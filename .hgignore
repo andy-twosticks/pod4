@@ -1,0 +1,16 @@
+syntax: regexp
+
+^\.bundle/
+^Gemfile.lock
+^doc/
+^pkg/
+^spec/reports/
+^tmp/
+
+syntax: glob
+*.bundle
+*.so
+*.o
+*.a
+mkmf.log
+.ruby-gemset
