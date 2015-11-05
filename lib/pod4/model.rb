@@ -1,7 +1,7 @@
 require 'octothorpe'
 
-require 'core/lib/errors'
-require 'core/lib/alert'
+require_relative 'errors'
+require_relative 'alert'
 
 
 module Pod4
@@ -10,25 +10,32 @@ module Pod4
   ##
   # The ultimate parent of all models.
   #
-  # Note that we distinguish between 'models' and 'interfaces'. An interface
-  # encapsulates connection to whatever is providing the data, for example, a
-  # database.  A model *is* the data, as far as SwingShift is concerned, and
-  # might not look anything like the database record or records that the
-  # interface provides to fill it. 
+  # Note that we distinguish between 'models' and 'interfaces':
   #
-  # An interface is a seperate class, a child of SwingShift::Interface. Each
-  # model has one interface. 
+  # The model represents the data to your application, in the format that makes
+  # most sense to your application: that might be the same format that it is
+  # stored in on the database, or it might not. The model doesn't care about
+  # where the data comes from. Models are all subclasses of Pod4::Model.
+  #
+  # An interface encapsulates the connection to whatever is providing the data.
+  # it might be a wrapper for calls to the Sequel ORM, for example. Or it could
+  # be a making a series of calls to a set of Nebulous verbs. It only cares
+  # about dealing with the data source, and it is only called by the model.
+  #
+  # An interface is a seperate class, which is defined for each model. There
+  # are parent classes for most of the data sources you will need, but failing
+  # that, you can always create one from the ultimate parent, Pod4::Interface.
   #
   # The most basic example model:
   #
-  #     class ExampleModel < SwingShift::Model
+  #     class ExampleModel < Pod4::Model
   #
-  #       class ExampleInterface < SwingShift::SequelInterface
+  #       class ExampleInterface < Pod4::SequelInterface
   #         set_table :example
   #         set_id_fld :id
   #       end
   #
-  #       set_interface SwingShift::SequelInterface(DB)
+  #       set_interface ExampleInterface.new($db)
   #       attr_columns :one, :two, :three
   #     end
   #
@@ -36,6 +43,16 @@ module Pod4
   # table 'example'. The table has a primary key field 'id' and columns which
   # correspond to our three attributes one, two and three.  There is no
   # validation or error control.
+  #
+  # Here is an example of this model in use:
+  #     
+  #     x = ExampleModel.new(14).read.or_die
+  #     x.two = "new value"
+  #     x.update
+  #
+  #     y = ExampleModel.new
+  #     y.set(params)
+  #     y.create unless y.model_status == :error
   #
   class Model
 
@@ -46,12 +63,22 @@ module Pod4
 
     class << self
 
+      ##
+      # You should call this in your model definition to define model 'columns'
+      # -- it gives you exactly the functionality of `attr_accessor` but also
+      # registers the attribute as one that `to_ot` and `set` will try to help
+      # you with.
+      #
       def attr_columns(*cols)
         @columns = cols
         attr_accessor *cols
       end
 
 
+      ##
+      # You MUST call this in your model definition to give it an instance of an
+      # interface. 
+      #
       def set_interface(interface)
         @interface = interface
       end
@@ -111,13 +138,15 @@ module Pod4
 
 
     ##
-    # Syntactic sugar; same as self.class.interface
+    # Syntactic sugar; same as self.class.interface, which returns the
+    # interface instance.
     #
     def interface; self.class.interface; end
 
 
     ##
-    # Syntactic sugar; same as self.class.columns
+    # Syntactic sugar; same as self.class.columns, which returns the
+    # `attr_columns` array.
     #
     def columns; self.class.columns; end
 
@@ -186,6 +215,8 @@ module Pod4
         instance_variable_set("@#{col}".to_sym, ot[col])
       end
 
+      validate
+
       self
     end
 
@@ -227,7 +258,7 @@ module Pod4
 
     
     ##
-    # Add an alert to the model instance @alerts attribute
+    # Add a Pod4::Alert to the model instance @alerts attribute
     #
     # Call this from your validation method.
     #

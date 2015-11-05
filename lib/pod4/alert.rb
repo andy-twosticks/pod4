@@ -2,16 +2,18 @@ module Pod4
   
 
   ##
-  # An Alert is an error, warning or note which a view might want to show on
-  # the screen. Alerts span the whole model-view-controller thing, though; they
-  # are raised as part of validation on the model and stored in the model.
-  # Which is not to say that you can't use them elsewhere.
+  # An Alert is an error, warning or note which might be raised in validation
+  # in the model. They are, however, designed to follow all the way through the
+  # controller to the view; you should use them whenever you want to display a
+  # message on the page.
   #
   class Alert
 
-    attr_reader :type, :field, :message, :exception
-
     ALERTTYPES = [:error, :warning, :info, :success]
+
+    attr_reader :type, :exception
+
+    attr_accessor :field, :message
 
 
     ##
@@ -21,7 +23,8 @@ module Pod4
     #
     # You may optionally specify the name of the field to be highlighted.
     # Models will give validation alerts a field that corresponds to the model
-    # attribute; but this is not enforced here.
+    # attribute; but this is not enforced here, and your controller will have
+    # to sort things out if the model is expecting different field names.
     #
     def initialize(type, field=nil, message)
       raise "unknown alert type" unless ALERTTYPES.include? type

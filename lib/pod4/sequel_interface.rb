@@ -2,15 +2,16 @@ require 'sequel'
 require 'octothorpe'
 
 require_relative 'interface'
+require_relative 'errors'
 
 
 module Pod4
 
 
   ##
-  # SwingShift Interface for a Sequel table.
+  # Pod4 Interface for a Sequel table.
   #
-  # If your DB table is one-one with your model, you shouldn;t need to override
+  # If your DB table is one-one with your model, you shouldn't need to override
   # anything.
   #
   # Example:
@@ -79,7 +80,7 @@ module Pod4
 
 
     ##
-    # id is whatever you set in the interface using set_id_fld
+    # ID is whatever you set in the interface using set_id_fld
     # record should be a Hash or Octothorpe.
     #
     def update(id, record)
@@ -91,7 +92,7 @@ module Pod4
 
 
     ##
-    # id is whatever you set in the interface using set_id_fld
+    # ID is whatever you set in the interface using set_id_fld
     #
     def delete(id)
       @table[@id_fld => id].delete
@@ -121,7 +122,7 @@ module Pod4
     end
 
 
-    private
+    protected
 
 
     def handle_error(err)

@@ -1,3 +1,6 @@
+require_relative 'errors'
+
+
 module Pod4
 
 
@@ -10,8 +13,8 @@ module Pod4
   # SwingShift errors (wrapping the error it gets inside a SwingShift error).
   #
   # We would expect a child of Interface for each data access type
-  # (sequelMethod, NebulousMethod, etc). These children will not change the
-  # signatures of the methods below.
+  # (sequelInterface, NebulousInterface, etc). These children *will not change*
+  # the signatures of the methods below.
   #
   # The methods below are the required ones. Interfaces will likely implement
   # other, interface-specific, ways of accessing data.
@@ -19,6 +22,10 @@ module Pod4
   # In Normal use, the interface classes will in turn be subclassed as inner
   # classes within each model, in order to customise them for the specific
   # entity that they are drawing data from. 
+  #
+  # Note that your Interface subclass probably returns an Octothorpe rather
+  # than a Hash, q.v..  (But you should be able to treat the former as if it
+  # were the latter in most cases.)
   #
   class Interface
 

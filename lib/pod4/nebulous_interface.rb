@@ -1,15 +1,23 @@
 require 'nebulous'
 
 require_relative 'interface'
+require_relative 'errors'
 
 
 module Pod4
 
 
   ##
-  # An interface to talk to a Nebulous Target. 
+  # An interface to talk to a Nebulous Target.
   #
-  # When you subclass this you may want to override list, read, create etc
+  # We make some assumptions about the verbs that the interface uses. In
+  # general, we assume that each of the CRUDL methods will correspond to a
+  # different Nebulous verb, and that they all have parameters which start with
+  # the ID field. See each CRUDL method for more details. If this isn't true,
+  # you way be able to get around it by overriding the CRUDL methods; or you
+  # may need more than one model.
+  #
+  # When you subclass this you may want to override list, create etc anyway --
   # to respond to specific parameters rather than just accepting an abstract
   # OT.
   #
@@ -61,6 +69,7 @@ module Pod4
       # Set the name of the Nebulous target in the interface definition
       #
       def set_target(target); @target = target; end
+
     end
     ##
 
