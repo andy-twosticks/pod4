@@ -1,4 +1,4 @@
-module SwingShift
+module Pod4
 
 
   ## 
@@ -11,7 +11,7 @@ module SwingShift
   # Base error class for Swingshift
   # Note the upgrade to set the existing @cause attribute
   #
-  class SwingShiftError < StandardError
+  class Pod4Error < StandardError
 
     def self.from_error(error)
       raise "trying to raise an error from an error that's not an error" \
@@ -28,14 +28,14 @@ module SwingShift
   ##
   # Raised if something goes wrong on the database
   #
-  class DatabaseError < SwingShiftError; end
+  class DatabaseError < Pod4Error; end
   ##
 
 
   ##
   # Raised if validation fails (and you wanted an exception...)
   #
-  class ValidationError < SwingShiftError
+  class ValidationError < Pod4Error
     attr_reader :field
 
     def self.from_error(error, field=nil)

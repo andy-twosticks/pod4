@@ -1,4 +1,4 @@
-module SwingShift
+module Pod4
 
 
   ##
@@ -31,7 +31,7 @@ module SwingShift
     # contact the data store, eg. the Sequel DB object. 
     #
     def initialize
-      raise "Interface needs to define an 'initialize' method"
+      raise NotImplemented, "Interface needs to define an 'initialize' method"
     end
 
 
@@ -46,7 +46,7 @@ module SwingShift
     # Note that list should ALWAYS return an array; never nil.
     #
     def list(selection=nil)
-      raise "Interface needs to define 'list' method"
+      raise NotImplemented, "Interface needs to define 'list' method"
     end
 
 
@@ -56,7 +56,7 @@ module SwingShift
     # Should return the ID for the new record.
     #
     def create(record)
-      raise "Interface needs to define 'create' method"
+      raise NotImplemented, "Interface needs to define 'create' method"
     end
 
 
@@ -65,7 +65,7 @@ module SwingShift
     # unique record for that ID.
     #
     def read(id)
-      raise "Interface needs to define 'read' method"
+      raise NotImplemented, "Interface needs to define 'read' method"
     end
 
 
@@ -75,7 +75,7 @@ module SwingShift
     # self.
     #
     def update(id, record)
-      raise "Interface needs to define 'update' method"
+      raise NotImplemented, "Interface needs to define 'update' method"
     end
 
 
@@ -83,7 +83,7 @@ module SwingShift
     # delete removes the record with the given ID. returns self.
     #
     def delete(id)
-      raise "Interface needs to define 'delete' method"
+      raise NotImplemented, "Interface needs to define 'delete' method"
     end
 
 

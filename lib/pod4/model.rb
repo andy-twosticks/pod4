@@ -4,11 +4,11 @@ require 'core/lib/errors'
 require 'core/lib/alert'
 
 
-module SwingShift
+module Pod4
 
 
   ##
-  # The ultimate parent of all SwingShift models.
+  # The ultimate parent of all models.
   #
   # Note that we distinguish between 'models' and 'interfaces'. An interface
   # encapsulates connection to whatever is providing the data, for example, a
@@ -58,7 +58,9 @@ module SwingShift
 
 
       def interface
-        raise "no call to set_interface in the model" unless @interface
+        raise NotImplemented, "no call to set_interface in the model" \
+          unless @interface
+
         @interface
       end
 
@@ -84,7 +86,7 @@ module SwingShift
 
         interface.list(params).map do |rec|
           key = rec[interface.id_fld]
-          raise "ID field missing from record" unless key
+          raise Bamf, "ID field missing from record" unless key
 
           rec = self.new(key)
           rec.set(rec) # do this seperately in case model forgot to return self
@@ -230,7 +232,7 @@ module SwingShift
     # Call this from your validation method.
     #
     def add_alert(type, field=nil, message)
-      @alerts << SwingShift::Alert.new(type, field, message)
+      @alerts << Alert.new(type, field, message)
 
       st = @alerts.sort.first.type
       @model_status = st if %i|error warning|.include?(st)

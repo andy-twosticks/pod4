@@ -1,9 +1,9 @@
 require 'nebulous'
 
-require 'core/lib/interface'
+require_relative 'interface'
 
 
-module SwingShift
+module Pod4
 
 
   ##
@@ -23,7 +23,7 @@ module SwingShift
   #       end
   #     end
   #
-  class NebulousInterface < SwingShift::Interface
+  class NebulousInterface < Interface
 
     # The NebResponse object from the last message sent, or nil otherwise
     attr_reader :response
@@ -51,7 +51,7 @@ module SwingShift
       # Set the verb names for each CRUDL action in the interface definition
       #
       def set_verb(action, verb)
-        raise "bad action" unless SwingShift::Interface::ACTIONS.include? action
+        raise Bamf, "bad action" unless Interface::ACTIONS.include? action
 
         @verbs ||= {}
         @verbs[action] = verb

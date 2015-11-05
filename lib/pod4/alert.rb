@@ -1,4 +1,4 @@
-module SwingShift
+module Pod4
   
 
   ##
@@ -11,7 +11,7 @@ module SwingShift
 
     attr_reader :type, :field, :message, :exception
 
-    AlertTypes = [:error, :warning, :info, :success]
+    ALERTTYPES = [:error, :warning, :info, :success]
 
 
     ##
@@ -24,7 +24,7 @@ module SwingShift
     # attribute; but this is not enforced here.
     #
     def initialize(type, field=nil, message)
-      raise "unknown alert type" unless AlertTypes.include? type
+      raise "unknown alert type" unless ALERTTYPES.include? type
 
       @type      = type.to_sym
       @field     = field.to_sym
@@ -48,7 +48,7 @@ module SwingShift
     # Sort alerts in descending order of seriousness
     #
     def <=>(other)
-      AlertTypes.index(self.type) <=> AlertTypes.index(other.type)
+      ALERTTYPES.index(self.type) <=> ALERTTYPES.index(other.type)
     end
 
 

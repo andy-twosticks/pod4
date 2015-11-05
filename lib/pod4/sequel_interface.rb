@@ -1,10 +1,10 @@
 require 'sequel'
 require 'octothorpe'
 
-require 'core/lib/interface'
+require_relative 'interface'
 
 
-module SwingShift
+module Pod4
 
 
   ##
@@ -19,7 +19,7 @@ module SwingShift
   #       set_id_fld :id
   #     end
   #
-  class SequelInterface < SwingShift::Interface
+  class SequelInterface < Interface
 
     class << self
       attr_reader :table, @id_fld
@@ -128,16 +128,16 @@ module SwingShift
       case err
 
         when Sequel::ValidationFailed
-          raise SwingShift::ValidationError.from_error(err)
+          raise ValidationError.from_error(err)
 
         when Sequel::UniqueConstraintViolation,
              Sequel::ForeignKeyConstraintViolation,
              Sequel::DatabaseError
 
-          raise SwingShift::DatabaseError.from_error(err)
+          raise DatabaseError.from_error(err)
 
         else
-          raise SwingShiftError.from_error(err)
+          raise Pod4Error.from_error(err)
 
       end
 
