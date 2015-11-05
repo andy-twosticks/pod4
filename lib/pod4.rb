@@ -1,4 +1,7 @@
+require 'devnull'
+
 require 'pod4/param'
+
 
 
 ##
@@ -39,6 +42,15 @@ module Pod4
   #
   def self.set_logger(lg)
     Param.set(:logger, lg)
+  end
+
+
+  ##
+  # Return a logger instance if you set one using set_logger.
+  # Otherwise, return a logger instance that points to a DevNull IO object.
+  #
+  def self.logger
+    Param.get(:logger) || Logger.new( DevNull.new )
   end
 
 

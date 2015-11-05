@@ -32,5 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "ripper-tags"
   spec.add_development_dependency "geminabox"
 
+  spec.add_runtime_dependency "devnull"
   spec.add_runtime_dependency "octothorpe"
 end
