@@ -1,0 +1,106 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+<=>	lib/pod4/alert.rb	/^    def <=>(other)$/;"	f	class:Pod4.Alert
+ACTIONS	lib/pod4/interface.rb	/^    ACTIONS = [ :list, :create, :read, :update, :delete ]$/;"	C	class:Pod4.Interface
+ALERTTYPES	lib/pod4/alert.rb	/^    ALERTTYPES = [:error, :warning, :info, :success]$/;"	C	class:Pod4.Alert
+Alert	lib/pod4/alert.rb	/^  class Alert$/;"	c	class:Pod4
+DatabaseError	lib/pod4/errors.rb	/^  class DatabaseError < Pod4Error; end$/;"	c	class:Pod4	inherits:Pod4Error
+DocNoPending	spec/doc_no_pending.rb	/^class DocNoPending < RSpec::Core:;FOrmatters::DocumentationFormatter$/;"	c
+Interface	lib/pod4/interface.rb	/^  class Interface$/;"	c	class:Pod4
+Model	lib/pod4/model.rb	/^  class Model$/;"	c	class:Pod4
+NebulousInterface	lib/pod4/nebulous_interface.rb	/^  class NebulousInterface < Interface$/;"	c	class:Pod4	inherits:Interface
+NotImplemented	lib/pod4/errors.rb	/^  class NotImplemented < Error; end$/;"	c	class:Pod4	inherits:Error
+Param	lib/pod4/param.rb	/^  module Param$/;"	m	class:Pod4
+Pod4	lib/pod4.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/alert.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/errors.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/interface.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/model.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/nebulous_interface.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/param.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/sequel_interface.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/version.rb	/^module Pod4 $/;"	m
+Pod4Error	lib/pod4/errors.rb	/^  class Pod4Error < StandardError$/;"	c	class:Pod4	inherits:StandardError
+STATII	lib/pod4/model.rb	/^    STATII = %i|error warning okay empty|$/;"	C	class:Pod4.Model
+SequelInterface	lib/pod4/sequel_interface.rb	/^  class SequelInterface < Interface$/;"	c	class:Pod4	inherits:Interface
+VERSION	lib/pod4/version.rb	/^  VERSION = 0.1$/;"	C	class:Pod4
+ValidationError	lib/pod4/errors.rb	/^  class ValidationError < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
+["@id_fld", 26]	lib/pod4/sequel_interface.rb	/^      attr_reader :table, @id_fld$/;"	F	class:Pod4.SequelInterface
+add_alert	lib/pod4/model.rb	/^    def add_alert(type, field=nil, message)$/;"	f	class:Pod4.Model
+alerts	lib/pod4/model.rb	/^    attr_reader :id, :alerts, :model_status$/;"	f	class:Pod4.Model
+attr_columns	lib/pod4/model.rb	/^      def attr_columns(*cols)$/;"	F	class:Pod4.Model
+bootstrap_class	lib/pod4/alert.rb	/^    def bootstrap_class$/;"	f	class:Pod4.Alert
+clearing_cache	lib/pod4/nebulous_interface.rb	/^    def clearing_cache$/;"	f	class:Pod4.NebulousInterface
+columns	lib/pod4/model.rb	/^      def columns $/;"	F	class:Pod4.Model
+columns	lib/pod4/model.rb	/^    def columns; self.class.columns; end$/;"	f	class:Pod4.Model
+create	lib/pod4/interface.rb	/^    def create(record)$/;"	f	class:Pod4.Interface
+create	lib/pod4/model.rb	/^    def create$/;"	f	class:Pod4.Model
+create	lib/pod4/nebulous_interface.rb	/^    def create(record)$/;"	f	class:Pod4.NebulousInterface
+create	lib/pod4/sequel_interface.rb	/^    def create(record)$/;"	f	class:Pod4.SequelInterface
+delete	lib/pod4/interface.rb	/^    def delete(id)$/;"	f	class:Pod4.Interface
+delete	lib/pod4/model.rb	/^    def delete$/;"	f	class:Pod4.Model
+delete	lib/pod4/nebulous_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.NebulousInterface
+delete	lib/pod4/sequel_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.SequelInterface
+example_pending	spec/doc_no_pending.rb	/^  def example_pending(notifications); end$/;"	f	class:DocNoPending
+exception	lib/pod4/alert.rb	/^    attr_reader :type, :exception$/;"	f	class:Pod4.Alert
+execute	lib/pod4/sequel_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4.SequelInterface
+field	lib/pod4/alert.rb	/^    attr_accessor :field, :message$/;"	f	class:Pod4.Alert
+field	lib/pod4/errors.rb	/^    attr_reader :field$/;"	f	class:Pod4.ValidationError
+field=	lib/pod4/alert.rb	/^    attr_accessor :field, :message$/;"	f	class:Pod4.Alert
+from_alert	lib/pod4/errors.rb	/^    def self.from_alert(alert)$/;"	F	class:Pod4.ValidationError
+from_error	lib/pod4/errors.rb	/^    def self.from_error(error)$/;"	F	class:Pod4.Pod4Error
+from_error	lib/pod4/errors.rb	/^    def self.from_error(error, field=nil)$/;"	F	class:Pod4.ValidationError
+get	lib/pod4/param.rb	/^    def get(p); params[p.to_sym]; end$/;"	f	class:Pod4.Param
+get_all	lib/pod4/param.rb	/^    def get_all; Octothorpe.new(params); end$/;"	f	class:Pod4.Param
+handle_error	lib/pod4/nebulous_interface.rb	/^    def handle_error(err)$/;"	f	class:Pod4.NebulousInterface
+handle_error	lib/pod4/sequel_interface.rb	/^    def handle_error(err)$/;"	f	class:Pod4.SequelInterface
+id	lib/pod4/model.rb	/^    attr_reader :id, :alerts, :model_status$/;"	f	class:Pod4.Model
+initialize	lib/pod4/alert.rb	/^    def initialize(type, field=nil, message)$/;"	f	class:Pod4.Alert
+initialize	lib/pod4/errors.rb	/^    def initialize(message, field=nil)$/;"	f	class:Pod4.ValidationError
+initialize	lib/pod4/errors.rb	/^    def initialize(message=nil); super; end$/;"	f	class:Pod4.Pod4Error
+initialize	lib/pod4/interface.rb	/^    def initialize$/;"	f	class:Pod4.Interface
+initialize	lib/pod4/model.rb	/^    def initialize(id=nil)$/;"	f	class:Pod4.Model
+initialize	lib/pod4/nebulous_interface.rb	/^    def initialize(paramHash)$/;"	f	class:Pod4.NebulousInterface
+initialize	lib/pod4/sequel_interface.rb	/^    def initialize(db)$/;"	f	class:Pod4.SequelInterface
+interface	lib/pod4/model.rb	/^      def interface$/;"	F	class:Pod4.Model
+interface	lib/pod4/model.rb	/^    def interface; self.class.interface; end$/;"	f	class:Pod4.Model
+list	lib/pod4/interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.Interface
+list	lib/pod4/model.rb	/^      def list(params=nil)$/;"	F	class:Pod4.Model
+list	lib/pod4/nebulous_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.NebulousInterface
+list	lib/pod4/sequel_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.SequelInterface
+logger	lib/pod4.rb	/^  def self.logger$/;"	F	class:Pod4
+message	lib/pod4/alert.rb	/^    attr_accessor :field, :message$/;"	f	class:Pod4.Alert
+message=	lib/pod4/alert.rb	/^    attr_accessor :field, :message$/;"	f	class:Pod4.Alert
+model_status	lib/pod4/model.rb	/^    attr_reader :id, :alerts, :model_status$/;"	f	class:Pod4.Model
+or_die	lib/pod4/model.rb	/^    alias :or_die :throw_exceptions$/;"	a	class:Pod4.Model
+param_string	lib/pod4/nebulous_interface.rb	/^    def param_string(params)$/;"	f	class:Pod4.NebulousInterface
+params	lib/pod4/param.rb	/^    def params; @params ||= {}; end$/;"	f	class:Pod4.Param
+read	lib/pod4/interface.rb	/^    def read(id)$/;"	f	class:Pod4.Interface
+read	lib/pod4/model.rb	/^    def read$/;"	f	class:Pod4.Model
+read	lib/pod4/nebulous_interface.rb	/^    def read(id)$/;"	f	class:Pod4.NebulousInterface
+read	lib/pod4/sequel_interface.rb	/^    def read(id)$/;"	f	class:Pod4.SequelInterface
+response	lib/pod4/nebulous_interface.rb	/^    attr_reader :response$/;"	f	class:Pod4.NebulousInterface
+select	lib/pod4/sequel_interface.rb	/^    def select(sql)$/;"	f	class:Pod4.SequelInterface
+send_message	lib/pod4/nebulous_interface.rb	/^    def send_message(verb, paramStr, with_cache=true)$/;"	f	class:Pod4.NebulousInterface
+set	lib/pod4/model.rb	/^    def set(ot)$/;"	f	class:Pod4.Model
+set	lib/pod4/param.rb	/^    def set(p,v); params[p.to_sym] = v; end$/;"	f	class:Pod4.Param
+set_id_fld	lib/pod4/sequel_interface.rb	/^      def set_id_fld(idFld); @id_fld = idFld; end$/;"	F	class:Pod4.SequelInterface
+set_interface	lib/pod4/model.rb	/^      def set_interface(interface)$/;"	F	class:Pod4.Model
+set_logger	lib/pod4.rb	/^  def self.set_logger(lg)$/;"	F	class:Pod4
+set_status	lib/pod4/nebulous_interface.rb	/^    def set_status$/;"	f	class:Pod4.NebulousInterface
+set_table	lib/pod4/sequel_interface.rb	/^      def set_table(table);  @table  = table; end$/;"	F	class:Pod4.SequelInterface
+set_target	lib/pod4/nebulous_interface.rb	/^      def set_target(target); @target = target; end$/;"	F	class:Pod4.NebulousInterface
+set_verb	lib/pod4/nebulous_interface.rb	/^      def set_verb(action, verb)$/;"	F	class:Pod4.NebulousInterface
+status	lib/pod4/nebulous_interface.rb	/^    attr_reader :status$/;"	f	class:Pod4.NebulousInterface
+table	lib/pod4/sequel_interface.rb	/^      attr_reader :table, @id_fld$/;"	F	class:Pod4.SequelInterface
+target	lib/pod4/nebulous_interface.rb	/^      attr_reader :target, :verbs$/;"	F	class:Pod4.NebulousInterface
+throw_exceptions	lib/pod4/model.rb	/^    def throw_exceptions$/;"	f	class:Pod4.Model
+to_ot	lib/pod4/model.rb	/^    def to_ot$/;"	f	class:Pod4.Model
+type	lib/pod4/alert.rb	/^    attr_reader :type, :exception$/;"	f	class:Pod4.Alert
+update	lib/pod4/interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.Interface
+update	lib/pod4/model.rb	/^    def update$/;"	f	class:Pod4.Model
+update	lib/pod4/nebulous_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.NebulousInterface
+update	lib/pod4/sequel_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.SequelInterface
+validate	lib/pod4/model.rb	/^    def validate$/;"	f	class:Pod4.Model
+verb_for	lib/pod4/nebulous_interface.rb	/^    def verb_for(action)$/;"	f	class:Pod4.NebulousInterface
+verbs	lib/pod4/nebulous_interface.rb	/^      attr_reader :target, :verbs$/;"	F	class:Pod4.NebulousInterface
