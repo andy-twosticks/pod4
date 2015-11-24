@@ -26,7 +26,7 @@ module Pod4
   # are parent classes for most of the data sources you will need, but failing
   # that, you can always create one from the ultimate parent, Pod4::Interface.
   #
-  # The most basic example model:
+  # The most basic example model (and interface):
   #
   #     class ExampleModel < Pod4::Model
   #
@@ -46,10 +46,12 @@ module Pod4
   #
   # Here is an example of this model in use:
   #     
+  #     # find record 14; raise error otherwise. Update and save.
   #     x = ExampleModel.new(14).read.or_die
   #     x.two = "new value"
   #     x.update
   #
+  #     # create a new record from the params hash -- unless validation fails.
   #     y = ExampleModel.new
   #     y.set(params)
   #     y.create unless y.model_status == :error

@@ -27,10 +27,11 @@ module Pod4
     # to sort things out if the model is expecting different field names.
     #
     def initialize(type, field=nil, message)
-      raise "unknown alert type" unless ALERTTYPES.include? type
+      raise ArgumentError, "unknown alert type" \
+        unless ALERTTYPES.include? type.to_sym
 
       @type      = type.to_sym
-      @field     = field.to_sym
+      @field     = field ? field.to_sym : nil
       @exception = nil
 
       if message.kind_of?(Exception)

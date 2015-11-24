@@ -1,5 +1,4 @@
 --color
---require --spec-helper
+--require spec_helper
 --require doc_no_pending
 -I .
---format progress
