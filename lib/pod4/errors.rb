@@ -4,7 +4,7 @@ module Pod4
   ## 
   # Raised in abstract methods when treated as concrete
   #
-  class NotImplemented < Error; end
+  class NotImplemented < Exception; end
 
 
   ##
@@ -13,11 +13,15 @@ module Pod4
   #
   class Pod4Error < StandardError
 
+    attr_accessor :from
+
     def self.from_error(error)
       raise "trying to raise an error from an error that's not an error" \
         unless error.kind_of? StandardError
 
-      self.new(error.message).cause = error
+      e = self.new( "#{error.class}: #{error.message}" )
+      e.from = error
+      e
     end
 
     def initialize(message=nil); super; end

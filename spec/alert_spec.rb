@@ -1,7 +1,5 @@
-require 'pod4'
 require 'pod4/alert'
 
-include Pod4
 
 describe Alert do
 

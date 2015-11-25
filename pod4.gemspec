@@ -19,12 +19,17 @@ Gem::Specification.new do |spec|
 
   spec.extra_rdoc_files = spec.files.grep(%r{^md/})
 
-  #spec.requirements << 'STOMP Messaging server'
-
+  # for bundler, management, etc etc
   spec.add_development_dependency "bundler", "~> 1.6"
   spec.add_development_dependency "rake",    "~> 10.0"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "rdoc"
+  
+  # For testing
+  spec.add_development_dependency "sequel"
+  spec.add_development_dependency "sqlite3"
+
+  # Development tools
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-doc"
   spec.add_development_dependency "guard"
