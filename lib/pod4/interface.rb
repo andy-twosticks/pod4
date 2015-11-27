@@ -31,6 +31,9 @@ module Pod4
 
     ACTIONS = [ :list, :create, :read, :update, :delete ]
 
+    # A field name in the data source, the name of the unique ID field.
+    attr_reader :id_fld
+
 
     ##
     # Individual implementations are likely to have very different initialize

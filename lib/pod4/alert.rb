@@ -28,7 +28,7 @@ module Pod4
     #
     def initialize(type, field=nil, message)
       raise ArgumentError, "unknown alert type" \
-        unless ALERTTYPES.include? type.to_sym
+        unless ALERTTYPES.include? type.to_s.to_sym
 
       @type      = type.to_sym
       @field     = field ? field.to_sym : nil

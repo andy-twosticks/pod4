@@ -13,7 +13,7 @@ describe Alert do
       expect{ Alert.new(nil)   }.to raise_exception ArgumentError
       expect{ Alert.new('foo') }.to raise_exception ArgumentError
       
-      [:baz, :werning, :note, :debug].each do |badType|
+      [:baz, :werning, nil, :note, :debug].each do |badType|
         expect{ Alert.new(badType, 'foo') }.
           to raise_exception(ArgumentError), "Alert.new(#{badType.inspect}...)"
 

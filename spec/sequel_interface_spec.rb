@@ -6,6 +6,14 @@ class TestSequelInterface < SequelInterface
   set_id_fld :id
 end
 
+class BadInterface1 < SequelInterface
+  set_table :customer
+end
+
+class BadInterface2 < SequelInterface
+  set_id_fld :id
+end
+
 
 describe TestSequelInterface do
 
@@ -47,6 +55,40 @@ describe TestSequelInterface do
     fill_data(interface)
   end
 
+  ##
+
+
+  describe 'SequelInterface.set_table' do
+    it 'takes one argument' do
+      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'SequelInterface.table' do
+    it 'returns the table' do
+      expect( TestSequelInterface.table ).to eq :customer
+    end
+  end
+  ##
+
+
+  describe 'SequelInterface.set_id_fld' do
+    it 'takes one argument' do
+      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'SequelInterface.id_fld' do
+    it 'returns the ID field name' do
+      expect( TestSequelInterface.id_fld ).to eq :id
+    end
+  end
+  ##
+
 
   describe '#new' do
 
@@ -56,6 +98,12 @@ describe TestSequelInterface do
       expect{ TestSequelInterface.new('foo') }.to raise_exception ArgumentError
 
       expect{ TestSequelInterface.new(db) }.not_to raise_exception
+    end
+
+    it 'requires the table and id field to be defined in the class' do
+      expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
+      expect{ BadInterface1.new(db)   }.to raise_exception Pod4Error
+      expect{ BadInterface2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
@@ -149,6 +197,15 @@ describe TestSequelInterface do
 
     it 'returns an empty Array if nothing matches' do
       expect( interface.list(name: 'Yogi') ).to eq([])
+    end
+
+    it 'returns an empty Array if there is no data' do
+      # remove all the data
+      interface.list.
+        map {|x| x.>>.id }.
+        each {|y| interface.delete(y) }
+
+      expect( interface.list ).to eq([])
     end
 
     it 'raises DatabaseError if the selection criteria is nonsensical' do

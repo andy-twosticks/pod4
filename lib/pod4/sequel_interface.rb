@@ -43,6 +43,12 @@ module Pod4
     def initialize(db)
       raise ArgumentError unless db.kind_of? Sequel::Database
 
+      raise Pod4Error, 'no call to set_table in the interface definition' \
+        if self.class.table.nil?
+
+      raise Pod4Error, 'no call to set_id_fld in the interface definition' \
+        if self.class.id_fld.nil?
+
       @db     = db
       @table  = db[self.class.table]
       @id_fld = self.class.id_fld
@@ -53,7 +59,7 @@ module Pod4
 
 
     ##
-    # Selection is a hash of field: value
+    # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
       (selection ? @table.where(selection) : @table.all).map do |x| 

@@ -58,9 +58,9 @@ module Pod4
   #
   class Model
 
-    attr_reader :id, :alerts, :model_status
+    attr_reader :model_id, :model_status
 
-    STATII = %i|error warning okay empty|
+    STATII = %i|error warning okay deleted empty|
 
 
     class << self
@@ -112,13 +112,15 @@ module Pod4
       # Note that list should ALWAYS return an array.
       #
       def list(params=nil)
+        raise POd4Error, "no ID field defined in interface" \
+          unless interface.id_fld
 
-        interface.list(params).map do |rec|
-          key = rec[interface.id_fld]
-          raise Bamf, "ID field missing from record" unless key
+        interface.list(params).map do |ot|
+          key = ot[interface.id_fld]
+          raise Pod4Error, "ID field missing from record" unless key
 
           rec = self.new(key)
-          rec.set(rec) # do this seperately in case model forgot to return self
+          rec.set(ot) # seperately, in case model forgot to return self
           rec 
         end
 
@@ -135,7 +137,7 @@ module Pod4
     def initialize(id=nil)
       @model_status = :empty
       @alerts       = []
-      @id           = id
+      @model_id     = id
     end
 
 
@@ -147,10 +149,19 @@ module Pod4
 
 
     ##
-    # Syntactic sugar; same as self.class.columns, which returns the
-    # `attr_columns` array.
+    # Syntactic sugar; pretty much the same as self.class.columns, which
+    # returns the `attr_columns` array.
     #
-    def columns; self.class.columns; end
+    def columns; self.class.columns.dup; end
+
+
+    ##
+    # Return the list of alerts. 
+    #
+    # We don't use attr_reader for this because it won't protect an array from
+    # external changes.
+    #
+    def alerts; @alerts.dup; end
 
 
     ##
@@ -160,7 +171,8 @@ module Pod4
     #
     def create
       validate
-      @id = interface.create( to_ot )
+      @model_id = interface.create(to_ot) unless @model_status == :error
+      @model_status = :okay if @model_status == :empty
       self
     end
 
@@ -169,8 +181,8 @@ module Pod4
     # Call this to fetch the data for this instance from the data source
     #
     def read
-      set( interface.read(@id) )
-      validate
+      set( interface.read(@model_id) )
+      @model_status = :okay if @model_status == :empty
       self
     end
 
@@ -179,8 +191,11 @@ module Pod4
     # Call this to update the data source with the current attribute values
     #
     def update
+      raise Pod4Error, "Invalid model status for an update" \
+        if [:empty, :deleted].include? @model_status
+
       validate
-      interface.update(@id, to_ot)
+      interface.update(@model_id, to_ot) unless @model_status == :error
       self
     end
 
@@ -191,8 +206,12 @@ module Pod4
     # Note: does not delete the instance...
     #
     def delete
+      raise Pod4Error, "Invalid model status for an update" \
+        if [:empty, :deleted].include? @model_status
+
       validate
-      interface.delete(@id)
+      interface.delete(@model_id)
+      @model_status = :deleted
       self
     end
 
@@ -202,7 +221,7 @@ module Pod4
     # Override this to add validation - calling `add_alert` for each problem.
     #
     def validate
-      super
+      # Hilding pattern. All models should use super, in principal
     end
 
 
@@ -213,6 +232,9 @@ module Pod4
     # control data types, etc.
     #
     def set(ot)
+      raise ArgumentError, 'parameter must be a Hash or Octothorpe' \
+        unless ot.kind_of?(Hash) || ot.kind_of?(Octothorpe)
+        
       columns.each do |col|
         instance_variable_set("@#{col}".to_sym, ot[col])
       end
@@ -239,7 +261,7 @@ module Pod4
 
 
     ##
-    # Throw a SwingShift exception for the model if any alerts are status
+    # Raise a SwingShift exception for the model if any alerts are status
     # :error; otherwise do nothing.
     #
     # Note the alias of or_die for this method, which means that if you have
@@ -247,13 +269,13 @@ module Pod4
     # lick from Perl and say:
     #     MyModel.new(14).read.or_die
     #
-    def throw_exceptions
+    def raise_exceptions
       al = @alerts.sort.first
-      raise ValidationError.from_alert(al) if al.type == :error
+      raise ValidationError.from_alert(al) if al && al.type == :error
       self
     end
 
-    alias :or_die :throw_exceptions
+    alias :or_die :raise_exceptions
 
 
     protected
