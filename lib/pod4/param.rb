@@ -20,6 +20,8 @@ module Pod4
 
     def get_all; Octothorpe.new(params); end
 
+    def reset; @params = {}; end
+
 
   end
 

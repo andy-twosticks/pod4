@@ -30,8 +30,8 @@ require 'pod4/param'
 #       absolute minimum of magic or surprises for the developer. 
 #
 # For more information, you should look at the contract Pod4 makes with its
-# callers -- you should find all that you need in the abstract classes
-# Pod4::Interface and POd4::Model.  Or, read the tests, of course.
+# callers -- you should find all that you need in the classes Pod4::Interface
+# and POd4::Model.  Or, read the tests, of course.
 #
 module Pod4
 
@@ -40,8 +40,8 @@ module Pod4
   # If you have a logger instance, set it here to have Pod4 models and
   # interfaces write to it.
   #
-  def self.set_logger(lg)
-    Param.set(:logger, lg)
+  def self.set_logger(instance)
+    Param.set(:logger, instance)
   end
 
 
