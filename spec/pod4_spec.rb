@@ -2,6 +2,7 @@ require 'logger'
 
 require 'pod4'
 require 'pod4/param'
+require 'pod4/errors'
 
 
 describe Pod4 do
@@ -44,6 +45,42 @@ describe Pod4 do
       expect( Pod4.logger ).to be_a_kind_of Logger
     end
 
+  end
+  ##
+  
+
+  describe 'Pod4::NotImplemented' do
+    it 'is an exception' do
+      expect( Pod4::NotImplemented ).not_to be_nil
+      expect( Pod4::NotImplemented.ancestors ).to include Exception
+    end
+  end
+  ##
+
+
+  describe 'Pod4::Pod4Error' do
+    it 'is an exception' do
+      expect( Pod4::Pod4Error ).not_to be_nil
+      expect( Pod4::Pod4Error.ancestors ).to include Exception
+    end
+  end
+  ##
+
+
+  describe 'Pod4::DatabaseError' do
+    it 'is an exception based on Pod4Error' do
+      expect( Pod4::DatabaseError ).not_to be_nil
+      expect( Pod4::DatabaseError.ancestors ).to include Pod4::Pod4Error
+    end
+  end
+  ##
+
+
+  describe 'Pod4::ValidationError' do
+    it 'is an exception based on Pod4Error' do
+      expect( Pod4::ValidationError ).not_to be_nil
+      expect( Pod4::ValidationError.ancestors ).to include Pod4::Pod4Error
+    end
   end
   ##
 
