@@ -47,11 +47,10 @@ module Pod4
 
     ##
     # List accepts a parameter as selection criteria, and returns an array of
-    # hashes (or Octothorpes). Exactly what the selection criteria look like
-    # will vary from interface to interface. So will the contents of the return
-    # OT, although it should include the ID field, or else the model will be
-    # much less useful. (Ideally each element of the return array should follow
-    # the same format as the return value for read(). )
+    # Octothorpes. Exactly what the selection criteria look like will vary from
+    # interface to interface. So will the contents of the return OT, although
+    # it must include the ID field. (Ideally each element of the return array
+    # should follow the same format as the return value for read(). )
     #
     # Note that list should ALWAYS return an array; never nil.
     #
@@ -61,9 +60,9 @@ module Pod4
 
 
     ##
-    # Create accepts a record parameter (again, the format of this will vary)
-    # representing a record, and creates the record. 
-    # Should return the ID for the new record.
+    # Create accepts a record parameter (Hash or OT, but again, the format of
+    # this will vary) representing a record, and creates the record.  Should
+    # return the ID for the new record.
     #
     def create(record)
       raise NotImplemented, "Interface needs to define 'create' method"
@@ -71,8 +70,8 @@ module Pod4
 
 
     ##
-    # Read accepts an ID, and returns a Hash / Octothorpe representing the
-    # unique record for that ID.
+    # Read accepts an ID, and returns an Octothorpe representing the unique
+    # record for that ID.
     #
     def read(id)
       raise NotImplemented, "Interface needs to define 'read' method"
