@@ -48,7 +48,24 @@ describe 'CustomerModel' do
 
   let(:records_as_ot) { records.map{|r| Octothorpe.new(r) } }
 
+  # model is just a plain newly created object that you can call read on.
+  # model2 and model3 are in an identical state - they have been filled with a
+  # read(). We have two so that we can RSpec 'allow' on one and not the other.
+
   let(:model) { CustomerModel.new(20) }
+
+  let(:model2) do
+    m = CustomerModel.new(30)
+    allow( m.interface ).to receive(:read).and_return( records_as_ot[2] )
+    m.read.or_die
+  end
+
+  let(:model3) do
+    m = CustomerModel.new(40)
+    allow( m.interface ).to receive(:read).and_return( records_as_ot[3] )
+    m.read.or_die
+  end
+
 
   ##
 
@@ -484,43 +501,52 @@ describe 'CustomerModel' do
 
   describe '#update' do
 
+    before do
+      allow( model2.interface ).
+        to receive(:update).
+        and_return( model2.interface )
+
+    end
+
     it 'takes no parameters' do
-      allow( model.interface ).to receive(:update).and_return( model.interface )
-      expect{ model.update(12) }.to raise_exception ArgumentError
-      expect{ model.update     }.not_to raise_exception
+      expect{ model2.update(12) }.to raise_exception ArgumentError
+      expect{ model2.update     }.not_to raise_exception
     end
 
     it 'returns self' do
-      allow( model.interface ).to receive(:update).and_return( model.interface )
-      expect( model.create ).to eq model
+      expect( model2.update ).to eq model2
     end
 
     it 'raises a Pod4Error if model status is :empty' do
       allow( model.interface ).to receive(:update).and_return( model.interface )
+
+      expect( model.model_status ).to eq :empty
       expect{ model.update }.to raise_exception Pod4::Pod4Error
     end
 
-    it 'raises a Pod4Error if model status is :deleted'
+    it 'raises a Pod4Error if model status is :deleted' do
+      model2.delete
+      expect{ model2.update }.to raise_exception Pod4::Pod4Error
+    end
 
     it 'calls validate' do
-      allow( model.interface ).to receive(:update).and_return( model.interface )
-      expect( model ).to receive(:validate)
-      model.update
+      expect( model2 ).to receive(:validate)
+      model2.update
     end
 
     it 'calls update on the interface if the validation passes' do
-      expect( model.interface ).
+      expect( model3.interface ).
         to receive(:update).
-        and_return( model.interface )
+        and_return( model3.interface )
 
-      model.update
+      model3.update
     end
 
     it 'doesnt call update on the interface if the validation fails' do
-      expect( model.interface ).not_to receive(:update)
+      expect( model3.interface ).not_to receive(:update)
 
-      model.fake_an_alert(:error, :price, 'qar')
-      model.update
+      model3.fake_an_alert(:error, :price, 'qar')
+      model3.update
     end
 
   end
@@ -529,61 +555,67 @@ describe 'CustomerModel' do
 
   describe '#delete' do
 
+    before do
+      allow( model2.interface ).
+        to receive(:delete).
+        and_return( model2.interface )
+
+    end
+
     it 'takes no parameters' do
-      allow( model.interface ).to receive(:delete).and_return( model.interface )
-      expect{ model.delete(12) }.to raise_exception ArgumentError
-      expect{ model.delete     }.not_to raise_exception
+      expect{ model2.delete(12) }.to raise_exception ArgumentError
+      expect{ model2.delete     }.not_to raise_exception
     end
 
     it 'returns self' do
-      allow( model.interface ).to receive(:delete).and_return( model.interface )
-      expect( model.delete ).to eq model
+      expect( model2.delete ).to eq model2
     end
 
-    it 'raises a Pod4Error if model status is :empty'
+    it 'raises a Pod4Error if model status is :empty' do
+      allow( model.interface ).to receive(:delete).and_return( model.interface )
 
-    it 'raises a Pod4Error if model status is :deleted'
+      expect( model.model_status ).to eq :empty
+      expect{ model.delete }.to raise_exception Pod4::Pod4Error
+    end
+
+    it 'raises a Pod4Error if model status is :deleted'do
+      model2.delete
+      expect{ model2.delete }.to raise_exception Pod4::Pod4Error
+    end
 
     it 'calls validate' do
-      allow( model.interface ).to receive(:delete).and_return( model.interface )
-      expect( model ).to receive(:validate)
-      model.delete
+      expect( model2 ).to receive(:validate)
+      model2.delete
     end
 
     it 'calls delete on the interface if the model status is good' do
-      expect( model.interface ).
+      expect( model3.interface ).
         to receive(:delete).
-        and_return( model.interface )
+        and_return( model3.interface )
 
-      model.delete 
+      model3.delete 
     end
 
     it 'calls delete on the interface if the model status is bad' do
-      expect( model.interface ).
+      expect( model3.interface ).
         to receive(:delete).
-        and_return( model.interface )
+        and_return( model3.interface )
 
-      model.fake_an_alert(:error, :price, 'qar')
-      model.delete 
+      model3.fake_an_alert(:error, :price, 'qar')
+      model3.delete 
     end
 
     it 'still gives you full access to the data after a delete' do
-      allow( model.interface ).to receive(:delete).and_return( model.interface )
+      model2.delete
 
-      ot = records_as_ot.last
-      cm = CustomerModel.new(40)
-      cm.set(ot)
-      cm.delete
-
-      expect( cm.id    ).to eq ot.>>.id
-      expect( cm.name  ).to eq ot.>>.name
-      expect( cm.price ).to eq ot.>>.price
+      expect( model2.id    ).to eq records_as_ot[2].>>.id
+      expect( model2.name  ).to eq records_as_ot[2].>>.name
+      expect( model2.price ).to eq records_as_ot[2].>>.price
     end
 
     it 'sets status to :deleted' do
-      allow( model.interface ).to receive(:delete).and_return( model.interface )
-      model.delete
-      expect( model.model_status ).to eq :deleted
+      model2.delete
+      expect( model2.model_status ).to eq :deleted
     end
 
   end
