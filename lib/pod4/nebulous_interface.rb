@@ -103,12 +103,14 @@ module Pod4
       ##
       # Set the name of the Nebulous target in the interface definition
       #
-      def set_target(target); @target = target; end
+      # a reference to the interface object.
+      def set_target(target); @target = target.to_s; end
+
       
       ##
       # Set the name of the ID parameter (needs to be in CRUD verbs param list)
       #
-      def set_id_fld(idFld); @id_fld = idFld; end 
+      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end 
 
       ##
       # Make sure all of the above is consistent
@@ -147,7 +149,7 @@ module Pod4
     # creating a NebRequest directly.
     #
     def initialize(requestObj=nil)
-      @request_object  = requestObj
+      @request_object  = requestObj #might as well be a reference 
       @response        = nil
       @response_status = nil
       @id_fld          = self.class.id_fld

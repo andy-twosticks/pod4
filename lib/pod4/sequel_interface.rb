@@ -31,8 +31,8 @@ module Pod4
       # out into the model.
       #+++
 
-      def set_table(table);  @table  = table; end
-      def set_id_fld(idFld); @id_fld = idFld; end
+      def set_table(table);  @table  = table.to_s.to_sym; end
+      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end
     end
     ##
 
@@ -49,7 +49,7 @@ module Pod4
       raise Pod4Error, 'no call to set_id_fld in the interface definition' \
         if self.class.id_fld.nil?
 
-      @db     = db
+      @db     = db # referemce to the db object
       @table  = db[self.class.table]
       @id_fld = self.class.id_fld
 

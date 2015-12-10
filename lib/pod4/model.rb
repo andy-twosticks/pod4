@@ -82,6 +82,7 @@ module Pod4
       # interface. 
       #
       def set_interface(interface)
+        # a reference to the interface object.
         @interface = interface
       end
 

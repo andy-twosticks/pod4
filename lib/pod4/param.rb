@@ -14,9 +14,9 @@ module Pod4
 
     def params; @params ||= {}; end
 
-    def set(p,v); params[p.to_sym] = v; end
+    def set(p,v); params[p.to_s.to_sym] = v; end
 
-    def get(p); params[p.to_sym]; end
+    def get(p); params[p.to_s.to_sym]; end
 
     def get_all; Octothorpe.new(params); end
 

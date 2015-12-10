@@ -20,7 +20,7 @@ module Pod4
         unless error.kind_of? StandardError
 
       e = self.new( "#{error.class}: #{error.message}" )
-      e.from = error
+      e.from = error.dup
       e
     end
 
@@ -43,7 +43,7 @@ module Pod4
     attr_reader :field
 
     def self.from_error(error, field=nil)
-      super(error).field = field
+      super(error).field = field.to_s.to_sym
     end
 
     def self.from_alert(alert)
@@ -51,8 +51,8 @@ module Pod4
     end
 
     def initialize(message, field=nil)
-      super(message)
-      @field = field
+      super(message.dup)
+      @field = field.to_s.to_sym
     end
 
   end

@@ -30,19 +30,19 @@ module Pod4
       raise ArgumentError, "unknown alert type" \
         unless ALERTTYPES.include? type.to_s.to_sym
 
-      @type      = type.to_sym
+      @type      = type.to_s.to_sym
       @field     = field ? field.to_sym : nil
       @exception = nil
 
       if message.kind_of?(Exception)
-        @exception = message
-        @message   = message.message
+        @exception = message.dup
+        @message   = @exception.message
 
         # SwingShift validation exceptions hold the field name
-        @field ||= message.field if message.respond_to?(:field)
+        @field ||= @exception.field if @exception.respond_to?(:field)
 
       else
-        @message = message
+        @message = message.dup
 
       end
     end
