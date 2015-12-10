@@ -1,3 +1,4 @@
+require 'logger'
 require 'devnull'
 
 require 'pod4/param'

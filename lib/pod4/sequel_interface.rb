@@ -154,6 +154,7 @@ module Pod4
 
 
     def handle_error(err)
+      Pod4.logger.error(__FILE__){ err.message }
 
       case err
 

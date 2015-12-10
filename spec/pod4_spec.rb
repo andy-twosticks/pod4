@@ -10,7 +10,7 @@ describe Pod4 do
   # Magically replaces the real Param module
   let(:param) { class_double(Pod4::Param).as_stubbed_const }
 
-  #after(:all) { Param.set(:logger, nil) }
+  after(:all) { Param.reset }
 
 
   it 'has a version' do

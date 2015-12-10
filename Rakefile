@@ -8,14 +8,14 @@ namespace :rdoc do
   RDoc::Task.new do |rdoc|
     rdoc.main = "md/README.md"
     rdoc.rdoc_files.include("lib/*", "md/*")
-    rdoc.options << "-r"
     rdoc.rdoc_dir = "doc"
   end
 
-  desc "Generate for ri command"
-  task :ri do
-    sh "rdoc -R"
+  desc "Push doc to HARS"
+  task :hars do
+    sh "rsync -aP --delete doc/ /home/hars/hars/public/pod4"
   end
+
 end
 
 desc "Start Guard"

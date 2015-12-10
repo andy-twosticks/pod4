@@ -1,6 +1,18 @@
 require 'octothorpe'
 
 
+# We make the assumption here that you have somehow managed to simulate a
+# working data source -- that is, delete actually deletes, create actually
+# creates, etc.  Sorry about that. For SequelModel we use an in-memory SQLite
+# dataabase; for NebulousModel we have a little class which we can insert
+# instances of and then track.  This fake data source should start off with no
+# data in it.
+#
+# To comply with this shared test file, you also need to supply:
+# * record - a record to insert
+# * record_id - the id of the record to insert
+# * interface - an instance of the interface to call.
+#
 RSpec.shared_examples 'an interface' do 
 
   let(:record_as_ot) { Octothorpe.new(record) }
@@ -9,41 +21,11 @@ RSpec.shared_examples 'an interface' do
   describe '#id_fld' do
     it 'is an attribute that stores a symbol' do
       expect( interface.id_fld ).not_to be_nil
-      expect( interface.id_fld ).to be_a_kind_of(Symbol)
+      expect( interface.id_fld ).to be_a_kind_of Symbol
     end
   end
   ##
 
-
-  describe '#list' do
-
-    # individual tests must cover the format of the parameter and whether it
-    # performs selection correctly.
-
-    it 'will allow itself to be called with no parameter' do
-      expect{ interface.list }.not_to raise_exception
-    end
-
-    it 'returns an array of Octothorpes' do
-      expect( interface.list       ).to be_a_kind_of Array
-      expect( interface.list.first ).to be_a_kind_of Octothorpe
-    end
-
-    it 'has the ID field as one of the Octothorpe keys' do
-      expect( interface.list.first.to_h ).to have_key interface.id_fld
-    end
-
-    it 'returns an empty array if there is no data' do
-      # remove all the data
-      interface.list.
-        each {|x| interface.delete( x[interface.id_fld] ) }
-
-      expect( interface.list ).to eq([])
-    end
-
-  end
-  ##
-  
 
   describe '#create' do
 
@@ -129,7 +111,7 @@ RSpec.shared_examples 'an interface' do
   describe '#delete' do
 
     def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id } 
+      interface.list.find {|x| x[interface.id_fld] == id }
     end
 
     before do
@@ -157,6 +139,36 @@ RSpec.shared_examples 'an interface' do
 
   end
   ##
+
+
+  describe '#list' do
+
+    # individual tests must cover the format of the parameter and whether it
+    # performs selection correctly.
+
+    it 'will allow itself to be called with no parameter' do
+      expect{ interface.list }.not_to raise_exception
+    end
+
+    it 'returns an array of Octothorpes' do
+      interface.create(record)
+      expect( interface.list       ).to be_a_kind_of Array
+      expect( interface.list.first ).to be_a_kind_of Octothorpe
+    end
+
+    it 'has the ID field as one of the Octothorpe keys' do
+      interface.create(record)
+      expect( interface.list.first.to_h ).to have_key interface.id_fld
+    end
+
+    it 'returns an empty array if there is no data' do
+      interface.list.each{|x| interface.delete(x[interface.id_fld]) }
+      expect( interface.list ).to eq([])
+    end
+
+  end
+  ##
+  
 
 end
 

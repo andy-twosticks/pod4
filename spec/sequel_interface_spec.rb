@@ -51,7 +51,7 @@ describe TestSequelInterface do
     db
   end
 
-  let (:interface) { TestSequelInterface.new(db) }
+  let(:interface) { TestSequelInterface.new(db) }
 
   before do
     fill_data(interface)
@@ -73,7 +73,8 @@ describe TestSequelInterface do
       TestSequelInterface.new(db)
     end
 
-    let(:record) { {name: 'Barney', price: 1.11} }
+    let(:record)    { {name: 'Barney', price: 1.11} }
+    let(:record_id) { 'Barney' }
 
   end
   ##

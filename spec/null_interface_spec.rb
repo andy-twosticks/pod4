@@ -121,14 +121,10 @@ describe NullInterface do
 
 
   describe '#delete' do
-
-    let(:id) { interface.list.last[:name] }
-
     it 'raises DatabaseError if anything hinky happens' do
       expect{ interface.delete(:foo) }.to raise_exception DatabaseError
       expect{ interface.delete(99)   }.to raise_exception DatabaseError
     end
-
   end
   ##
 
