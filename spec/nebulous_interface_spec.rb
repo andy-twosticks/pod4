@@ -1,6 +1,6 @@
-require 'nebulous/nebrequest_null'
-
 require 'pod4/nebulous_interface'
+
+require 'nebulous'
 require 'nebulous/nebrequest_null'
 
 require_relative 'shared_examples_for_interface'
