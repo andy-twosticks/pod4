@@ -42,7 +42,7 @@ module Pod4
         @field ||= @exception.field if @exception.respond_to?(:field)
 
       else
-        @message = message.dup
+        @message = message
 
       end
     end

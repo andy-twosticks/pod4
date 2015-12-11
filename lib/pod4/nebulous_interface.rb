@@ -110,7 +110,7 @@ module Pod4
       ##
       # Set the name of the ID parameter (needs to be in CRUD verbs param list)
       #
-      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end 
+      def set_id_fld(idFld); @id_fld = idFld; end 
 
       ##
       # Make sure all of the above is consistent
@@ -149,7 +149,7 @@ module Pod4
     # creating a NebRequest directly.
     #
     def initialize(requestObj=nil)
-      @request_object  = requestObj #might as well be a reference 
+      @request_object  = requestObj # might as well be a reference 
       @response        = nil
       @response_status = nil
       @id_fld          = self.class.id_fld
@@ -191,7 +191,7 @@ module Pod4
     #
     def create(record)
       raise ArgumentError, 'create takes a Hash or an Octothorpe' \
-        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
+        unless hashy?(record)
 
       send_message( verb_for(:create), param_string(:create, record) )
 
@@ -223,7 +223,7 @@ module Pod4
     def update(id, record)
       raise ArgumentError, 'You must pass an ID to update' unless id
       raise ArgumentError, 'update record takes a Hash or an Octothorpe' \
-        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
+        unless hashy?(record)
 
       send_message( verb_for(:update), 
                     param_string(:update, record, id), 
@@ -371,6 +371,11 @@ module Pod4
       end
 
       with_cache ? request.send : request.send_no_cache
+    end
+
+
+    def hashy?(obj)
+      obj.kind_of?(Hash) || obj.kind_of?(Octothorpe)
     end
 
 

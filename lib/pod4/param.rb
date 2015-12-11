@@ -18,7 +18,7 @@ module Pod4
 
     def get(p); params[p.to_s.to_sym]; end
 
-    def get_all; Octothorpe.new(params); end
+    def get_all; Octothorpe.new(params.dup); end
 
     def reset; @params = {}; end
 

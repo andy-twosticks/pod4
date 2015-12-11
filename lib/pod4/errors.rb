@@ -20,7 +20,7 @@ module Pod4
         unless error.kind_of? StandardError
 
       e = self.new( "#{error.class}: #{error.message}" )
-      e.from = error.dup
+      e.from = error.clone
       e
     end
 
@@ -51,7 +51,7 @@ module Pod4
     end
 
     def initialize(message, field=nil)
-      super(message.dup)
+      super(message)
       @field = field.to_s.to_sym
     end
 
