@@ -1,23 +1,23 @@
-require 'pod4/sequel_interface'
+require 'pod4/tds_interface'
 
 require_relative 'shared_examples_for_interface'
 
 
-class TestSequelInterface < SequelInterface
+class TestTdsInterface < TdsInterface
   set_table :customer
   set_id_fld :id
 end
 
-class BadInterface1 < SequelInterface
+class BadInterface1 < TdsInterface
   set_table :customer
 end
 
-class BadInterface2 < SequelInterface
+class BadInterface2 < TdsInterface
   set_id_fld :id
 end
 
 
-describe TestSequelInterface do
+describe TestTdsInterface do
 
   # We actually connect to a special test database for this. I don't generally
   # like unit tests to involve other classes at all, but otherwise we are
@@ -41,28 +41,45 @@ describe TestSequelInterface do
   # This may be an entirely unwarranted assumption. If so, we will have to
   # change this. But in any case, we are not in the business of testing Sequel:
   # just our interface to it.
-  before do
-    @db = Sequel.sqlite
-    @db.create_table :customer do
+  let (:db) do
+    db = Sequel.sqlite
+    db.create_table :customer do
       primary_key :id
       String      :name
       Float       :price
     end
+    db
+  end
 
-    @interface = TestSequelInterface.new(@db)
+  let(:interface) { TestSequelInterface.new(db) }
 
-    fill_data(@interface)
+  before do
+    fill_data(interface)
   end
 
   ##
 
 
-  include_examples "an interface", 
-    TestSequelInterface.new(@db)
-    {name: 'barney', price:1.11} 
+  it_behaves_like 'an interface' do
+
+    let(:interface) do
+      db = Sequel.sqlite
+      db.create_table :customer do
+        primary_key :id
+        String      :name
+        Float       :price
+      end
+
+      TestSequelInterface.new(db)
+    end
+
+    let(:record)    { {name: 'Barney', price: 1.11} }
+    let(:record_id) { 'Barney' }
+
+  end
+  ##
 
 
-=begin
   describe 'SequelInterface.set_table' do
     it 'takes one argument' do
       expect( SequelInterface ).to respond_to(:set_table).with(1).argument
@@ -120,29 +137,19 @@ describe TestSequelInterface do
     let(:hash) { {name: 'Bam-Bam', price: 4.44} }
     let(:ot)   { Octothorpe.new(name: 'Wilma', price: 5.55) }
 
-    it 'requires a hash or an OT' do
-      expect{ interface.create      }.to raise_exception ArgumentError
-      expect{ interface.create(nil) }.to raise_exception ArgumentError
-      expect{ interface.create(3)   }.to raise_exception ArgumentError
-
-      expect{ interface.create(hash) }.not_to raise_exception
-      expect{ interface.create(ot)   }.not_to raise_exception
-    end
-
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
       expect{ interface.create(one: 'two') }.to raise_exception DatabaseError
     end
 
-    it 'creates the record and returns the id when given a hash' do
+    it 'creates the record when given a hash' do
       # kinda impossible to seperate these two tests
-      
       id = interface.create(hash)
 
       expect{ interface.read(id) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include hash
     end
 
-    it 'creates the record and returns the id when given an Octothorpe' do
+    it 'creates the record when given an Octothorpe' do
       id = interface.create(ot)
 
       expect{ interface.read(id) }.not_to raise_exception
@@ -155,15 +162,7 @@ describe TestSequelInterface do
 
   describe '#read' do
 
-    it 'requires an id' do
-      expect{ interface.read      }.to raise_exception ArgumentError
-      expect{ interface.read(nil) }.to raise_exception ArgumentError
-
-      expect{ interface.read(1) }.not_to raise_exception
-    end
-
     it 'returns the record for the id as an Octothorpe' do
-      expect( interface.read(1)      ).to be_a_kind_of Octothorpe
       expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.22)
     end
 
@@ -181,7 +180,6 @@ describe TestSequelInterface do
 
     it 'has an optional selection parameter, a hash' do
       # Actually it does not have to be a hash, but FTTB we only support that.
-      expect{ interface.list }.not_to raise_exception
       expect{ interface.list(name: 'Barney') }.not_to raise_exception
     end
 
@@ -204,15 +202,6 @@ describe TestSequelInterface do
       expect( interface.list(name: 'Yogi') ).to eq([])
     end
 
-    it 'returns an empty Array if there is no data' do
-      # remove all the data
-      interface.list.
-        map {|x| x.>>.id }.
-        each {|y| interface.delete(y) }
-
-      expect( interface.list ).to eq([])
-    end
-
     it 'raises DatabaseError if the selection criteria is nonsensical' do
       expect{ interface.list('foo') }.to raise_exception Pod4::DatabaseError
     end
@@ -225,21 +214,11 @@ describe TestSequelInterface do
 
     let(:id) { interface.list.first[:id] }
 
-    it 'requires an id and a record (hash or OT)' do
-      expect{ interface.update      }.to raise_exception ArgumentError
-      expect{ interface.update(nil) }.to raise_exception ArgumentError
-      expect{ interface.update(14)  }.to raise_exception ArgumentError
-    end
-
     it 'updates the record at ID with record parameter' do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
       expect( interface.read(id).to_h ).to include(record)
-    end
-
-    it 'returns self' do
-      expect( interface.update(id, name: 'frank') ).to eq interface
     end
 
     it 'raises a DatabaseError if anything weird happens' do
@@ -256,30 +235,10 @@ describe TestSequelInterface do
 
 
   describe '#delete' do
-
-    let(:id) { interface.list.last[:id] }
-
-    it 'requires an id' do
-      expect{ interface.delete      }.to raise_exception ArgumentError
-      expect{ interface.delete(nil) }.to raise_exception ArgumentError
-    end
-
-    it 'makes the record at ID go away' do
-      interface.delete(id)
-
-      expect( interface.list.size ).to eq(data.size - 1)
-      expect( interface.list.map{|r| r[:name] } ).not_to include 'Betty'
-    end
-
-    it 'returns self' do
-      expect( interface.delete(id) ).to eq interface
-    end
-
     it 'raises DatabaseError if anything hinky happens' do
       expect{ interface.delete(:foo) }.to raise_exception DatabaseError
       expect{ interface.delete(99)   }.to raise_exception DatabaseError
     end
-
   end
   ##
 
@@ -346,8 +305,6 @@ describe TestSequelInterface do
 
   end
   ##
-  
-=end
 
 
 end

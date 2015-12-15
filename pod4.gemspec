@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
   # For testing
   spec.add_development_dependency "sequel"
   spec.add_development_dependency "sqlite3"
+  spec.add_development_dependency "tiny_tds"
 
   # Development tools
   spec.add_development_dependency "pry"
