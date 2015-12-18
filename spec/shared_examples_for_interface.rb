@@ -1,6 +1,27 @@
 require 'octothorpe'
 
 
+# **ANDY** -- the assumptions below are dumb ones. The shared examples should
+# test the API that the interface presents to the model, and only that, It
+# can't test that the interface is calling the underlying data source library
+# correctly, becaue it's different in each case. And it **can't** do what it
+# does now, and assume that we can magically fake the whole data source
+# library, because that's not practical for, say, raw SQL -- and if the
+# interface spec wants to use a real database, that's up to that spec, and
+# shouldn't be a constraint!
+#
+# We will, I think, have to resort to using a real database for the TDS and PG
+# interface tests. But, that shouldn't be something that effects the shared
+# examples.
+#
+# Proposal: this shared file should expect interface and record, with the
+# understanding that if you use them together, the interface will not return an
+# error. That's it.  It will allow these shared examples to test basic return
+# values, like read() returning an OT. I've marked anything beyond that in the
+# code. (Do we need record_id?)
+# -------
+#
+#
 # We make the assumption here that you have somehow managed to simulate a
 # working data source -- that is, delete actually deletes, create actually
 # creates, etc.  Sorry about that. For SequelModel we use an in-memory SQLite
@@ -40,13 +61,13 @@ RSpec.shared_examples 'an interface' do
       expect{ interface.create(record_as_ot) }.not_to raise_exception
     end
 
-    it 'returns the ID' do
+    it 'returns the ID' do  
       record_id = interface.create(record)
       expect{ interface.read(record_id) }.not_to raise_exception
       expect( interface.read(record_id).to_h ).to include record
     end
 
-    it 'sets the record in the datastore' do
+    it 'sets the record in the datastore' do   # bamf -- to go?
       interface.create(record)
       expect( interface.list.first.to_h ).to include record
     end
@@ -131,7 +152,7 @@ RSpec.shared_examples 'an interface' do
       expect( interface.delete(@id) ).to eq interface
     end
 
-    it 'makes the record at ID go away' do
+    it 'makes the record at ID go away' do   # bamf - to go?
       expect( list_contains(@id) ).to be_truthy
       interface.delete(@id)
       expect( list_contains(@id) ).to be_falsy
@@ -161,7 +182,7 @@ RSpec.shared_examples 'an interface' do
       expect( interface.list.first.to_h ).to have_key interface.id_fld
     end
 
-    it 'returns an empty array if there is no data' do
+    it 'returns an empty array if there is no data' do   # bamf - to go?
       interface.list.each{|x| interface.delete(x[interface.id_fld]) }
       expect( interface.list ).to eq([])
     end

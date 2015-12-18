@@ -1,5 +1,7 @@
 require 'tiny_tds'
 require 'octothorpe'
+require 'date'
+require 'time'
 
 require_relative 'interface'
 require_relative 'errors'
@@ -42,7 +44,7 @@ module Pod4
     ##
     # Initialise the interface by passing it a TinyTDS connection hash.
     # For testing ONLY you can also pass an object which pretends to be a
-    # TinyTDS client. 
+    # TinyTDS client, in which case the hash is pretty much ignored.
     #
     def initialize(connectHash, testClient=nil)
 
@@ -55,9 +57,9 @@ module Pod4
       raise Pod4Error, 'no call to set_id_fld in the interface definition' \
         if self.class.id_fld.nil?
 
-      @connect_hash = connectHash
+      @connect_hash = connectHash.dup
       @test_client  = testClient 
-      @db           = nil
+      @client       = nil
 
       TinyTds::Client.default_query_options[:as] = :hash
       TinyTds::Client.default_query_options[:symbolize_keys] = true
@@ -65,6 +67,11 @@ module Pod4
     rescue => e
       handle_error(e)
     end
+
+
+    def db;     self.class.db;     end
+    def table;  self.class.table;  end
+    def id_fld; self.class.id_fld; end
 
 
     ##
@@ -75,16 +82,14 @@ module Pod4
       if selection
         sel = selection.map {|k,v| "[#{k}] = #{quote v}" }.join(" and ")
         sql = %Q|select * 
-                     from [#@table]
+                     from [#{table}]
                      where #{sel};|
 
       else
-        sql = %Q|select * from [#@table];|
+        sql = %Q|select * from [#{table}];|
       end
 
-      rows = []
-      select(sql) {|r| rows << Octothorpe.new(r) }
-      rows
+      select(sql) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -103,13 +108,13 @@ module Pod4
       ks = record.keys.map   {|k| "[#{k}]" }
       vs = record.values.map {|v| quote v } 
 
-      sql = "insert into [#@table]\n"
+      sql = "insert into [#{table}]\n"
       sql << "    ( " << ks.join(",") << ")\n"
-      sql << "    output inserted.[#@id_fld]\n"
+      sql << "    output inserted.[#{id_fld}]\n"
       sql << "    values( " << vs.join(",") << ");"
-      x = select(sql)
 
-      x.first #bamf
+      x = select(sql)
+      x.first  # bamf?
 
     rescue => e
       handle_error(e) 
@@ -123,11 +128,10 @@ module Pod4
       raise ArgumentError if id.nil?
 
       sql = %Q|select * 
-                   from [#@table] 
-                   where [#@table].[#@id_fld] = #{quote id};|
+                   from [#{table}] 
+                   where [#{id_fld}] = #{quote id};|
 
-      record = []
-      select(sql) {|r| record << Octothorpe.new(r) }
+      record = select(sql) {|r| Octothorpe.new(r) }
 
       raise DatabaseError, "'No record found with ID '#{id}'" if rec == []
       record.first
@@ -168,9 +172,7 @@ module Pod4
       raise ArgumentError if id.nil?
 
       #read(id) # to check it exists BAMF
-      
-      execute( %Q|delete [#@table]
-                      where [#@id_fld] = #{quote id};| )
+      execute( %Q|delete [#{table}] where [#{id_fld}] = #{quote id};| )
 
       self
 
@@ -189,21 +191,27 @@ module Pod4
     #       # r is a single record
     #     end
     #
+    # The returned results will be an array of hashes (or if you passed a
+    # block, of whatever you returned from the block).
+    #
     def select(sql)
-      $logger.debug(__FILE__){ "select: #{sql}" }
-
       open unless connected?
-      query = @db.execute(sql)
 
-      if block_given?
-        query.each {|r| yield r }
-        rows = nil
-      else
-        rows = []
-        @db.execute(sql).each {|r| rows << r }
+      $logger.debug(__FILE__){ "select: #{sql}" }
+      query = @client.execute(sql)
+
+      rows = []
+      query.each do |r| 
+
+        if block_given? 
+          rows << yield(r)
+        else
+          rows << r
+        end
+
       end
 
-      @db.cancel  #bamf ???
+      @client.cancel  #bamf ???
       rows
 
     rescue => e
@@ -215,10 +223,11 @@ module Pod4
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
-      $logger.debug(__FILE__){ "execute: #{sql}" }
-
       open unless connected?
-      r = @db.execute(sql)
+
+      $logger.debug(__FILE__){ "execute: #{sql}" }
+      r = @client.execute(sql)
+
       r.do
       r
 
@@ -237,11 +246,11 @@ module Pod4
     #
     def open
       $logger.info(__FILE__){ "Connecting to DB" }
-      tDB = @test_Client || TinyTds::Client.new(@connect_hash)
-      raise "Bad Connection" unless tDB.active?
+      client = @test_Client || TinyTds::Client.new(@connect_hash)
+      raise "Bad Connection" unless client.active?
 
-      @db = tDB
-      execute("use [#@db]")
+      @client = client
+      execute("use [#{self.class.db}]")
 
       self
 
@@ -257,7 +266,7 @@ module Pod4
     #
     def close
       $logger.info(__FILE__){ "Closing connection to DB" }
-      @db.close unless @db.nil?
+      @client.close unless @client.nil?
 
     rescue => e
       handle_error(e)
@@ -268,7 +277,7 @@ module Pod4
     # True if we are connected to a database
     #
     def connected?
-      @db && @db.active?
+      @client && @client.active?
     end
 
 
@@ -292,7 +301,14 @@ module Pod4
 
 
     def quote(fld)
-      fld.kind_of?(String) ? "'#{fld}'" : fld
+
+      case fld
+        when String, Date, Time
+          "'#{fld}'" 
+        else 
+          fld
+      end
+
     end
 
 
