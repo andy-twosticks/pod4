@@ -28,11 +28,11 @@ module Pod4
     class << self
       attr_reader :db, :table, :id_fld
 
-      #---
+      #--
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
-      #+++
+      #++
 
       def set_db(db);        @db     = db.to_s.to_sym;    end
       def set_table(table);  @table  = table.to_s.to_sym; end

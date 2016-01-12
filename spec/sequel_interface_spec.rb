@@ -206,6 +206,11 @@ describe TestSequelInterface do
       expect{ interface.list('foo') }.to raise_exception Pod4::DatabaseError
     end
 
+    it 'returns an empty array if there is no data' do
+      interface.list.each {|x| interface.delete(x[interface.id_fld]) }
+      expect( interface.list ).to eq([])
+    end
+
   end
   ##
   
@@ -235,10 +240,24 @@ describe TestSequelInterface do
 
 
   describe '#delete' do
+
+    def list_contains(id)
+      interface.list.find {|x| x[interface.id_fld] == id }
+    end
+
+    let(:id) { interface.list.first[:id] }
+
     it 'raises DatabaseError if anything hinky happens' do
       expect{ interface.delete(:foo) }.to raise_exception DatabaseError
       expect{ interface.delete(99)   }.to raise_exception DatabaseError
     end
+
+    it 'makes the record at ID go away' do
+      expect( list_contains(id) ).to be_truthy
+      interface.delete(id)
+      expect( list_contains(id) ).to be_falsy
+    end
+
   end
   ##
 

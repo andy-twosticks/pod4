@@ -8,22 +8,16 @@ class TestTdsInterface < TdsInterface
   set_id_fld :id
 end
 
-class BadInterface1 < TdsInterface
+class BadTdsInterface1 < TdsInterface
   set_table :customer
 end
 
-class BadInterface2 < TdsInterface
+class BadTdsInterface2 < TdsInterface
   set_id_fld :id
 end
 
 
 describe TestTdsInterface do
-
-  # We actually connect to a special test database for this. I don't generally
-  # like unit tests to involve other classes at all, but otherwise we are
-  # hardly testing anything, and in any case we do need to test that this class
-  # successfully interfaces with Sequel. We can't really do that without
-  # talking to a database.
 
   let(:data) do
     [ {name: 'Barney', price: 1.11},
@@ -35,20 +29,13 @@ describe TestTdsInterface do
     data.each{|r| ifce.create(r) }
   end
 
-  # This is stolen almost verbatim from the Sequel Readme. We use an in-memory
-  # sqlite database, and we assume that Sequel is sane and behaves broadly the
-  # same for our limited purposes as it would when talking to TinyTDS or Pg.
-  # This may be an entirely unwarranted assumption. If so, we will have to
-  # change this. But in any case, we are not in the business of testing Sequel:
-  # just our interface to it.
-  let (:db) do
-    db = Sequel.sqlite
-    db.create_table :customer do
-      primary_key :id
-      String      :name
-      Float       :price
-    end
-    db
+  # Mock a TDS client. Once again, this is not at all ideal because it ties us
+  # to specific behaviour which we should not care about. But, there is no
+  # other way.
+  let (:client) do
+    x = double(TinyTds::Client).as_null_object
+    allow(x).to_receive(:active?).and_return(true)
+
   end
 
   let(:interface) { TestSequelInterface.new(db) }

@@ -141,8 +141,7 @@ describe TestNebulousInterface do
 
 
   it_behaves_like 'an interface' do
-    let(:record)    { {id: 1, name: 'percy', price: 1.23} }
-    let(:record_id) { 1 }
+    let(:record) { {id: 1, name: 'percy', price: 1.23} }
 
     let(:interface) do 
       init_nebulous
@@ -240,6 +239,11 @@ describe TestNebulousInterface do
       expect( interface.list(name: 'Yogi') ).to eq([])
     end
 
+    it 'returns an empty array if there is no data' do
+      interface.list.each{|x| interface.delete(x[interface.id_fld]) }
+      expect( interface.list ).to eq([])
+    end
+
   end
   ##
   
@@ -261,9 +265,21 @@ describe TestNebulousInterface do
 
   describe '#delete' do
 
+    let(:id) { interface.list.first[:id] }
+
+    def list_contains(id)
+      interface.list.find {|x| x[interface.id_fld] == id }
+    end
+
     it 'raises DatabaseError if anything hinky happens' do
       expect{ interface.delete(:foo) }.to raise_exception DatabaseError
       expect{ interface.delete(99)   }.to raise_exception DatabaseError
+    end
+
+    it 'makes the record at ID go away' do
+      expect( list_contains(id) ).to be_truthy
+      interface.delete(id)
+      expect( list_contains(id) ).to be_falsy
     end
 
   end
