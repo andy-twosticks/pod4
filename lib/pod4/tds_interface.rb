@@ -11,7 +11,7 @@ module Pod4
 
 
   ##
-  # Pod4 Interface for requests on a SQL table via TinyTDS.
+  # Pod4 Interface for requests on a SQL table via TinyTds.
   #
   # If your DB table is one-one with your model, you shouldn't need to override
   # anything.
@@ -42,9 +42,9 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a TinyTDS connection hash.
+    # Initialise the interface by passing it a TinyTds connection hash.
     # For testing ONLY you can also pass an object which pretends to be a
-    # TinyTDS client, in which case the hash is pretty much ignored.
+    # TinyTds client, in which case the hash is pretty much ignored.
     #
     def initialize(connectHash, testClient=nil)
 
@@ -114,7 +114,7 @@ module Pod4
       sql << "    values( " << vs.join(",") << ");"
 
       x = select(sql)
-      x.first  # bamf?
+      x.first[id_fld]
 
     rescue => e
       handle_error(e) 
@@ -133,7 +133,7 @@ module Pod4
 
       record = select(sql) {|r| Octothorpe.new(r) }
 
-      raise DatabaseError, "'No record found with ID '#{id}'" if rec == []
+      raise DatabaseError, "'No record found with ID '#{id}'" if record == []
       record.first
 
     rescue => e
@@ -153,9 +153,9 @@ module Pod4
 
       sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
 
-      sql = "update [#@table] set\n"
+      sql = "update [#{table}] set\n"
       sql << sets.join(",") << "\n"
-      sql << "where [#@id_fld] = #{quote id};"
+      sql << "where [#{id_fld}] = #{quote id};"
       execute(sql)
 
       self
@@ -197,7 +197,7 @@ module Pod4
     def select(sql)
       open unless connected?
 
-      $logger.debug(__FILE__){ "select: #{sql}" }
+      Pod4.logger.debug(__FILE__){ "select: #{sql}" }
       query = @client.execute(sql)
 
       rows = []
@@ -211,7 +211,7 @@ module Pod4
 
       end
 
-      @client.cancel  #bamf ???
+      query.cancel 
       rows
 
     rescue => e
@@ -225,7 +225,7 @@ module Pod4
     def execute(sql)
       open unless connected?
 
-      $logger.debug(__FILE__){ "execute: #{sql}" }
+      Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
       r = @client.execute(sql)
 
       r.do
@@ -245,7 +245,7 @@ module Pod4
     # No parameters are needed: the option hash has everything we need.
     #
     def open
-      $logger.info(__FILE__){ "Connecting to DB" }
+      Pod4.logger.info(__FILE__){ "Connecting to DB" }
       client = @test_Client || TinyTds::Client.new(@connect_hash)
       raise "Bad Connection" unless client.active?
 
@@ -265,7 +265,7 @@ module Pod4
     # caller will find it useful.
     #
     def close
-      $logger.info(__FILE__){ "Closing connection to DB" }
+      Pod4.logger.info(__FILE__){ "Closing connection to DB" }
       @client.close unless @client.nil?
 
     rescue => e
@@ -289,7 +289,7 @@ module Pod4
         when ArgumentError, Pod4::Pod4Error
           raise err
 
-        when TimyTDS::Error
+        when TinyTds::Error
           raise Pod4::DatabaseError.from_error(err)
 
         else

@@ -1,103 +1,167 @@
 require 'pod4/tds_interface'
 
 require_relative 'shared_examples_for_interface'
+require_relative 'fixtures/database'
 
 
 class TestTdsInterface < TdsInterface
+  set_db :pod4_test
   set_table :customer
   set_id_fld :id
 end
 
 class BadTdsInterface1 < TdsInterface
+  set_db :pod4_test
   set_table :customer
 end
 
 class BadTdsInterface2 < TdsInterface
+  set_db :pod4_test
   set_id_fld :id
 end
 
 
 describe TestTdsInterface do
 
-  let(:data) do
-    [ {name: 'Barney', price: 1.11},
-      {name: 'Fred',   price: 2.22},
-      {name: 'Betty',  price: 3.33} ]
+  def db_setup(connect)
+    client = TinyTds::Client.new(connect)
+    client.execute(%Q|use [pod4_test];|).do
+
+    # Our SQL Server does not support DROP TABLE IF EXISTS !
+    # This is apparently an SQL-agnostic way of doing it:
+    client.execute(%Q|
+      if exists (select * from INFORMATION_SCHEMA.TABLES 
+                     where TABLE_NAME   = 'customer' 
+                       AND TABLE_SCHEMA = 'dbo' )
+            drop table dbo.customer;| ).do
+
+    client.execute(%Q|
+      create table dbo.customer ( 
+        id    int identity(1,1) not null,
+        name  nvarchar(max),
+        price money );| ).do
+
+  ensure
+    client.close if client
   end
+
 
   def fill_data(ifce)
-    data.each{|r| ifce.create(r) }
+    @data.each{|r| ifce.create(r) }
   end
 
-  # Mock a TDS client. Once again, this is not at all ideal because it ties us
-  # to specific behaviour which we should not care about. But, there is no
-  # other way.
-  let (:client) do
-    x = double(TinyTds::Client).as_null_object
-    allow(x).to_receive(:active?).and_return(true)
+
+  before(:all) do
+    @connect_hash = DB[:tds]
+    db_setup(@connect_hash)
+
+    @data = [ {name: 'Barney', price: 1.11},
+              {name: 'Fred',   price: 2.22},
+              {name: 'Betty',  price: 3.33} ]
 
   end
 
-  let(:interface) { TestSequelInterface.new(db) }
 
   before do
-    fill_data(interface)
+    interface.execute(%Q|delete from customer;|)
   end
 
-  ##
+
+  let(:interface) do
+    TestTdsInterface.new(@connect_hash)
+  end
+
+  #####
 
 
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      db = Sequel.sqlite
-      db.create_table :customer do
-        primary_key :id
-        String      :name
-        Float       :price
-      end
-
-      TestSequelInterface.new(db)
+      TestTdsInterface.new(@connect_hash)
     end
 
-    let(:record)    { {name: 'Barney', price: 1.11} }
-    let(:record_id) { 'Barney' }
+    let(:record) { {name: 'Barney', price: 1.11} }
 
   end
   ##
+ 
 
-
-  describe 'SequelInterface.set_table' do
+  describe 'TdsInterface.set_db' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
+      expect( TdsInterface ).to respond_to(:set_db).with(1).argument
     end
   end
   ##
 
 
-  describe 'SequelInterface.table' do
+  describe 'TdsInterface.db' do
     it 'returns the table' do
-      expect( TestSequelInterface.table ).to eq :customer
+      expect( TestTdsInterface.db ).to eq :pod4_test
     end
   end
   ##
 
 
-  describe 'SequelInterface.set_id_fld' do
+  describe 'TdsInterface.set_table' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( TdsInterface ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
 
 
-  describe 'SequelInterface.id_fld' do
+  describe 'TdsInterface.table' do
+    it 'returns the table' do
+      expect( TestTdsInterface.table ).to eq :customer
+    end
+  end
+  ##
+
+
+  describe 'TdsInterface.set_id_fld' do
+    it 'takes one argument' do
+      expect( TdsInterface ).to respond_to(:set_id_fld).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'TdsInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestSequelInterface.id_fld ).to eq :id
+      expect( TestTdsInterface.id_fld ).to eq :id
     end
   end
   ##
 
+
+  describe '#new' do
+
+    it 'requires a TinyTds connection string' do
+      expect{ TestTdsInterface.new        }.to raise_exception ArgumentError
+      expect{ TestTdsInterface.new(nil)   }.to raise_exception ArgumentError
+      expect{ TestTdsInterface.new('foo') }.to raise_exception ArgumentError
+
+      expect{ TestTdsInterface.new(@connect_hash) }.not_to raise_exception
+    end
+
+    it 'requires the table and id field to be defined in the class' do
+      expect{ TdsInterface.new(@connect_hash) }.to raise_exception Pod4Error
+
+      expect{ BadTdsInterface1.new(@connect_hash) }.
+        to raise_exception Pod4Error
+
+      expect{ BadTdsInterface2.new(@connect_hash) }.
+        to raise_exception Pod4Error
+
+    end
+
+  end
+  ##
+
+
+
+
+=begin
 
   describe '#new' do
 
@@ -111,8 +175,8 @@ describe TestTdsInterface do
 
     it 'requires the table and id field to be defined in the class' do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
-      expect{ BadInterface1.new(db)   }.to raise_exception Pod4Error
-      expect{ BadInterface2.new(db)   }.to raise_exception Pod4Error
+      expect{ BadTdsInterface1.new(db)   }.to raise_exception Pod4Error
+      expect{ BadTdsInterface2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
@@ -292,6 +356,8 @@ describe TestTdsInterface do
 
   end
   ##
+
+=end
 
 
 end

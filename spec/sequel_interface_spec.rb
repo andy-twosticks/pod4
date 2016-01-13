@@ -8,11 +8,11 @@ class TestSequelInterface < SequelInterface
   set_id_fld :id
 end
 
-class BadInterface1 < SequelInterface
+class BadSequelInterface1 < SequelInterface
   set_table :customer
 end
 
-class BadInterface2 < SequelInterface
+class BadSequelInterface2 < SequelInterface
   set_id_fld :id
 end
 
@@ -124,8 +124,8 @@ describe TestSequelInterface do
 
     it 'requires the table and id field to be defined in the class' do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
-      expect{ BadInterface1.new(db)   }.to raise_exception Pod4Error
-      expect{ BadInterface2.new(db)   }.to raise_exception Pod4Error
+      expect{ BadSequelInterface1.new(db)   }.to raise_exception Pod4Error
+      expect{ BadSequelInterface2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
