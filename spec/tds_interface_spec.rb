@@ -63,7 +63,8 @@ describe TestTdsInterface do
 
 
   before do
-    interface.execute(%Q|delete from customer;|)
+    # TRUNCATE TABLE also resets the identity counter
+    interface.execute(%Q|truncate table customer;|)
   end
 
 
@@ -159,30 +160,6 @@ describe TestTdsInterface do
   ##
 
 
-
-
-=begin
-
-  describe '#new' do
-
-    it 'requires a Sequel DB object' do
-      expect{ TestSequelInterface.new        }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new('foo') }.to raise_exception ArgumentError
-
-      expect{ TestSequelInterface.new(db) }.not_to raise_exception
-    end
-
-    it 'requires the table and id field to be defined in the class' do
-      expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
-      expect{ BadTdsInterface1.new(db)   }.to raise_exception Pod4Error
-      expect{ BadTdsInterface2.new(db)   }.to raise_exception Pod4Error
-    end
-
-  end
-  ##
-
-
   describe '#create' do
 
     let(:hash) { {name: 'Bam-Bam', price: 4.44} }
@@ -212,9 +189,10 @@ describe TestTdsInterface do
 
 
   describe '#read' do
+    before { fill_data(interface) }
 
     it 'returns the record for the id as an Octothorpe' do
-      expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.22)
+      expect( interface.read(2).to_h ).to include(@data[1])
     end
 
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
@@ -228,6 +206,7 @@ describe TestTdsInterface do
 
 
   describe '#list' do
+    before { fill_data(interface) }
 
     it 'has an optional selection parameter, a hash' do
       # Actually it does not have to be a hash, but FTTB we only support that.
@@ -238,7 +217,7 @@ describe TestTdsInterface do
       # convert each OT to a hash and remove the ID key
       arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
 
-      expect( arr ).to match_array data
+      expect( arr ).to match_array @data
     end
 
     it 'returns a subset of records based on the selection parameter' do
@@ -262,14 +241,22 @@ describe TestTdsInterface do
   
 
   describe '#update' do
+    before { fill_data(interface) }
 
     let(:id) { interface.list.first[:id] }
+
+    def float_price(row)
+      row[:price] = row[:price].to_f
+      row
+    end
 
     it 'updates the record at ID with record parameter' do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      expect( interface.read(id).to_h ).to include(record)
+      # It so happens that TinyTds returns money as BigDecimal --
+      # this is a really good thing, even though it screws with our test.
+      expect( float_price( interface.read(id).to_h ) ).to include(record)
     end
 
     it 'raises a DatabaseError if anything weird happens' do
@@ -286,10 +273,26 @@ describe TestTdsInterface do
 
 
   describe '#delete' do
+
+    def list_contains(id)
+      interface.list.find {|x| x[interface.id_fld] == id }
+    end
+
+    let(:id) { interface.list.first[:id] }
+
+    before { fill_data(interface) }
+
     it 'raises DatabaseError if anything hinky happens' do
       expect{ interface.delete(:foo) }.to raise_exception DatabaseError
       expect{ interface.delete(99)   }.to raise_exception DatabaseError
     end
+
+    it 'makes the record at ID go away' do
+      expect( list_contains(id) ).to be_truthy
+      interface.delete(id)
+      expect( list_contains(id) ).to be_falsy
+    end
+
   end
   ##
 
@@ -297,6 +300,8 @@ describe TestTdsInterface do
   describe '#execute' do
 
     let(:sql) { 'delete from customer where price < 2.0;' }
+
+    before { fill_data(interface) }
 
     it 'requires an SQL string' do
       expect{ interface.execute      }.to raise_exception ArgumentError
@@ -312,7 +317,7 @@ describe TestTdsInterface do
 
     it 'executes the string' do
       expect{ interface.execute(sql) }.not_to raise_exception
-      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.size ).to eq(@data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
     end
 
@@ -321,6 +326,8 @@ describe TestTdsInterface do
 
 
   describe '#select' do
+
+    before { fill_data(interface) }
 
     it 'requires an SQL string' do
       expect{ interface.select      }.to raise_exception ArgumentError
@@ -348,7 +355,7 @@ describe TestTdsInterface do
       sql = 'delete from customer where price < 2.0;'
       ret = interface.select(sql)
 
-      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.size ).to eq(@data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end
@@ -356,8 +363,6 @@ describe TestTdsInterface do
 
   end
   ##
-
-=end
 
 
 end

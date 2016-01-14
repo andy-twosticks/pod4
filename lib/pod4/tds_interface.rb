@@ -2,6 +2,7 @@ require 'tiny_tds'
 require 'octothorpe'
 require 'date'
 require 'time'
+require 'bigdecimal'
 
 require_relative 'interface'
 require_relative 'errors'
@@ -57,6 +58,9 @@ module Pod4
       raise Pod4Error, 'no call to set_id_fld in the interface definition' \
         if self.class.id_fld.nil?
 
+      raise ArgumentError, 'invalid connection hash' \
+        unless connectHash.kind_of?(Hash)
+
       @connect_hash = connectHash.dup
       @test_client  = testClient 
       @client       = nil
@@ -78,6 +82,9 @@ module Pod4
     # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
+
+      raise Pod4::DatabaseError, 'selection is not a hash' \
+        unless selection.nil? || selection.respond_to?(:keys)
 
       if selection
         sel = selection.map {|k,v| "[#{k}] = #{quote v}" }.join(" and ")
@@ -149,7 +156,7 @@ module Pod4
       raise ArgumentError unless record.kind_of?(Hash) \
                               || record.kind_of?(Octothorpe)
 
-      #read(id) # to check it exists BAMF
+      read(id) # to raise Pod4::DatabaseError if id does not exist
 
       sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
 
@@ -171,7 +178,7 @@ module Pod4
     def delete(id)
       raise ArgumentError if id.nil?
 
-      #read(id) # to check it exists BAMF
+      read(id) # to raise Pod4::DatabaseError if id does not exist
       execute( %Q|delete [#{table}] where [#{id_fld}] = #{quote id};| )
 
       self
@@ -195,6 +202,8 @@ module Pod4
     # block, of whatever you returned from the block).
     #
     def select(sql)
+      raise ArgumentError unless sql.kind_of?(String)
+
       open unless connected?
 
       Pod4.logger.debug(__FILE__){ "select: #{sql}" }
@@ -223,6 +232,8 @@ module Pod4
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
+      raise ArgumentError unless sql.kind_of?(String)
+
       open unless connected?
 
       Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
@@ -305,6 +316,8 @@ module Pod4
       case fld
         when String, Date, Time
           "'#{fld}'" 
+        when BigDecimal
+          fld.to_f
         else 
           fld
       end
