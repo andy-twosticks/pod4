@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sequel"
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "tiny_tds"
+  spec.add_development_dependency "pg"
 
   # Development tools
   spec.add_development_dependency "pry"
