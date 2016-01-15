@@ -112,7 +112,7 @@ module Pod4
                    returning "#{id_fld}";| 
 
       x = select(sql)
-      x.first[id_fld.to_s]
+      x.first[id_fld]
 
     rescue => e
       handle_error(e) 
@@ -170,7 +170,7 @@ module Pod4
       raise ArgumentError if id.nil?
 
       read(id) # to raise Pod4::DatabaseError if id does not exist
-      execute( %Q|delete "#{table}" where "#{id_fld}" = #{quote id};| )
+      execute( %Q|delete from "#{table}" where "#{id_fld}" = #{quote id};| )
 
       self
 
@@ -201,13 +201,15 @@ module Pod4
 
       rows = []
       @client.exec(sql) do |query|
+        oids = make_oid_hash(query)
 
         query.each do |r| 
+          row = cast_row_fudge(r, oids)
 
           if block_given? 
-            rows << yield(r)
+            rows << yield(row)
           else
-            rows << r
+            rows << row
           end
 
         end
@@ -251,8 +253,9 @@ module Pod4
       client = @test_Client || PG.connect(@connect_hash)
       raise "Bad Connection" unless client.status == PG::CONNECTION_OK
 
-      # bamf - supposedly this makes pg return actual non-strings. I've had
-      # trouble with it in the past.
+      # This gives us type mapping for integers, floats, booleans, and dates
+      # -- but annoyingly the PostgreSQL types 'numeric' and 'money' remain as
+      # strings...
       client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
       client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
 
@@ -340,9 +343,43 @@ module Pod4
       end
 
     end
+    
+
+    ##
+    # build a hash of column -> oid
+    #
+    def make_oid_hash(query)
+
+      query.fields.each_with_object({}) do |f,h|
+        h[f.to_sym] = query.ftype( query.fnumber(f) )
+      end
+
+    end
+
+
+    ##
+    # Cast a query row
+    # This is to step around problems with pg type mapping
+    # There is definitely a way to tell pg to cast money and numeric as
+    # BigDecimal, but, it's not documented and no one can tell me how to do it!
+    #
+    def cast_row_fudge(row, oids)
+
+      row.each_with_object({}) do |(k,v),h|
+        key = k.to_sym
+
+        h[key] = 
+          case oids[key]
+            when 1700 then BigDecimal.new(v)        # numeric
+            when 790  then BigDecimal.new(v[1...1]) # money ("£1.23")
+            else v
+          end
+
+      end
+
+    end
 
 
   end
-
 
 end
