@@ -56,6 +56,9 @@ module Pod4
   # parameter part of the success verb. If that's not true, then you will have
   # to override #create and sort this out yourself.
   #
+  # Finally, note that all values are returned as strings; there is no
+  # typecasting. This is a given limitation for Nebulous as a whole.
+  #
   class NebulousInterface < Interface
 
     # The NebResponse object from the last message sent, or nil otherwise

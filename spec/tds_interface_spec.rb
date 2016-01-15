@@ -1,5 +1,7 @@
 require 'pod4/tds_interface'
 
+require 'date'
+
 require_relative 'shared_examples_for_interface'
 require_relative 'fixtures/database'
 
@@ -37,9 +39,13 @@ describe TestTdsInterface do
 
     client.execute(%Q|
       create table dbo.customer ( 
-        id    int identity(1,1) not null,
-        name  nvarchar(max),
-        price money );| ).do
+        id        int identity(1,1) not null,
+        name      nvarchar(max),
+        level     real         null,
+        day       date         null,
+        timestamp datetime     null,
+        price     money        null,
+        qty       numeric(5,2) null );| ).do
 
   ensure
     client.close if client
@@ -55,9 +61,27 @@ describe TestTdsInterface do
     @connect_hash = DB[:tds]
     db_setup(@connect_hash)
 
-    @data = [ {name: 'Barney', price: 1.11},
-              {name: 'Fred',   price: 2.22},
-              {name: 'Betty',  price: 3.33} ]
+    @data = []
+    @data << { name:      'Barney', 
+               level:     1.23, 
+               day:       Date.parse("2016-01-01"),
+               timestamp: Time.parse('2015-01-01 12:11'),
+               price:     BigDecimal.new("1.24"), 
+               qty:       BigDecimal.new("1.25") }
+
+    @data << { name:      'Fred', 
+               level:     2.34, 
+               day:       Date.parse("2016-02-02"),
+               timestamp: Time.parse('2015-01-02 12:22'),
+               price:     BigDecimal.new("2.35"), 
+               qty:       BigDecimal.new("2.36") }
+
+    @data << { name:      'Betty', 
+               level:     3.45, 
+               day:       Date.parse("2016-03-03"),
+               timestamp: Time.parse('2015-01-03 12:33'),
+               price:     BigDecimal.new("3.46"), 
+               qty:       BigDecimal.new("3.47") }
 
   end
 
@@ -81,7 +105,7 @@ describe TestTdsInterface do
       TestTdsInterface.new(@connect_hash)
     end
 
-    let(:record) { {name: 'Barney', price: 1.11} }
+    let(:record) { {name: 'Barney'} }
 
   end
   ##
@@ -192,7 +216,9 @@ describe TestTdsInterface do
     before { fill_data(interface) }
 
     it 'returns the record for the id as an Octothorpe' do
-      expect( interface.read(2).to_h ).to include(@data[1])
+      rec = interface.read(2)
+      expect( rec ).to be_a_kind_of Octothorpe
+      expect( rec.>>.name ).to eq 'Fred'
     end
 
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
@@ -200,9 +226,45 @@ describe TestTdsInterface do
       expect{ interface.read(99)   }.to raise_exception DatabaseError
     end
 
+    it 'returns real fields as Float' do
+      level = interface.read(1).>>.level
+
+      expect( level ).to be_a_kind_of Float
+      expect( level ).to be_within(0.001).of( @data.first[:level] )
+    end
+
+    it 'returns date fields as Date' do
+      date = interface.read(1).>>.day
+
+      binding.pry #bamf
+
+      expect( date ).to be_a_kind_of Date
+      expect( date ).to eq @data.first[:day]
+    end
+
+    it 'returns datetime fields as Time' do
+      timestamp = interface.read(1).>>.timestamp
+
+      expect( timestamp ).to be_a_kind_of Time
+      expect( timestamp ).to eq @data.first[:timestamp]
+    end
+
+    it 'returns numeric fields as BigDecimal' do
+      qty = interface.read(1).>>.qty
+
+      expect( qty ).to be_a_kind_of BigDecimal
+      expect( qty ).to eq @data.first[:qty]
+    end
+
+    it 'returns money fields as BigDecimal' do
+      price   = interface.read(1).>>.price
+
+      expect( price ).to be_a_kind_of BigDecimal
+      expect( price ).to eq @data.first[:price]
+    end
+
   end
   ##
-
 
 
   describe '#list' do
@@ -214,17 +276,17 @@ describe TestTdsInterface do
     end
 
     it 'returns an array of Octothorpes that match the records' do
-      # convert each OT to a hash and remove the ID key
-      arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
+      list = interface.list
 
-      expect( arr ).to match_array @data
+      expect( list.first ).to be_a_kind_of Octothorpe
+      expect( list.map{|x| x.>>.name} ).to match_array @data.map{|y| y[:name]}
     end
 
     it 'returns a subset of records based on the selection parameter' do
       expect( interface.list(name: 'Fred').size ).to eq 1
 
       expect( interface.list(name: 'Betty').first.to_h ).
-        to include(name: 'Betty', price: 3.33)
+        to include(name: 'Betty', price: 3.46)
 
     end
 

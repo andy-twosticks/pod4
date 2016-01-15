@@ -4,19 +4,25 @@ require 'octothorpe'
 ##
 # These are the shared tests for all interfaces. To use them you need to
 # supply:
+#
 # * record - a record to insert
 # * interface - an instance of the interface to call.
 #
 # For example (from nebulous_interface_spec):
 #
 #     it_behaves_like 'an interface' do
-#       let(:record) { {id: 1, name: 'percy', price: 1.23} }
+#       let(:record) { {id: 1, name: 'percy'} }
 #
 #       let(:interface) do
 #         init_nebulous
 #         TestNebulousInterface.new( FakeRequester.new )
 #       end
 #     end
+#
+# 'record' does not have to include every column in your table, and you should
+# actively exclude floats (where you cannot guarantee equality) or anything
+# that is supposed to render to a BigDecimal.  Make sure these fields are NULL
+# in the table definition.
 #
 # Note that these shared tests only test the common parts of the API that the
 # interface exposes to the *model*; they make no assumptions about where your

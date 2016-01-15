@@ -314,8 +314,10 @@ module Pod4
     def quote(fld)
 
       case fld
-        when String, Date, Time
-          "'#{fld}'" 
+        when DateTime, Time
+          %Q|'#{fld.to_s[0..-7]}'|
+        when String, Date
+          %Q|'#{fld}'|
         when BigDecimal
           fld.to_f
         else 
