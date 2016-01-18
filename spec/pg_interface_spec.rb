@@ -27,9 +27,13 @@ describe TestPgInterface do
 
     client.exec(%Q|
       create table customer ( 
-        id    serial,
-        name  text,
-        price numeric );| )
+        id        serial,
+        name      text,
+        level     real      null,
+        day       date      null,
+        timestamp timestamp null,
+        price     money     null,
+        qty       numeric   null );| )
 
   ensure
     client.finish if client
@@ -45,16 +49,34 @@ describe TestPgInterface do
     @connect_hash = DB[:pg]
     db_setup(@connect_hash)
 
-    @data = [ {name: 'Barney', price: 1.11},
-              {name: 'Fred',   price: 2.22},
-              {name: 'Betty',  price: 3.33} ]
+    @data = []
+    @data << { name:      'Barney',
+               level:     1.23,
+               day:       Date.parse("2016-01-01"),
+               timestamp: Time.parse('2015-01-01 12:11'),
+               price:     BigDecimal.new("1.24"),
+               qty:       BigDecimal.new("1.25") }
+
+    @data << { name:      'Fred',
+               level:     2.34,
+               day:       Date.parse("2016-02-02"),
+               timestamp: Time.parse('2015-01-02 12:22'),
+               price:     BigDecimal.new("2.35"),
+               qty:       BigDecimal.new("2.36") }
+
+    @data << { name:      'Betty',
+               level:     3.45,
+               day:       Date.parse("2016-03-03"),
+               timestamp: Time.parse('2015-01-03 12:33'),
+               price:     BigDecimal.new("3.46"),
+               qty:       BigDecimal.new("3.47") }
 
   end
 
 
   before do
     # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer;|)
+    interface.execute(%Q|truncate table customer restart identity;|)
   end
 
 
@@ -71,29 +93,11 @@ describe TestPgInterface do
       TestPgInterface.new(@connect_hash)
     end
 
-    let(:record) { {name: 'Barney', price: 1.11} }
+    let(:record) { {name: 'Barney'} }
 
   end
   ##
  
-
-=begin
-
-  describe 'PgInterface.set_db' do
-    it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_db).with(1).argument
-    end
-  end
-  ##
-
-
-  describe 'PgInterface.db' do
-    it 'returns the table' do
-      expect( TestPgInterface.db ).to eq :pod4_test
-    end
-  end
-  ##
-
 
   describe 'PgInterface.set_table' do
     it 'takes one argument' do
@@ -184,17 +188,52 @@ describe TestPgInterface do
     before { fill_data(interface) }
 
     it 'returns the record for the id as an Octothorpe' do
-      expect( interface.read(2).to_h ).to include(@data[1])
+      rec = interface.read(2)
+      expect( rec ).to be_a_kind_of Octothorpe
+      expect( rec.>>.name ).to eq 'Fred'
     end
 
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
       expect{ interface.read(:foo) }.to raise_exception DatabaseError
       expect{ interface.read(99)   }.to raise_exception DatabaseError
     end
+    it 'returns real fields as Float' do
+      level = interface.read(1).>>.level
+
+      expect( level ).to be_a_kind_of Float
+      expect( level ).to be_within(0.001).of( @data.first[:level] )
+    end
+
+    it 'returns date fields as Date' do
+      date = interface.read(1).>>.day
+
+      expect( date ).to be_a_kind_of Date
+      expect( date ).to eq @data.first[:day]
+    end
+
+    it 'returns datetime fields as Time' do
+      timestamp = interface.read(1).>>.timestamp
+
+      expect( timestamp ).to be_a_kind_of Time
+      expect( timestamp ).to eq @data.first[:timestamp]
+    end
+
+    it 'returns numeric fields as BigDecimal' do
+      qty = interface.read(1).>>.qty
+
+      expect( qty ).to be_a_kind_of BigDecimal
+      expect( qty ).to eq @data.first[:qty]
+    end
+
+    it 'returns money fields as BigDecimal' do
+      price   = interface.read(1).>>.price
+
+      expect( price ).to be_a_kind_of BigDecimal
+      expect( price ).to eq @data.first[:price]
+    end
 
   end
   ##
-
 
 
   describe '#list' do
@@ -216,7 +255,7 @@ describe TestPgInterface do
       expect( interface.list(name: 'Fred').size ).to eq 1
 
       expect( interface.list(name: 'Betty').first.to_h ).
-        to include(name: 'Betty', price: 3.33)
+        to include(name: 'Betty')
 
     end
 
@@ -291,7 +330,7 @@ describe TestPgInterface do
 
   describe '#execute' do
 
-    let(:sql) { 'delete from customer where price < 2.0;' }
+    let(:sql) { 'delete from customer where cast(price as numeric) < 2.0;' }
 
     before { fill_data(interface) }
 
@@ -334,8 +373,8 @@ describe TestPgInterface do
     end
 
     it 'returns the result of the sql' do
-      sql1 = 'select name from customer where price < 2.0;'
-      sql2 = 'select name from customer where price < 0.0;'
+      sql1 = 'select name from customer where cast(price as numeric) < 2.0;'
+      sql2 = 'select name from customer where cast(price as numeric) < 0.0;'
 
       expect{ interface.select(sql1) }.not_to raise_exception
       expect( interface.select(sql1) ).to eq( [{name: 'Barney'}] )
@@ -344,7 +383,7 @@ describe TestPgInterface do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
-      sql = 'delete from customer where price < 2.0;'
+      sql = 'delete from customer where cast(price as numeric) < 2.0;'
       ret = interface.select(sql)
 
       expect( interface.list.size ).to eq(@data.size - 1)
@@ -352,11 +391,9 @@ describe TestPgInterface do
       expect( ret ).to eq( [] )
     end
 
-
   end
   ##
 
-=end
 
 end
 

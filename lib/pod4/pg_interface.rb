@@ -41,9 +41,9 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a TinyTds connection hash.
+    # Initialise the interface by passing it a Pg connection hash.
     # For testing ONLY you can also pass an object which pretends to be a
-    # TinyTds client, in which case the hash is pretty much ignored.
+    # Pg client, in which case the hash is pretty much ignored.
     #
     def initialize(connectHash, testClient=nil)
 
@@ -255,7 +255,7 @@ module Pod4
 
       # This gives us type mapping for integers, floats, booleans, and dates
       # -- but annoyingly the PostgreSQL types 'numeric' and 'money' remain as
-      # strings...
+      # strings... we fudge that elsewhere.
       client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
       client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
 
@@ -369,9 +369,10 @@ module Pod4
         key = k.to_sym
 
         h[key] = 
-          case oids[key]
-            when 1700 then BigDecimal.new(v)        # numeric
-            when 790  then BigDecimal.new(v[1...1]) # money ("£1.23")
+          case
+            when v.nil? then nil
+            when oids[key] == 1700 then BigDecimal.new(v)        # numeric
+            when oids[key] == 790  then BigDecimal.new(v[1..-1]) # "£1.23"
             else v
           end
 

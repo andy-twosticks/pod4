@@ -58,7 +58,7 @@ RSpec.shared_examples 'an interface' do
       expect{ interface.create(record_as_ot) }.not_to raise_exception
     end
 
-    it 'returns the ID' do 
+    it 'returns the ID' do
       record_id = interface.create(record)
       expect{ interface.read(record_id) }.not_to raise_exception
       expect( interface.read(record_id).to_h ).to include record
