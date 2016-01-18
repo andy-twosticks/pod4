@@ -1,5 +1,9 @@
 require 'pod4/sequel_interface'
 
+require 'date'
+require 'time'
+require 'bigdecimal'
+
 require_relative 'shared_examples_for_interface'
 
 
@@ -26,9 +30,26 @@ describe TestSequelInterface do
   # talking to a database.
 
   let(:data) do
-    [ {name: 'Barney', price: 1.11},
-      {name: 'Fred',   price: 2.22},
-      {name: 'Betty',  price: 3.33} ]
+    d = []
+    d << { name:      'Barney',
+           level:     1.23,
+           day:       Date.parse("2016-01-01"),
+           timestamp: Time.parse('2015-01-01 12:11'),
+           price:     BigDecimal.new("1.24") }
+
+    d << { name:      'Fred',
+           level:     2.34,
+           day:       Date.parse("2016-02-02"),
+           timestamp: Time.parse('2015-01-02 12:22'),
+           price:     BigDecimal.new("2.35") }
+
+    d << { name:      'Betty',
+           level:     3.45,
+           day:       Date.parse("2016-03-03"),
+           timestamp: Time.parse('2015-01-03 12:33'),
+           price:     BigDecimal.new("3.46") }
+
+    d
   end
 
   def fill_data(ifce)
@@ -46,7 +67,10 @@ describe TestSequelInterface do
     db.create_table :customer do
       primary_key :id
       String      :name
-      Float       :price
+      Float       :level
+      Date        :day
+      Time        :timestamp
+      BigDecimal  :price, :size=>[10.2] # Sequel doesn't support money
     end
     db
   end
@@ -63,18 +87,21 @@ describe TestSequelInterface do
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      db = Sequel.sqlite
-      db.create_table :customer do
+      db2 = Sequel.sqlite
+      db2.create_table :customer do
         primary_key :id
         String      :name
-        Float       :price
+        Float       :level
+        Date        :day
+        Time        :timestamp
+        BigDecimal  :price, :size=>[10.2] 
       end
 
-      TestSequelInterface.new(db)
+      TestSequelInterface.new(db2)
     end
 
     let(:record)    { {name: 'Barney', price: 1.11} }
-    let(:record_id) { 'Barney' }
+    #let(:record_id) { 'Barney' }
 
   end
   ##
@@ -163,12 +190,40 @@ describe TestSequelInterface do
   describe '#read' do
 
     it 'returns the record for the id as an Octothorpe' do
-      expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.22)
+      expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
       expect{ interface.read(:foo) }.to raise_exception DatabaseError
       expect{ interface.read(99)   }.to raise_exception DatabaseError
+    end
+
+    it 'returns real fields as Float' do
+      level = interface.read(1).>>.level
+
+      expect( level ).to be_a_kind_of Float
+      expect( level ).to be_within(0.001).of( data.first[:level] )
+    end
+
+    it 'returns date fields as Date' do
+      date = interface.read(1).>>.day
+
+      expect( date ).to be_a_kind_of Date
+      expect( date ).to eq data.first[:day]
+    end
+
+    it 'returns datetime fields as Time' do
+      timestamp = interface.read(1).>>.timestamp
+
+      expect( timestamp ).to be_a_kind_of Time
+      expect( timestamp ).to eq data.first[:timestamp]
+    end
+
+    it 'returns numeric fields as BigDecimal' do
+      price = interface.read(1).>>.price
+
+      expect( price ).to be_a_kind_of BigDecimal
+      expect( price ).to eq data.first[:price]
     end
 
   end
@@ -194,7 +249,7 @@ describe TestSequelInterface do
       expect( interface.list(name: 'Fred').size ).to eq 1
 
       expect( interface.list(name: 'Betty').first.to_h ).
-        to include(name: 'Betty', price: 3.33)
+        to include(name: 'Betty', price: 3.46)
 
     end
 
@@ -223,7 +278,9 @@ describe TestSequelInterface do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      expect( interface.read(id).to_h ).to include(record)
+      booboo = interface.read(id)
+      expect( booboo.>>.name       ).to eq( record[:name] )
+      expect( booboo.>>.price.to_f ).to eq( record[:price] )
     end
 
     it 'raises a DatabaseError if anything weird happens' do

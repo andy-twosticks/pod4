@@ -234,9 +234,8 @@ describe TestTdsInterface do
     end
 
     it 'returns date fields as Date' do
+      pending "not supported by TinyTds ¬_¬ "
       date = interface.read(1).>>.day
-
-      binding.pry #bamf
 
       expect( date ).to be_a_kind_of Date
       expect( date ).to eq @data.first[:day]

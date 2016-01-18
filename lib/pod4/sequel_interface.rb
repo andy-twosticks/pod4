@@ -20,6 +20,10 @@ module Pod4
   #       set_id_fld :id
   #     end
   #
+  # Data types: Sequel itself will translate to BigDecimal, Float, Integer,
+  # date, and datetime as appropriate -- but it also depends on the underlying
+  # adapter.  TinyTds maps dates to strings, for example. 
+  #
   class SequelInterface < Interface
 
     class << self
