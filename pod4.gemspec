@@ -34,8 +34,6 @@ Gem::Specification.new do |spec|
   # Development tools
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-doc"
-  spec.add_development_dependency "guard"
-  spec.add_development_dependency "guard-rspec"
   spec.add_development_dependency "ripper-tags"
 
   spec.add_runtime_dependency "devnull", '~>0.1'
