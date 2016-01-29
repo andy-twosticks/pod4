@@ -25,7 +25,8 @@ require 'pod4/null_interface'
 # for the first time. Its use isn't spelled out in the RSpec docs AFAICS. 
 #
 class CustomerModel < Pod4::Model
-  attr_columns :id, :name, :price
+  attr_columns :id, :name
+  attr_columns :price  # specifically testing multiple calls to attr_columns
   set_interface NullInterface.new(:id, :name, :price, [])
 
   def fake_an_alert(*args)

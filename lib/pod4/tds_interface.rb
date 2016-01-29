@@ -79,7 +79,8 @@ module Pod4
 
 
     ##
-    # Selection is whatever Sequel's `where` supports.
+    # Selection is a hash or something like it: keys should be field names. We
+    # return any records where the given fields equal the given values.
     #
     def list(selection=nil)
 

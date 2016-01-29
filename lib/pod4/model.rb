@@ -72,7 +72,8 @@ module Pod4
       # you with.
       #
       def attr_columns(*cols)
-        @columns = cols
+        @columns ||= []
+        @columns += cols
         attr_accessor *cols
       end
 
@@ -120,6 +121,8 @@ module Pod4
           raise Pod4Error, "ID field missing from record" unless key
 
           rec = self.new(key)
+
+          # BAMF - should this be a read??? 
           rec.set(ot) # seperately, in case model forgot to return self
           rec 
         end
