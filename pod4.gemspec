@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "tiny_tds"
   spec.add_development_dependency "pg"
+  spec.add_development_dependency "nebulous", "~>1.1"
 
   # Development tools
   spec.add_development_dependency "pry"
