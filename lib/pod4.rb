@@ -2,6 +2,8 @@ require 'logger'
 require 'devnull'
 
 require 'pod4/param'
+require 'pod4/model'
+require 'pod4/alert'
 
 
 
