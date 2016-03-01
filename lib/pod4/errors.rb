@@ -19,7 +19,7 @@ module Pod4
       raise "trying to raise an error from an error that's not an error" \
         unless error.kind_of? StandardError
 
-      e = self.new( "#{error.class}: #{error.message}" )
+      e = self.new( "Pod4Error: #{error.class}: #{error.message}" )
       e.from = error.clone
       e
     end
