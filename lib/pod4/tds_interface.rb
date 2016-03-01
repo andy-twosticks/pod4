@@ -49,16 +49,16 @@ module Pod4
     #
     def initialize(connectHash, testClient=nil)
 
-      raise Pod4Error, 'no call to set_db in the interface definition' \
+      raise(Pod4Error, 'no call to set_db in the interface definition') \
         if self.class.db.nil?
 
-      raise Pod4Error, 'no call to set_table in the interface definition' \
+      raise(Pod4Error, 'no call to set_table in the interface definition') \
         if self.class.table.nil?
 
-      raise Pod4Error, 'no call to set_id_fld in the interface definition' \
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') \
         if self.class.id_fld.nil?
 
-      raise ArgumentError, 'invalid connection hash' \
+      raise(ArgumentError, 'invalid connection hash') \
         unless connectHash.kind_of?(Hash)
 
       @connect_hash = connectHash.dup
@@ -84,7 +84,7 @@ module Pod4
     #
     def list(selection=nil)
 
-      raise Pod4::DatabaseError, 'selection is not a hash' \
+      raise(Pod4::DatabaseError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
       if selection
@@ -110,8 +110,8 @@ module Pod4
     # which is just what we want to do, too.
     #
     def create(record)
-      raise ArgumentError unless record.kind_of?(Hash) \
-                              || record.kind_of?(Octothorpe)
+      raise(ArgumentError, "Bad type for record parameter") \
+            unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       ks = record.keys.map   {|k| "[#{k}]" }
       vs = record.values.map {|v| quote v } 
@@ -133,7 +133,7 @@ module Pod4
     # ID corresponds to whatever you set in set_id_fld
     #
     def read(id)
-      raise ArgumentError if id.nil?
+      raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       sql = %Q|select * 
                    from [#{table}] 
@@ -154,8 +154,8 @@ module Pod4
     # record should be a Hash or Octothorpe.
     #
     def update(id, record)
-      raise ArgumentError unless record.kind_of?(Hash) \
-                              || record.kind_of?(Octothorpe)
+      raise(ArgumentError, "Bad type for record parameter") \
+        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       read(id) # to raise Pod4::DatabaseError if id does not exist
 
@@ -177,8 +177,6 @@ module Pod4
     # ID is whatever you set in the interface using set_id_fld
     #
     def delete(id)
-      raise ArgumentError if id.nil?
-
       read(id) # to raise Pod4::DatabaseError if id does not exist
       execute( %Q|delete [#{table}] where [#{id_fld}] = #{quote id};| )
 
@@ -203,7 +201,7 @@ module Pod4
     # block, of whatever you returned from the block).
     #
     def select(sql)
-      raise ArgumentError unless sql.kind_of?(String)
+      raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
 
       open unless connected?
 
@@ -233,7 +231,7 @@ module Pod4
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
-      raise ArgumentError unless sql.kind_of?(String)
+      raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
 
       open unless connected?
 

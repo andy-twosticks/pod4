@@ -45,12 +45,12 @@ module Pod4
     # Initialise the interface by passing it the Sequel DB object.
     #
     def initialize(db)
-      raise ArgumentError unless db.kind_of? Sequel::Database
+      raise(ArgumentError, "Bad database") unless db.kind_of? Sequel::Database
 
-      raise Pod4Error, 'no call to set_table in the interface definition' \
+      raise(Pod4Error, 'no call to set_table in the interface definition') \
         if self.class.table.nil?
 
-      raise Pod4Error, 'no call to set_id_fld in the interface definition' \
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') \
         if self.class.id_fld.nil?
 
       @db     = db # referemce to the db object
@@ -80,8 +80,8 @@ module Pod4
     # which is just what we want to do, too.
     #
     def create(record)
-      raise ArgumentError unless record.kind_of?(Hash) \
-                              || record.kind_of?(Octothorpe)
+      raise(ArgumentError, "Bad type for record parameter") \
+        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       @table.insert(record.to_h)
 
@@ -94,7 +94,7 @@ module Pod4
     # ID corresponds to whatever you set in set_id_fld
     #
     def read(id)
-      raise ArgumentError if id.nil?
+      raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       rec = @table[@id_fld => id]
       raise DatabaseError, "'No record found with ID '#{id}'" if rec.nil?
@@ -135,7 +135,7 @@ module Pod4
     # Bonus method: execute arbitrary SQL. Returns nil.
     #
     def execute(sql)
-      raise ArgumentError unless sql.kind_of?(String)
+      raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
       @db.run(sql)
     rescue => e
       handle_error(e)
@@ -147,7 +147,7 @@ module Pod4
     # Hash.
     #
     def select(sql)
-      raise ArgumentError unless sql.kind_of?(String)
+      raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
       @db[sql].all
     rescue => e
       handle_error(e)

@@ -26,7 +26,7 @@ module Pod4
     # hashes to fill them.
     #
     def initialize(*cols, data)
-      raise ArgumentError if cols.nil? || cols == []
+      raise ArgumentError, "no columns"  if cols.nil? || cols == []
 
       @cols   = cols.dup.map(&:to_sym)
       @data   = Array.new(data.dup).flatten 
@@ -61,7 +61,9 @@ module Pod4
     # new().
     #
     def create(record)
-      raise ArgumentError if record.nil? || ! record.respond_to?(:to_h)
+      raise(ArgumentError, "Create requires an ID") \
+        if record.nil? || ! record.respond_to?(:to_h)
+
       @data << record.to_h
       record[@id_fld]
 
@@ -74,7 +76,7 @@ module Pod4
     # ID is the first column you named in new()
     #
     def read(id)
-      raise ArgumentError if id.nil?
+      raise(ArgumentError, "Read requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
       raise DatabaseError, "'No record found with ID '#{id}'" if rec.nil?
@@ -92,7 +94,7 @@ module Pod4
     # Again, note that we don't care what columns you send us.
     #
     def update(id, record)
-      raise ArgumentError if id.nil?
+      raise(ArgumentError, "Update requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
       raise Pod4::Pod4Error if rec.nil?
@@ -108,7 +110,8 @@ module Pod4
     # ID is that first column
     #
     def delete(id)
-      raise ArgumentError if id.nil?
+      raise(ArgumentError, "Delete requires an ID")  if id.nil?
+
       read(id) # to see if it exists
       @data.delete_if {|r| r[@id_fld] == id }
       self
