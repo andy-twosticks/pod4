@@ -224,7 +224,7 @@ module Pod4
     # Override this to add validation - calling `add_alert` for each problem.
     #
     def validate
-      # Hilding pattern. All models should use super, in principal
+      # Holding pattern. All models should use super, in principal
     end
 
 
