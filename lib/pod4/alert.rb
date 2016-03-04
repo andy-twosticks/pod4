@@ -56,6 +56,18 @@ module Pod4
     end
 
 
+    ##
+    # Write self to the log
+    #
+    def log(file='')
+      case self.type
+        when :error   then Pod4.logger.error(file) { self.message }
+        when :warning then Pod4.logger.warn(file)  { self.message }
+        else Pod4.logger.info(file) { self.message }
+      end
+    end
+
+
   end
   ##
 

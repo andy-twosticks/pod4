@@ -133,6 +133,40 @@ describe Alert do
 =end
 
 
+  describe '#log' do
+
+    let(:alert_error)   { Alert.new(:error, 'error')     }
+    let(:alert_warning) { Alert.new(:warning, 'warning') }
+    let(:alert_info)    { Alert.new(:info, 'info')       }
+    let(:alert_success) { Alert.new(:success, 'success') }
+
+    it 'accepts a context field' do
+      expect{ alert_warning.log           }.not_to raise_exception
+      expect{ alert_warning.log('foo')    }.not_to raise_exception
+      expect{ alert_warning.log('foo', 2) }.to  raise_exception ArgumentError
+    end
+
+    it 'outputs itself to the log, at the right level' do
+      lugger = double(Logger)
+      Pod4.set_logger lugger
+
+      expect(lugger).to receive(:error)
+      alert_error.log
+
+      expect(lugger).to receive(:warn)
+      alert_warning.log
+
+      expect(lugger).to receive(:info)
+      alert_info.log
+
+      expect(lugger).to receive(:info)
+      alert_success.log
+    end
+
+  end
+  ##
+
+
   context 'when collected in an array' do
 
     it 'orders itself by severity of type' do
