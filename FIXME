@@ -4,7 +4,5 @@ Things To Do
 * a gem should not use a global if at all possible; let's step away from
   $logger.
 
-* Models should not raise an alert if an identical one already exists.
-
 * Ideally Alert should have a method to write itself to the log.
 

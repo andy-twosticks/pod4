@@ -290,6 +290,10 @@ module Pod4
     # Call this from your validation method.
     #
     def add_alert(type, field=nil, message)
+      return if @alerts.any? do |a| 
+        a.type == type && a.field == field && a.message = message
+      end
+
       @alerts << Alert.new(type, field, message)
 
       st = @alerts.sort.first.type

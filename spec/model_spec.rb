@@ -281,6 +281,13 @@ describe 'CustomerModel' do
       expect( model.model_status ).to eq :error
     end
 
+    it 'ignores a new alert if identical to an existing one' do
+      lurch = 'Dnhhhhhh'
+      2.times { model.fake_an_alert(:error, :price, lurch) }
+
+      expect( model.alerts.size ).to eq 1
+    end
+
   end
   ##
 
