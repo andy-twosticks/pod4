@@ -56,14 +56,6 @@ module Pod4
     end
 
 
-    ## 
-    # Return the Bootstrap notification class for this error 
-    #
-    def bootstrap_class
-      @type == :error ? 'alert-danger' : "alert-#@type"
-    end
-
-
   end
   ##
 

@@ -111,6 +111,7 @@ describe Alert do
 
 
 
+=begin
   describe '#bootstrap_class' do
 
     it 'outputs the bootstrap class name for the alert type' do
@@ -129,6 +130,7 @@ describe Alert do
 
   end
   ##
+=end
 
 
   context 'when collected in an array' do
