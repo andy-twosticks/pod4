@@ -183,6 +183,11 @@ describe TestSequelInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.create(name: :Booboo) }.not_to raise_exception
+    end
+
   end
   ##
 
@@ -266,6 +271,12 @@ describe TestSequelInterface do
       expect( interface.list ).to eq([])
     end
 
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.list(name: :Barney) }.not_to raise_exception
+    end
+
+
   end
   ##
   
@@ -290,6 +301,11 @@ describe TestSequelInterface do
       expect{ interface.update(99, name: 'Booboo') }.
         to raise_exception DatabaseError
 
+    end
+
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.update(id, name: :Booboo) }.not_to raise_exception
     end
 
   end

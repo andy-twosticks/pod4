@@ -276,6 +276,10 @@ module Pod4
         raise Pod4::DatabaseError, "Nebulous is turned off!"
       end
 
+      Pod4.logger.debug(__FILE__) do
+        "Sending v:#{verb} p:#{paramStr} c?: #{with_cache}"
+      end
+
       @response = send_message_helper(verb, paramStr, with_cache)
 
       raise Pod4::DatabaseError, "Null response" if @response.nil?

@@ -25,9 +25,21 @@ require 'pod4/null_interface'
 # for the first time. Its use isn't spelled out in the RSpec docs AFAICS. 
 #
 class CustomerModel < Pod4::Model
-  attr_columns :id, :name
+  attr_columns :id, :name, :groups
   attr_columns :price  # specifically testing multiple calls to attr_columns
-  set_interface NullInterface.new(:id, :name, :price, [])
+  set_interface NullInterface.new(:id, :name, :price, :groups, [])
+
+  def map_to_model(ot)
+    super
+    @groups = @groups ? @groups.split(',') : []
+    self
+  end
+
+  def map_to_interface
+    x = super
+    g = (x.>>.groups || []).join(',')
+    x.merge(groups: g)
+  end
 
   def fake_an_alert(*args)
     add_alert(*args) #protected method
@@ -41,13 +53,22 @@ end
 describe 'CustomerModel' do
 
   let(:records) do
-    [ {id: 10, name: 'Gomez',     price: 1.23},
-      {id: 20, name: 'Morticia',  price: 2.34},
-      {id: 30, name: 'Wednesday', price: 3.45},
-      {id: 40, name: 'Pugsley',   price: 4.56} ]
+    [ {id: 10, name: 'Gomez',     price: 1.23, groups: 'trains'       },
+      {id: 20, name: 'Morticia',  price: 2.34, groups: 'spanish'      },
+      {id: 30, name: 'Wednesday', price: 3.45, groups: 'school'       },
+      {id: 40, name: 'Pugsley',   price: 4.56, groups: 'trains,school'} ]
   end
 
-  let(:records_as_ot) { records.map{|r| Octothorpe.new(r) } }
+  let(:recordsx) do
+    records.map {|h| h.reject{|k,_| k == :groups} }.flatten
+  end
+
+  let(:records_as_ot)  { records.map{|r| Octothorpe.new(r) } }
+  let(:recordsx_as_ot) { recordsx.map{|r| Octothorpe.new(r) } }
+
+  def without_groups(ot)
+    ot.to_h.reject {|k,_| k == :groups}
+  end
 
   # model is just a plain newly created object that you can call read on.
   # model2 and model3 are in an identical state - they have been filled with a
@@ -57,13 +78,19 @@ describe 'CustomerModel' do
 
   let(:model2) do
     m = CustomerModel.new(30)
-    allow( m.interface ).to receive(:read).and_return( records_as_ot[2] )
+
+    allow( m.interface ).to receive(:read).
+      and_return( Octothorpe.new(records[2]) )
+
     m.read.or_die
   end
 
   let(:model3) do
     m = CustomerModel.new(40)
-    allow( m.interface ).to receive(:read).and_return( records_as_ot[3] )
+
+    allow( m.interface ).to receive(:read).
+      and_return( Octothorpe.new(records[3]) )
+
     m.read.or_die
   end
 
@@ -81,9 +108,11 @@ describe 'CustomerModel' do
       expect( CustomerModel.new ).to respond_to(:id)
       expect( CustomerModel.new ).to respond_to(:name)
       expect( CustomerModel.new ).to respond_to(:price)
+      expect( CustomerModel.new ).to respond_to(:groups)
       expect( CustomerModel.new ).to respond_to(:id=)
       expect( CustomerModel.new ).to respond_to(:name=)
       expect( CustomerModel.new ).to respond_to(:price=)
+      expect( CustomerModel.new ).to respond_to(:groups=)
     end
 
     # it adds the columns to Model.columns -- covered by the columns test
@@ -93,7 +122,7 @@ describe 'CustomerModel' do
 
   describe 'Model.columns' do
     it 'lists the columns' do
-      expect( CustomerModel.columns ).to match_array( [:id,:name,:price] )
+      expect( CustomerModel.columns ).to match_array( [:id,:name,:price,:groups] )
     end
   end
   ##
@@ -122,6 +151,13 @@ describe 'CustomerModel' do
 
     let(:list1) { CustomerModel.list }
 
+    def arr_without_groups(arr)
+      arr
+        .map {|m| without_groups(m.to_ot) }
+        .flatten
+
+    end
+
     it 'allows an optional selection parameter' do
       expect{ CustomerModel.list                }.not_to raise_exception
       expect{ CustomerModel.list(name: 'Betty') }.not_to raise_exception
@@ -142,7 +178,7 @@ describe 'CustomerModel' do
         and_return(records_as_ot)
 
       expect( list1.size ).to eq records.size
-      expect( list1.map{|x| x.to_ot.to_h} ).to match_array records
+      expect( arr_without_groups(list1) ).to include( *recordsx )
     end
 
     it 'honours passed selection criteria' do
@@ -154,7 +190,7 @@ describe 'CustomerModel' do
 
       list2 = CustomerModel.list(hash)
       expect( list2.size ).to eq 1
-      expect( list2.first.to_ot.to_h ).to eq( records[1] )
+      expect( arr_without_groups(list2).first ).to eq( recordsx[1] )
     end
 
     it 'returns an empty array if nothing matches' do
@@ -169,6 +205,14 @@ describe 'CustomerModel' do
 
     it 'returns an empty array if there are no records' do
       expect( CustomerModel.list ).to eq []
+    end
+
+    it 'calls map_to_model to set the record data' do
+      allow( CustomerModel.interface ).
+        to receive(:list).
+        and_return(records_as_ot)
+
+      expect( CustomerModel.list.last.groups ).to eq(['trains', 'school'])
     end
 
   end
@@ -209,7 +253,10 @@ describe 'CustomerModel' do
 
   describe '#columns' do
     it 'returns the attr_columns list from the class definition' do
-      expect( CustomerModel.new.columns ).to match_array([:id,:name,:price])
+
+      expect( CustomerModel.new.columns ).
+        to match_array( [:id,:name,:price,:groups] )
+
     end
   end
   ##
@@ -337,16 +384,44 @@ describe 'CustomerModel' do
   describe '#to_ot' do
     it 'returns an Octothorpe made of the attribute columns' do
       expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( model.to_ot.to_h ).to eq({id: nil, name: nil, price:nil})
 
-      model.set(records[1])
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( model.to_ot.to_h ).to eq records[1]
+      expect( model.to_ot.to_h ).
+        to eq( {id: nil, name: nil, price:nil, groups:nil} )
 
-      model.set(records_as_ot[2])
+      model.map_to_model(records[1])
       expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( model.to_ot.to_h ).to eq records[2]
+      expect( without_groups(model.to_ot) ).to eq recordsx[1]
+
+      model.map_to_model(records_as_ot[2])
+      expect( model.to_ot ).to be_a_kind_of Octothorpe
+      expect( without_groups(model.to_ot) ).to eq recordsx[2]
     end
+  end
+  ##
+
+
+  describe '#map_to_model' do
+
+    it 'sets the columns, with groups as an array' do
+      cm = CustomerModel.new
+      cm.map_to_model(records.last)
+
+      expect( cm.groups ).to eq( ['trains','school'] )
+    end
+
+  end
+  ##
+
+
+  describe '#map_to_interface' do
+
+    it 'returns the columns, with groups as a list' do
+      cm = CustomerModel.new
+      cm.map_to_model(records.last)
+
+      expect( cm.map_to_interface.>>.groups ).to eq( 'trains,school' )
+    end
+
   end
   ##
 
@@ -439,6 +514,15 @@ describe 'CustomerModel' do
       expect( new_model.model_status ).to eq :warning
     end
 
+    it 'calls map_to_interface to get record data' do
+      allow( new_model.interface ).to receive(:create)
+      expect( new_model ).to receive(:map_to_interface)
+
+      new_model.id   = 50
+      new_model.name = "Lurch"
+      new_model.create
+    end
+
   end
   ##
 
@@ -476,7 +560,7 @@ describe 'CustomerModel' do
       model.read
     end
 
-    it 'sets the attribute columns' do
+    it 'sets the attribute columns using map_to_model' do
       ot = records_as_ot.last
       allow( model.interface ).to receive(:read).and_return( ot )
 
@@ -484,6 +568,8 @@ describe 'CustomerModel' do
       expect( cm.id    ).to eq ot.>>.id
       expect( cm.name  ).to eq ot.>>.name
       expect( cm.price ).to eq ot.>>.price
+      expect( cm.groups ).to be_a_kind_of(Array)
+      expect( cm.groups ).to eq( ot.>>.groups.split(',') )
     end
 
     it 'sets model status to :okay if it was :empty' do
@@ -556,6 +642,12 @@ describe 'CustomerModel' do
       model3.fake_an_alert(:error, :price, 'qar')
       model3.update
     end
+
+    it 'calls map_to_interface to get record data' do
+      expect( model3 ).to receive(:map_to_interface)
+      model3.update
+    end
+
 
   end
   ##

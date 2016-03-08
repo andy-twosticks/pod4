@@ -135,6 +135,10 @@ describe Alert do
 
   describe '#log' do
 
+    after do
+      Pod4::Param.reset
+    end
+
     let(:alert_error)   { Alert.new(:error, 'error')     }
     let(:alert_warning) { Alert.new(:warning, 'warning') }
     let(:alert_info)    { Alert.new(:info, 'info')       }

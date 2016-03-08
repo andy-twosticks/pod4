@@ -66,9 +66,9 @@ module Pod4
     # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
-      (selection ? @table.where(selection) : @table.all).map do |x| 
-        Octothorpe.new(x) 
-      end
+      sel = sanitise_hash(selection)
+      Pod4.logger.debug(__FILE__) { "Listing: #{sel.inspect}" }
+      (sel ? @table.where(sel) : @table.all).map {|x| Octothorpe.new(x) }
     rescue => e
       handle_error(e)
     end
@@ -83,7 +83,8 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      @table.insert(record.to_h)
+      Pod4.logger.debug(__FILE__) { "Creating: #{record.inspect}" }
+      @table.insert( sanitise_hash(record.to_h) )
 
     rescue => e
       handle_error(e) 
@@ -99,6 +100,7 @@ module Pod4
       rec = @table[@id_fld => id]
       raise DatabaseError, "'No record found with ID '#{id}'" if rec.nil?
 
+      Pod4.logger.debug(__FILE__) { "Reading where #{@id_fld}=#{id}" }
       Octothorpe.new(rec)
 
     rescue => e
@@ -112,7 +114,12 @@ module Pod4
     #
     def update(id, record)
       read(id) # to check it exists
-      @table.where(@id_fld => id).update(record.to_h)
+
+      Pod4.logger.debug(__FILE__) do 
+        "Updating where #{@id_fld}=#{id}: #{record.inspect}"
+      end
+
+      @table.where(@id_fld => id).update( sanitise_hash(record.to_h) )
       self
     rescue => e
       handle_error(e)
@@ -124,6 +131,7 @@ module Pod4
     #
     def delete(id)
       read(id) # to check it exists
+      Pod4.logger.debug(__FILE__) { "Deleting where #{@id_fld}=#{id}" }
       @table.where(@id_fld => id).delete
       self
     rescue => e
@@ -136,6 +144,8 @@ module Pod4
     #
     def execute(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
+
+      Pod4.logger.debug(__FILE__) { "Execute SQL: #{sql}" }
       @db.run(sql)
     rescue => e
       handle_error(e)
@@ -148,6 +158,8 @@ module Pod4
     #
     def select(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
+
+      Pod4.logger.debug(__FILE__) { "Select SQL: #{sql}" }
       @db[sql].all
     rescue => e
       handle_error(e)
@@ -181,6 +193,26 @@ module Pod4
 
     end
 
+
+    ##
+    # Sequel behaves VERY oddly if you pass a symbol as a value to the hash you
+    # give to a selection,etc on a dataset. (It raises an error complaining that
+    # the symbol does not exist as a column in the table...)
+    #
+    def sanitise_hash(sel)
+
+      case sel
+        when Hash
+          sel.each_with_object({}) do |(k,v),m| 
+            m[k] = v.kind_of?(Symbol) ? v.to_s : v 
+          end
+
+        else 
+          sel
+
+      end
+
+    end
 
   end
 

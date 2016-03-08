@@ -68,8 +68,8 @@ module Pod4
       ##
       # You should call this in your model definition to define model 'columns'
       # -- it gives you exactly the functionality of `attr_accessor` but also
-      # registers the attribute as one that `to_ot` and `set` will try to help
-      # you with.
+      # registers the attribute as one that `to_ot`, `map_to_model` and
+      # `map_to_interface` will try to help you with.
       #
       def attr_columns(*cols)
         @columns ||= []
@@ -122,8 +122,7 @@ module Pod4
 
           rec = self.new(key)
 
-          # BAMF - should this be a read??? 
-          rec.set(ot) # seperately, in case model forgot to return self
+          rec.map_to_model(ot) # seperately, in case model forgot to return self
           rec 
         end
 
@@ -174,7 +173,9 @@ module Pod4
     #
     def create
       validate
-      @model_id = interface.create(to_ot) unless @model_status == :error
+      @model_id = interface.create(map_to_interface) \
+        unless @model_status == :error
+
       @model_status = :okay if @model_status == :empty
       self
     end
@@ -184,7 +185,7 @@ module Pod4
     # Call this to fetch the data for this instance from the data source
     #
     def read
-      set( interface.read(@model_id) )
+      map_to_model( interface.read(@model_id) )
       @model_status = :okay if @model_status == :empty
       self
     end
@@ -198,7 +199,9 @@ module Pod4
         if [:empty, :deleted].include? @model_status
 
       validate
-      interface.update(@model_id, to_ot) unless @model_status == :error
+      interface.update(@model_id, map_to_interface) \
+        unless @model_status == :error
+
       self
     end
 
@@ -229,21 +232,17 @@ module Pod4
 
 
     ##
-    # Set instance values from a Hash or Octothorpe.
+    # Set instance values on the model from a Hash or Octothorpe.
     #
-    # Override if you need it to set anything not in attr_columns, or to
+    # This is what your code calls when it wants to update the model. Override
+    # it if you need it to set anything not in attr_columns, or to
     # control data types, etc.
     #
+    # See also: `to_ot`.
+    #
     def set(ot)
-      raise ArgumentError, 'parameter must be a Hash or Octothorpe' \
-        unless ot.kind_of?(Hash) || ot.kind_of?(Octothorpe)
-        
-      columns.each do |col|
-        instance_variable_set("@#{col}".to_sym, ot[col])
-      end
-
+      merge(ot)
       validate
-
       self
     end
 
@@ -252,14 +251,51 @@ module Pod4
     # Return an Octothorpe of all the attr_columns attributes.
     #
     # Override if you want to return any extra data. (You will need to create a
-    # new Octothorpe.)
+    # new Octothorpe.) 
+    #
+    # See also: `set`
     #
     def to_ot
-      hash = columns.each_with_object({}) do |col, hash|
-        hash[col] = instance_variable_get("@#{col}".to_sym)
-      end
+      Octothorpe.new(to_h)
+    end
 
-      Octothorpe.new(hash)
+
+    ##
+    # Used by the interface to set the column values on the model.
+    #
+    # Don't use this to set model attributes from your code; use `set`,
+    # instead.
+    #
+    # By default this does exactly the same a `set`. Override it if you want
+    # the model to represent data differently than the data source does --
+    # but then you will have to override `map_to_interface`, too, to convert
+    # the data back.
+    #
+    # See also: `to_ot`.
+    #
+    def map_to_model(ot)
+      merge(ot)
+      validate
+      self
+    end
+
+
+    ##
+    # used by the model to get an OT of column values for the interface. 
+    #
+    # Don't use this to get model values in your code; use `to_ot`, instead.
+    # This is called by model.create and model.update when it needs to write to
+    # the data source.
+    #
+    # By default this behaves exactly the same as to_ot. Override it if you
+    # want the model to represent data differently than the data source -- in
+    # which case you also need to override `map_to_model`.
+    #
+    # Bear in mind that any attribute could be nil, and likely will be when
+    # `map_to_interface` is called from the create method.
+    #
+    def map_to_interface
+      Octothorpe.new(to_h)
     end
 
 
@@ -298,6 +334,32 @@ module Pod4
 
       st = @alerts.sort.first.type
       @model_status = st if %i|error warning|.include?(st)
+    end
+
+    
+    private
+
+
+    ##
+    # Output a hash of the columns
+    #
+    def to_h
+      columns.each_with_object({}) do |col, hash|
+        hash[col] = instance_variable_get("@#{col}".to_sym)
+      end
+    end
+
+
+    ##
+    # Merge an OT with our columns
+    #
+    def merge(ot)
+      raise ArgumentError, 'parameter must be a Hash or Octothorpe' \
+        unless ot.kind_of?(Hash) || ot.kind_of?(Octothorpe)
+
+      columns.each do |col|
+        instance_variable_set("@#{col}".to_sym, ot[col])
+      end
     end
 
 
