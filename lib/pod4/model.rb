@@ -10,6 +10,9 @@ module Pod4
   ##
   # The ultimate parent of all models.
   #
+  # Models & Interfaces
+  # -------------------
+  #
   # Note that we distinguish between 'models' and 'interfaces':
   #
   # The model represents the data to your application, in the format that makes
@@ -25,6 +28,9 @@ module Pod4
   # An interface is a seperate class, which is defined for each model. There
   # are parent classes for most of the data sources you will need, but failing
   # that, you can always create one from the ultimate parent, Pod4::Interface.
+  #
+  # Simple Example
+  # ---------------
   #
   # The most basic example model (and interface):
   #
@@ -55,6 +61,20 @@ module Pod4
   #     y = ExampleModel.new
   #     y.set(params)
   #     y.create unless y.model_status == :error
+  #
+  # Overriding Column Representation
+  # --------------------------------
+  #
+  # If you want to represent information differently on the model than it is
+  # stored on the data source, there are four methods you potentially need to
+  # know about and override:
+  #
+  # * set -- used by you to set model column values
+  # * to_ot -- used by you to get model column values
+  # * map_to_model -- used by the model to set column values from the interface
+  # * map_to_interface -- used by the model to set interface values 
+  #
+  # See the methods themselves for more detail.
   #
   class Model
 
@@ -238,7 +258,7 @@ module Pod4
     # it if you need it to set anything not in attr_columns, or to
     # control data types, etc.
     #
-    # See also: `to_ot`.
+    # See also: `to_ot`, `map_to_model`, `map_to_interface`
     #
     def set(ot)
       merge(ot)
@@ -253,7 +273,7 @@ module Pod4
     # Override if you want to return any extra data. (You will need to create a
     # new Octothorpe.) 
     #
-    # See also: `set`
+    # See also: `set`, `map_to_model', 'map_to_interface'
     #
     def to_ot
       Octothorpe.new(to_h)
@@ -266,12 +286,12 @@ module Pod4
     # Don't use this to set model attributes from your code; use `set`,
     # instead.
     #
-    # By default this does exactly the same a `set`. Override it if you want
+    # By default this does exactly the same as `set`. Override it if you want
     # the model to represent data differently than the data source does --
     # but then you will have to override `map_to_interface`, too, to convert
     # the data back.
     #
-    # See also: `to_ot`.
+    # See also: `to_ot`, `map_to_model'
     #
     def map_to_model(ot)
       merge(ot)
@@ -293,6 +313,8 @@ module Pod4
     #
     # Bear in mind that any attribute could be nil, and likely will be when
     # `map_to_interface` is called from the create method.
+    #
+    # See also: `to_ot`, `set`.
     #
     def map_to_interface
       Octothorpe.new(to_h)

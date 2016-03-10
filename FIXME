@@ -11,28 +11,5 @@ Things To Do
   stack trace, which is unhelpful. Ideally they would take a context as a
   parameter which they could then pass to the raise statement.
 
-### mappings ###
-
-Model needs to specifically differentiate between:
-
-    1. Mapping the interface to the model (`set` by default)
-    2. Mapping the model to the interface (`to_ot` by default)
-    3. Exporting data to the application (`to_ot`, all the time)
-    4. Importing data from the application ('set' by default).
-
-The current code works fine until you want to change the representation of a
-column -- eg, a list on the DB to be shown as an array in the model.
-
-Planned change:
-
-* `to_ot` becomes specifically for exporting data from the application. Code as
-  now.
-
-* `set` becomes specifically for importing data from the application. Code as
-  now.
-
-* New method `map_to_model` is called to set the model attributes from the
-  interface. The default code just calls `set`.
-
-* New method 'map_to_interface` is called to translate model attributes into an
-  OT for the interface. The default code just calls 'to_ot'.
+* When you raise an alert it should at that point write the alert to the log,
+  saving the user's program from having to do so.
