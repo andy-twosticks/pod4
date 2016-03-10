@@ -167,6 +167,10 @@ describe Alert do
       alert_success.log
     end
 
+    it 'returns self' do
+      expect( alert_error.log ).to eq alert_error
+    end
+
   end
   ##
 

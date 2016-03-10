@@ -291,19 +291,21 @@ module Pod4
     end
 
 
-    def handle_error(err)
+    def handle_error(err, kaller=nil)
+      kaller ||= caller[1..-1]
+
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
 
         when ArgumentError, Pod4::Pod4Error
-          raise err
+          raise err.class, err.message, kaller
 
         when TinyTds::Error
-          raise Pod4::DatabaseError.from_error(err)
+          raise Pod4::DatabaseError, err.message, kaller
 
         else
-          raise Pod4::Pod4Error.from_error(err)
+          raise Pod4::Pod4Error, err.message, kaller
 
       end
 

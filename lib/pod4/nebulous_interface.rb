@@ -335,22 +335,24 @@ module Pod4
     # Our contract says that we should throw errors to the model, but those
     # errors should be Pod4 errors. 
     #
-    def handle_error(err)
+    def handle_error(err, kaller=nil)
+      kaller ||= caller[1..-1]
+
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
         when ArgumentError, Pod4::Pod4Error
-          raise err
+          raise err.class, err.message, kaller
 
         when Nebulous::NebulousTimeout
             @response_status = :timeout
-            raise Pod4::DatabaseError.from_error(err)
+            raise Pod4::DatabaseError, err.message, kaller
 
         when Nebulous::NebulousError
-          raise Pod4::DatabaseError.from_error(err)
+          raise Pod4::DatabaseError, err.message, kaller
 
         else
-          raise Pod4::Pod4Error.from_error(err)
+          raise Pod4::Pod4Error, err.message, kaller
 
       end
 

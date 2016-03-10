@@ -65,6 +65,8 @@ module Pod4
         when :warning then Pod4.logger.warn(file)  { self.message }
         else Pod4.logger.info(file) { self.message }
       end
+
+      self
     end
 
 

@@ -1,9 +1,9 @@
 require 'logger'
 require 'devnull'
 
-require 'pod4/param'
-require 'pod4/model'
-require 'pod4/alert'
+require_relative 'pod4/param'
+require_relative 'pod4/model'
+require_relative 'pod4/alert'
 
 
 

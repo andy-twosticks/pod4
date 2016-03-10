@@ -352,7 +352,8 @@ module Pod4
         a.type == type && a.field == field && a.message = message
       end
 
-      @alerts << Alert.new(type, field, message)
+      lert = Alert.new(type, field, message).log
+      @alerts << lert
 
       st = @alerts.sort.first.type
       @model_status = st if %i|error warning|.include?(st)

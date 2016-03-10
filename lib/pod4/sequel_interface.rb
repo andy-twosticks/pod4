@@ -169,25 +169,32 @@ module Pod4
     protected
 
 
-    def handle_error(err)
+    ##
+    # Helper routine to handle or re-raise the right exception.
+    # Unless kaller is passed, we re-raise on the caller of the caller, which
+    # is likely the original bug
+    # 
+    def handle_error(err, kaller=nil)
+      kaller ||= caller[1..-1]
+
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
 
         when ArgumentError, Pod4::Pod4Error
-          raise err
+          raise err.class, err.message, kaller
 
         when Sequel::ValidationFailed
-          raise Pod4::ValidationError.from_error(err)
+          raise Pod4::ValidationError, err.message, kaller
 
         when Sequel::UniqueConstraintViolation,
              Sequel::ForeignKeyConstraintViolation,
              Sequel::DatabaseError
 
-          raise Pod4::DatabaseError.from_error(err)
+          raise Pod4::DatabaseError, err.message, kaller
 
         else
-          raise Pod4::Pod4Error.from_error(err)
+          raise Pod4::Pod4Error, err.message, kaller
 
       end
 

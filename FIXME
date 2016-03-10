@@ -7,9 +7,3 @@ Things To Do
   numeric types. There is no documentation for how to do this, and apparently
   no-one knows how /O\
 
-* The routines that catch errors in the interfaces report themselves in the
-  stack trace, which is unhelpful. Ideally they would take a context as a
-  parameter which they could then pass to the raise statement.
-
-* When you raise an alert it should at that point write the alert to the log,
-  saving the user's program from having to do so.

@@ -68,7 +68,7 @@ module Pod4
       record[@id_fld]
 
     rescue => e
-      handle_error(e) 
+      handle_error(e)
     end
 
 
@@ -123,13 +123,16 @@ module Pod4
     protected
 
 
-    def handle_error(err)
+    def handle_error(err, kaller=nil)
+      kaller ||= caller[1..-1]
+
+      Pod4.logger.error(__FILE__){ err.message }
 
       case err
         when ArgumentError, Pod4::Pod4Error
-          raise err
+          raise err.class, err.message, kaller
         else
-          raise Pod4::Pod4Error.from_error(err)
+          raise Pod4::Pod4Error, err.message, kaller
       end
 
     end

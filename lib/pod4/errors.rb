@@ -4,7 +4,13 @@ module Pod4
   ## 
   # Raised in abstract methods when treated as concrete
   #
-  class NotImplemented < Exception; end
+  class NotImplemented < Exception
+    
+    def initialize(msg=nil)
+      super(msg || $! && $!.message)
+    end
+
+  end
 
 
   ##
@@ -13,18 +19,10 @@ module Pod4
   #
   class Pod4Error < StandardError
 
-    attr_accessor :from
-
-    def self.from_error(error)
-      raise "trying to raise an error from an error that's not an error" \
-        unless error.kind_of? StandardError
-
-      e = self.new( "Pod4Error: #{error.class}: #{error.message}" )
-      e.from = error.clone
-      e
+    def initialize(msg=nil)
+      super(msg || $! && $!.message)
     end
 
-    def initialize(message=nil); super; end
   end
   ##
 
@@ -42,16 +40,12 @@ module Pod4
   class ValidationError < Pod4Error
     attr_reader :field
 
-    def self.from_error(error, field=nil)
-      super(error).field = field.to_s.to_sym
-    end
-
     def self.from_alert(alert)
       self.new(alert.message, alert.field)
     end
 
-    def initialize(message, field=nil)
-      super(message)
+    def initialize(message=nil, field=nil)
+      super(message || $! && $!.message)
       @field = field.to_s.to_sym
     end
 
