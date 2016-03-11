@@ -206,8 +206,8 @@ describe TestNebulousInterface do
 
     end
 
-    it 'raises a Pod4::DatabaseError if anything goes wrong' do
-      expect{ interface.read(:foo) }.to raise_exception DatabaseError
+    it 'raises a Pod4::CantContinue if the ID is bad' do
+      expect{ interface.read(:foo) }.to raise_exception CantContinue
     end
 
   end
@@ -271,9 +271,9 @@ describe TestNebulousInterface do
       interface.list.find {|x| x[interface.id_fld] == id }
     end
 
-    it 'raises DatabaseError if anything hinky happens' do
-      expect{ interface.delete(:foo) }.to raise_exception DatabaseError
-      expect{ interface.delete(99)   }.to raise_exception DatabaseError
+    it 'raises CantContinue if anything hinky happens with the ID' do
+      expect{ interface.delete(:foo) }.to raise_exception CantContinue
+      expect{ interface.delete(99)   }.to raise_exception CantContinue
     end
 
     it 'makes the record at ID go away' do

@@ -130,7 +130,8 @@ module Pod4
       # each array element, and we return an array of instances of the model.
       # Override this method if that is not true for your Interface.
       #
-      # Note that list should ALWAYS return an array.
+      # Note that list should ALWAYS return an array, and array elements should
+      # always respond to :id -- otherwise we raise a Pod4Error.
       #
       def list(params=nil)
         raise POd4Error, "no ID field defined in interface" \

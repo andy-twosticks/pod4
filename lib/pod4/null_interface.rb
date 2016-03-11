@@ -79,7 +79,7 @@ module Pod4
       raise(ArgumentError, "Read requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
-      raise DatabaseError, "'No record found with ID '#{id}'" if rec.nil?
+      raise Pod4::CantContinue, "'No record found with ID '#{id}'" if rec.nil?
 
       Octothorpe.new(rec)
 
@@ -97,7 +97,7 @@ module Pod4
       raise(ArgumentError, "Update requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
-      raise Pod4::Pod4Error if rec.nil?
+      raise Pod4::CantContinue if rec.nil?
 
       rec.merge!(record.to_h)
       self
@@ -129,7 +129,7 @@ module Pod4
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
-        when ArgumentError, Pod4::Pod4Error
+        when ArgumentError, Pod4Error, Pod4::CantContinue
           raise err.class, err.message, kaller
         else
           raise Pod4::Pod4Error, err.message, kaller

@@ -15,7 +15,9 @@ module Pod4
 
   ##
   # Base error class for Swingshift
-  # Note the upgrade to set the existing @cause attribute
+  #
+  # Also used for any configuration errors where ArgumentError is not
+  # appropriate.
   #
   class Pod4Error < StandardError
 
@@ -30,7 +32,29 @@ module Pod4
   ##
   # Raised if something goes wrong on the database
   #
-  class DatabaseError < Pod4Error; end
+  class DatabaseError < Pod4Error
+
+    def initialize(msg=nil)
+      super(msg || $! && $!.message)
+    end
+
+  end
+  ##
+
+
+  ##
+  # Raised if a Pod4 method runs into problems
+  #
+  # Note, invalid parameters get a Ruby ArgumentError. This is for, eg, an
+  # interface finding that the ID it was given to read does not exist.
+  #
+  class CantContinue < Pod4Error
+
+    def initialize(msg=nil)
+      super(msg || $! && $!.message)
+    end
+
+  end
   ##
 
 

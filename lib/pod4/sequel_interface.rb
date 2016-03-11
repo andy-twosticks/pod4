@@ -98,10 +98,13 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       rec = @table[@id_fld => id]
-      raise DatabaseError, "'No record found with ID '#{id}'" if rec.nil?
+      raise CantContinue, "'No record found with ID '#{id}'" if rec.nil?
 
       Pod4.logger.debug(__FILE__) { "Reading where #{@id_fld}=#{id}" }
       Octothorpe.new(rec)
+
+    rescue Sequel::DatabaseError
+      raise CantContinue, "Problem reading record. Is '#{id}' really an ID?"
 
     rescue => e
       handle_error(e)
@@ -181,7 +184,7 @@ module Pod4
 
       case err
 
-        when ArgumentError, Pod4::Pod4Error
+        when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
           raise err.class, err.message, kaller
 
         when Sequel::ValidationFailed

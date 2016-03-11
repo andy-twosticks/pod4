@@ -198,9 +198,9 @@ describe TestSequelInterface do
       expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
-    it 'raises a Pod4::DatabaseError if anything goes wrong' do
-      expect{ interface.read(:foo) }.to raise_exception DatabaseError
-      expect{ interface.read(99)   }.to raise_exception DatabaseError
+    it 'raises a Pod4::CantContinue if anything goes wrong with the ID' do
+      expect{ interface.read(:foo) }.to raise_exception CantContinue
+      expect{ interface.read(99)   }.to raise_exception CantContinue
     end
 
     it 'returns real fields as Float' do
@@ -294,11 +294,14 @@ describe TestSequelInterface do
       expect( booboo.>>.price.to_f ).to eq( record[:price] )
     end
 
-    it 'raises a DatabaseError if anything weird happens' do
-      expect{ interface.update(id, smarts: 'more') }.
-        to raise_exception DatabaseError
-
+    it 'raises a CantContinue if anything weird happens with the ID' do
       expect{ interface.update(99, name: 'Booboo') }.
+        to raise_exception CantContinue
+
+    end
+
+    it 'raises a DatabaseError if anything weird happensi with the record' do
+      expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
     end
@@ -320,9 +323,9 @@ describe TestSequelInterface do
 
     let(:id) { interface.list.first[:id] }
 
-    it 'raises DatabaseError if anything hinky happens' do
-      expect{ interface.delete(:foo) }.to raise_exception DatabaseError
-      expect{ interface.delete(99)   }.to raise_exception DatabaseError
+    it 'raises CantContinue if anything hinky happens with the ID' do
+      expect{ interface.delete(:foo) }.to raise_exception CantContinue
+      expect{ interface.delete(99)   }.to raise_exception CantContinue
     end
 
     it 'makes the record at ID go away' do

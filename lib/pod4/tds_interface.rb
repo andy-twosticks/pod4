@@ -141,10 +141,17 @@ module Pod4
 
       record = select(sql) {|r| Octothorpe.new(r) }
 
-      raise DatabaseError, "'No record found with ID '#{id}'" if record == []
+      raise CantContinue, "'No record found with ID '#{id}'" if record == []
       record.first
 
     rescue => e
+      # select already wrapped any error in a Pod4::DatabaseError, but in this
+      # case we want to try to catch something. (Side note: TinyTds' error
+      # class structure is a bit poor...)
+      raise CantContinue, "Problem reading record. Is '#{id}' really an ID?" \
+        if e.cause.class   == TinyTds::Error \
+        && e.cause.message =~ /invalid column/i
+
       handle_error(e)
     end
 
@@ -298,7 +305,7 @@ module Pod4
 
       case err
 
-        when ArgumentError, Pod4::Pod4Error
+        when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
           raise err.class, err.message, kaller
 
         when TinyTds::Error

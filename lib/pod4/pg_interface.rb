@@ -73,8 +73,7 @@ module Pod4
     # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
-
-      raise(Pod4::DatabaseError, 'selection parameter is not a hash') \
+      raise(ArgumentError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
       if selection
@@ -131,10 +130,15 @@ module Pod4
 
       record = select(sql) {|r| Octothorpe.new(r) }
 
-      raise DatabaseError, "'No record found with ID '#{id}'" if record == []
+      raise CantContinue, "'No record found with ID '#{id}'" if record == []
       record.first
 
     rescue => e
+      # Select has already wrapped the error in a Pod4Error, but in this case
+      # we want to catch something
+      raise CantContinue, "That doesn't look like an ID" \
+        if e.cause.class == PG::InvalidTextRepresentation
+
       handle_error(e)
     end
 
@@ -248,8 +252,10 @@ module Pod4
     #
     def open
       Pod4.logger.info(__FILE__){ "Connecting to DB" }
+
       client = @test_Client || PG.connect(@connect_hash)
-      raise "Bad Connection" unless client.status == PG::CONNECTION_OK
+      raise DataBaseError, "Bad Connection" \
+        unless client.status == PG::CONNECTION_OK
 
       # This gives us type mapping for integers, floats, booleans, and dates
       # -- but annoyingly the PostgreSQL types 'numeric' and 'money' remain as
@@ -317,7 +323,7 @@ module Pod4
 
       case err
 
-        when ArgumentError, Pod4::Pod4Error
+        when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
           raise err.class, err.message, kaller
 
         when PG::Error
@@ -334,7 +340,7 @@ module Pod4
     def quote(fld)
 
       case fld
-        when String, Date, Time
+        when String, Date, Time, Symbol
           "'#{fld}'" 
         when BigDecimal
           fld.to_f

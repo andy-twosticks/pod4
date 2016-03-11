@@ -291,7 +291,7 @@ module Pod4
           else                :response
         end
 
-      raise Pod4::DatabaseError, "Nebulous returned an error verb" \
+      raise Pod4::CantContinue, "Nebulous returned an error verb" \
         if @response_status == :verberror
 
       self
@@ -335,9 +335,7 @@ module Pod4
     # Our contract says that we should throw errors to the model, but those
     # errors should be Pod4 errors. 
     #
-    def handle_error(err, kaller=nil)
-      kaller ||= caller[1..-1]
-
+    def handle_error(err, kaller=caller[1..-1])
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
@@ -346,7 +344,7 @@ module Pod4
 
         when Nebulous::NebulousTimeout
             @response_status = :timeout
-            raise Pod4::DatabaseError, err.message, kaller
+            raise Pod4::CantContinue, err.message, kaller
 
         when Nebulous::NebulousError
           raise Pod4::DatabaseError, err.message, kaller

@@ -193,9 +193,9 @@ describe TestPgInterface do
       expect( rec.>>.name ).to eq 'Fred'
     end
 
-    it 'raises a Pod4::DatabaseError if anything goes wrong' do
-      expect{ interface.read(:foo) }.to raise_exception DatabaseError
-      expect{ interface.read(99)   }.to raise_exception DatabaseError
+    it 'raises a CantContinue if anything goes wrong with the ID' do
+      expect{ interface.read(:foo) }.to raise_exception CantContinue
+      expect{ interface.read(99)   }.to raise_exception CantContinue
     end
     it 'returns real fields as Float' do
       level = interface.read(1).>>.level
@@ -263,8 +263,8 @@ describe TestPgInterface do
       expect( interface.list(name: 'Yogi') ).to eq([])
     end
 
-    it 'raises DatabaseError if the selection criteria is nonsensical' do
-      expect{ interface.list('foo') }.to raise_exception Pod4::DatabaseError
+    it 'raises ArgumentError if the selection criteria is nonsensical' do
+      expect{ interface.list('foo') }.to raise_exception ArgumentError
     end
 
   end
@@ -290,11 +290,14 @@ describe TestPgInterface do
       expect( float_price( interface.read(id).to_h ) ).to include(record)
     end
 
-    it 'raises a DatabaseError if anything weird happens' do
-      expect{ interface.update(id, smarts: 'more') }.
-        to raise_exception DatabaseError
-
+    it 'raises a CantContinue if anything weird happens with the ID' do
       expect{ interface.update(99, name: 'Booboo') }.
+        to raise_exception CantContinue
+
+    end
+
+    it 'raises a DatabaseError if anything weird happens with the record' do
+      expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
     end
@@ -313,9 +316,9 @@ describe TestPgInterface do
 
     before { fill_data(interface) }
 
-    it 'raises DatabaseError if anything hinky happens' do
-      expect{ interface.delete(:foo) }.to raise_exception DatabaseError
-      expect{ interface.delete(99)   }.to raise_exception DatabaseError
+    it 'raises CantContinue if anything hinky happens with the id' do
+      expect{ interface.delete(:foo) }.to raise_exception CantContinue
+      expect{ interface.delete(99)   }.to raise_exception CantContinue
     end
 
     it 'makes the record at ID go away' do
