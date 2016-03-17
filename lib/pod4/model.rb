@@ -78,8 +78,13 @@ module Pod4
   #
   class Model
 
-    attr_reader :model_id, :model_status
+    # The value of the ID field on the record
+    attr_reader :model_id
+    
+    # one of Model::STATII
+    attr_reader :model_status
 
+    # Valid values for @model_status
     STATII = %i|error warning okay deleted empty|
 
 
@@ -219,7 +224,7 @@ module Pod4
       raise Pod4Error, "Invalid model status for an update" \
         if [:empty, :deleted].include? @model_status
 
-      validate
+      validate 
       interface.update(@model_id, map_to_interface) \
         unless @model_status == :error
 
@@ -245,7 +250,16 @@ module Pod4
 
     ##
     # Call this to validate the model.
+    #
     # Override this to add validation - calling `add_alert` for each problem.
+    #
+    # Note that you can only validate what is actually stored on the model. If
+    # you want to check the data being passed to the model in `set`, you need
+    # to override that routine.
+    #
+    # Also, you don't have any way of telling whether you are currently
+    # creating a new record or updating an old one: override `create` and
+    # `update` respectively.
     #
     def validate
       # Holding pattern. All models should use super, in principal
@@ -259,11 +273,15 @@ module Pod4
     # it if you need it to set anything not in attr_columns, or to
     # control data types, etc.
     #
+    # You might want to put validation here, too, if what you are validating is
+    # something that isn't actually stored on the model. You can call add_alert
+    # from here just fine.
+    #
     # See also: `to_ot`, `map_to_model`, `map_to_interface`
     #
     def set(ot)
       merge(ot)
-      validate
+      validate 
       self
     end
 
@@ -353,7 +371,7 @@ module Pod4
         a.type == type && a.field == field && a.message = message
       end
 
-      lert = Alert.new(type, field, message).log
+      lert = Alert.new(type, field, message).log(caller.first.split(':').first)
       @alerts << lert
 
       st = @alerts.sort.first.type
