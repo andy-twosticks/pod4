@@ -5,7 +5,13 @@ require_relative 'fixtures/database'
 
 
 class TestPgInterface < PgInterface
-  set_table :customer
+  set_table  :customer
+  set_id_fld :id
+end
+
+class SchemaPgInterface < PgInterface
+  set_schema :public
+  set_table  :customer
   set_id_fld :id
 end
 
@@ -99,13 +105,34 @@ describe TestPgInterface do
   ##
  
 
+  describe 'PgInterface.set_schema' do
+    it 'takes one argument' do
+      expect( PgInterface ).to respond_to(:set_schema).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'PgInterface.schema' do
+    it 'returns the schema' do
+      expect( SchemaPgInterface.schema ).to eq :public
+    end
+
+    it 'is optional' do
+      expect{ TestPgInterface.schema }.not_to raise_exception
+      expect( TestPgInterface.schema ).to eq nil
+    end
+  end
+  ##
+
+
   describe 'PgInterface.set_table' do
     it 'takes one argument' do
       expect( PgInterface ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
-
+  
 
   describe 'PgInterface.table' do
     it 'returns the table' do
@@ -150,6 +177,21 @@ describe TestPgInterface do
       expect{ BadPgInterface2.new(@connect_hash) }.
         to raise_exception Pod4Error
 
+    end
+
+  end
+  ##
+  
+
+  describe '#quoted_table' do
+
+    it 'returns just the table when the schema is not set' do
+      expect( interface.quoted_table ).to eq( %Q|"customer"| )
+    end
+
+    it 'returns the schema plus table when the schema is set' do
+      ifce = SchemaPgInterface.new(@connect_hash)
+      expect( ifce.quoted_table ).to eq( %|"public"."customer"| )
     end
 
   end

@@ -7,8 +7,15 @@ require_relative 'fixtures/database'
 
 
 class TestTdsInterface < TdsInterface
-  set_db :pod4_test
-  set_table :customer
+  set_db     :pod4_test
+  set_table  :customer
+  set_id_fld :id
+end
+
+class SchemaTdsInterface < TdsInterface
+  set_db     :pod4_test
+  set_schema :public
+  set_table  :customer
   set_id_fld :id
 end
 
@@ -127,6 +134,27 @@ describe TestTdsInterface do
   ##
 
 
+  describe 'TdsInterface.set_schema' do
+    it 'takes one argument' do
+      expect( TdsInterface ).to respond_to(:set_schema).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'TdsInterface.schema' do
+    it 'returns the schema' do
+      expect( SchemaTdsInterface.schema ).to eq :public
+    end
+
+    it 'is optional' do
+      expect{ TestTdsInterface.schema }.not_to raise_exception
+      expect( TestTdsInterface.schema ).to eq nil
+    end
+  end
+  ##
+
+
   describe 'TdsInterface.set_table' do
     it 'takes one argument' do
       expect( TdsInterface ).to respond_to(:set_table).with(1).argument
@@ -178,6 +206,21 @@ describe TestTdsInterface do
       expect{ BadTdsInterface2.new(@connect_hash) }.
         to raise_exception Pod4Error
 
+    end
+
+  end
+  ##
+
+
+  describe '#quoted_table' do
+
+    it 'returns just the table when the schema is not set' do
+      expect( interface.quoted_table ).to eq( %Q|[customer]| )
+    end
+
+    it 'returns the schema plus table when the schema is set' do
+      ifce = SchemaTdsInterface.new(@connect_hash)
+      expect( ifce.quoted_table ).to eq( %|[public].[customer]| )
     end
 
   end

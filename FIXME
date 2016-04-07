@@ -6,6 +6,3 @@ Things To Do
 * PG gem raises lots of "please cast this type explicitly" warnings for money,
   numeric types. There is no documentation for how to do this, and apparently
   no-one knows how /O\
-
-* We probably want to raise a different error for underlying interface
-  data-source problems than for user-caused problems like a missing ID

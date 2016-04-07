@@ -27,7 +27,7 @@ module Pod4
   class TdsInterface < Interface
 
     class << self
-      attr_reader :db, :table, :id_fld
+      attr_reader :db, :schema, :table, :id_fld
 
       #--
       # These are set in the class because it keeps the model code cleaner: the
@@ -35,9 +35,25 @@ module Pod4
       # out into the model.
       #++
 
-      def set_db(db);        @db     = db.to_s.to_sym;    end
-      def set_table(table);  @table  = table.to_s.to_sym; end
-      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end
+      ##
+      # Use this to set the database name.
+      #
+      def set_db(db);         @db     = db.to_s.to_sym;     end
+
+      ##
+      # Use this to set the schema name (optional)
+      #
+      def set_schema(schema); @schema = schema.to_s.to_sym; end
+
+      ##
+      # Use this to set the name of the table
+      #
+      def set_table(table);   @table  = table.to_s.to_sym;  end
+
+      ##
+      # This sets the column that holds the unique id for the table
+      #
+      def set_id_fld(idFld) ; @id_fld = idFld.to_s.to_sym;  end
     end
     ##
 
@@ -74,8 +90,13 @@ module Pod4
 
 
     def db;     self.class.db;     end
+    def schema; self.class.schema; end
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
+
+    def quoted_table
+      schema ? %Q|[#{schema}].[#{table}]| : %Q|[#{table}]|
+    end
 
 
     ##
@@ -90,11 +111,11 @@ module Pod4
       if selection
         sel = selection.map {|k,v| "[#{k}] = #{quote v}" }.join(" and ")
         sql = %Q|select * 
-                     from [#{table}]
+                     from #{quoted_table}
                      where #{sel};|
 
       else
-        sql = %Q|select * from [#{table}];|
+        sql = %Q|select * from #{quoted_table};|
       end
 
       select(sql) {|r| Octothorpe.new(r) }
@@ -116,7 +137,7 @@ module Pod4
       ks = record.keys.map   {|k| "[#{k}]" }
       vs = record.values.map {|v| quote v } 
 
-      sql = "insert into [#{table}]\n"
+      sql = "insert into #{quoted_table}\n"
       sql << "    ( " << ks.join(",") << ")\n"
       sql << "    output inserted.[#{id_fld}]\n"
       sql << "    values( " << vs.join(",") << ");"
@@ -136,7 +157,7 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       sql = %Q|select * 
-                   from [#{table}] 
+                   from #{quoted_table} 
                    where [#{id_fld}] = #{quote id};|
 
       record = select(sql) {|r| Octothorpe.new(r) }
@@ -168,7 +189,7 @@ module Pod4
 
       sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
 
-      sql = "update [#{table}] set\n"
+      sql = "update #{quoted_table} set\n"
       sql << sets.join(",") << "\n"
       sql << "where [#{id_fld}] = #{quote id};"
       execute(sql)
@@ -185,7 +206,7 @@ module Pod4
     #
     def delete(id)
       read(id) # to raise Pod4::DatabaseError if id does not exist
-      execute( %Q|delete [#{table}] where [#{id_fld}] = #{quote id};| )
+      execute( %Q|delete #{quoted_table} where [#{id_fld}] = #{quote id};| )
 
       self
 
