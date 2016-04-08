@@ -217,7 +217,7 @@ much. So that's probably going to be it for your Interface definition.
 Models have two of their own DSLish methods:
 
 * `set_interface` -- here is where you instantiate your Interface class
-* `attr_columns`  -- like attr_accessor, but letting the model know to care.
+* `attr_columns`  -- like `attr_accessor`, but letting the model know to care.
 
 You can see that interfaces are instantiated when the model is required.
 Exactly what you need to pass to the interface to instantiate it depends on the
