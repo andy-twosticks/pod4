@@ -9,8 +9,11 @@ This actually hasn't come up in my own use of Pod4 -- for complex reasons I'm
 either using SequelInterface or running transient jobs which start up a couple
 of models, do some work, and then stop entirely -- but it _is_ rather silly.
 
-Connection is currently baked into those interfaces, but I'm sure I can figure
-something out.
+Connection is baked into those interfaces, and interface dependant. So I'm
+thinking in terms of a memoising object that stores the connection hash and
+then gets passed to the interface. When the interface wants a connection, then
+it asks the connection object. If the connection object doesn't have one, then
+the interface connects, and gives the connection to the connection object.
 
 
 Transactions

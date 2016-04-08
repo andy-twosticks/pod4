@@ -6,11 +6,16 @@ Gem::Specification.new do |spec|
   spec.name          = "pod4"
   spec.version       = Pod4::VERSION
   spec.authors       = ["Andy Jones"]
-  spec.email         = ["andy.jones@jameshall.co.uk"]
+  spec.email         = ["andy.jones@twosticksconsulting.co.uk"]
   spec.summary       = %q|Totally not an ORM|
-  #spec.description   = %q{TODO: Write a longer description.}
+  spec.description   = <<~DESC
+    Provides a simple, common framework to talk to a bunch of data sources,
+    using model classes which consist of a bare minimum of DSL plus vanilla Ruby
+    inheritance.
+  DESC
+
   #spec.homepage      = ""
-  spec.license       = "Closed"
+  spec.license       = "MIT"
 
   spec.files         = `hg status -macn0`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -18,6 +23,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.extra_rdoc_files = spec.files.grep(%r{^md/})
+
+  spec.add_runtime_dependency "devnull",    '~>0.1'
+  spec.add_runtime_dependency "octothorpe", '~>0.1'
 
   # for bundler, management, etc etc
   spec.add_development_dependency "bundler", "~> 1.6"
@@ -30,7 +38,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "tiny_tds"
   spec.add_development_dependency "pg"
-  spec.add_development_dependency "nebulous", "~>1.1"
+  spec.add_development_dependency "nebulous"
 
   # Development tools
   spec.add_development_dependency "pry"
@@ -38,6 +46,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "ripper-tags"
   spec.add_development_dependency "geminabox"
 
-  spec.add_runtime_dependency "devnull", '~>0.1'
-  spec.add_runtime_dependency "octothorpe", '~>0.1'
 end

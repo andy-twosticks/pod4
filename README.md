@@ -63,9 +63,9 @@ established existing DSL within your model code -- SQL.
 Thanks
 ======
 
-This code was developed, by me, during working hours at (James Hall & Co.
-Ltd)[http://jameshall.co.uk].  I'm incredibly greatful that they have permitted
-me to open source it. 
+This code was developed, by me, during working hours at [James Hall & Co.
+Ltd](http://jameshall.co.uk). I'm incredibly greatful that they have permitted
+me to open-source it.
 
 
 Installation
@@ -135,8 +135,8 @@ instance you can call the following for basic operation:
 * read   -- obtains the "record" from the data source
 * update -- updates the "record" on the data source
 * delete -- deletes the "record" on the data source.
-* set    -- set the column attributesi' of the object with a hash or Octothorpe
-* to_ot  -- output an Octothorpe of the object 'column attributes'
+* set    -- set the 'column attributes' of the object with a hash or Octothorpe
+* to_ot  -- output an Octothorpe of the object's 'column attributes'
 * alerts -- return an array of Alerts (which I'll explain later)
 
 (Note that we say "record" not record. The data source might not be a database.
@@ -167,16 +167,16 @@ Here is the model and interface definition that goes with the above example:
 
     class ExampleModel < Pod4::Model
 
-      class ExampleInterface < Pod4::SequelInterface
+      class ExampleInterface < Pod4::PgInterface
         set_table :example
         set_id_fld :id
       end
 
-      set_interface ExampleInterface.new($db)
+      set_interface ExampleInterface.new($pg_conn)
       attr_columns :one, :two, :three
     end
 
-In this example we have a model that relies on the Sequel ORM to talk to a
+In this example we have a model that relies on the Pg gem to talk to a
 table 'example'. The table has a primary key field 'id' and columns which
 correspond to our three attributes one, two and three.  There is no validation
 or error control.
@@ -192,7 +192,7 @@ fine with that.
 
 Inside your interface class you must call some DSLish methods to tell the
 interface how to talk to the data. What they are depends on the interface, but
-the ones for SequelInterface are pretty common:
+the ones for PgInterface are pretty common:
 
 * set_schema -- optional -- the name of the schema to find the table in
 * set_table  -- mandatory -- the name of the database table to use
