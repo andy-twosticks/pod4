@@ -165,6 +165,9 @@ A Simple Model
 
 Here is the model and interface definition that goes with the above example:
 
+    require 'pod4'
+    require 'pod4/pg_interface'
+    
     class ExampleModel < Pod4::Model
 
       class ExampleInterface < Pod4::PgInterface
@@ -180,6 +183,8 @@ In this example we have a model that relies on the Pg gem to talk to a
 table 'example'. The table has a primary key field 'id' and columns which
 correspond to our three attributes one, two and three.  There is no validation
 or error control.
+
+Note that we have to require pg_interface seperately. I won't bother to show this in any more model examples.
 
 ### Interface ###
 
