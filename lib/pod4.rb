@@ -26,7 +26,7 @@ require_relative 'pod4/alert'
 #
 # * you should look at the contract Pod4 makes with its
 #   callers -- you should find all that you need in the classes Pod4::Interface
-#   and POd4::Model. 
+#   and Pod4::Model. 
 #
 # * Or, read the tests, of course.
 #

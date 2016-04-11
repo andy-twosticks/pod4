@@ -9,11 +9,20 @@ module Pod4
   #
   class Alert
 
+    # Valid values for @type: :error, :warning, :info or :success
     ALERTTYPES = [:error, :warning, :info, :success]
 
-    attr_reader :type, :exception
+    # The alert type
+    attr_reader :type
 
-    attr_accessor :field, :message
+    # The exception attached to the alert, or nil if there isn't one
+    attr_reader :exception
+
+    # The field name associated with the alert, or nil
+    attr_accessor :field
+
+    # The alert message
+    attr_accessor :message
 
 
     ##
@@ -49,7 +58,8 @@ module Pod4
 
 
     ##
-    # Sort alerts in descending order of seriousness
+    # An array of Alert is automatically sorted into descending order of
+    # seriousness
     #
     def <=>(other)
       ALERTTYPES.index(self.type) <=> ALERTTYPES.index(other.type)

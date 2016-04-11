@@ -35,8 +35,17 @@ module Pod4
       # out into the model.
       #+++
 
+      ##
+      # Set the table name. 
+      #
       def set_table(table);  @table  = table.to_s.to_sym; end
+
+
+      ##
+      # Set the unique id field on the table.
+      #
       def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end
+
     end
     ##
 

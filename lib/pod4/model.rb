@@ -94,6 +94,9 @@ module Pod4
       end
 
 
+      ##
+      # Returns the list of columns from attr_columns
+      #
       def columns 
         @columns || []
       end

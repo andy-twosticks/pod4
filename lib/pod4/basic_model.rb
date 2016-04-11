@@ -24,7 +24,7 @@ module Pod4
     # one of Model::STATII
     attr_reader :model_status
 
-    # Valid values for @model_status
+    # Valid values for @model_status: :error :warning :okay :deleted or :empty
     STATII = %i|error warning okay deleted empty|
 
 
