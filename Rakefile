@@ -6,8 +6,8 @@ RSpec::Core::RakeTask.new(:spec)
 
 namespace :rdoc do
   RDoc::Task.new do |rdoc|
-    rdoc.main = "md/README.md"
-    rdoc.rdoc_files.include("lib/*", "md/*")
+    rdoc.main = "README.md"
+    rdoc.rdoc_files.include("*.md", "lib/*", "md/*")
     rdoc.rdoc_dir = "doc"
   end
 
