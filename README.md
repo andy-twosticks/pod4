@@ -64,7 +64,7 @@ Thanks
 ======
 
 This code was developed, by me, during working hours at [James Hall & Co.
-Ltd](http://jameshall.co.uk). I'm incredibly greatful that they have permitted
+Ltd](https://www.jameshall.co.uk/). I'm incredibly greatful that they have permitted
 me to open-source it.
 
 
@@ -131,19 +131,19 @@ Simple Model Usage
 A model is a class, each instance of which represents a single record. on that
 instance you can call the following for basic operation:
 
-* create -- tells the data source to store this new "record"
-* read   -- obtains the "record" from the data source
-* update -- updates the "record" on the data source
-* delete -- deletes the "record" on the data source.
-* set    -- set the 'column attributes' of the object with a hash or Octothorpe
-* to_ot  -- output an Octothorpe of the object's 'column attributes'
-* alerts -- return an array of Alerts (which I'll explain later)
+* `create` -- tells the data source to store this new "record"
+* `read`   -- obtains the "record" from the data source
+* `update` -- updates the "record" on the data source
+* `delete` -- deletes the "record" on the data source.
+* `set`    -- set the column attributes of the object with a hash or Octothorpe
+* `to_ot`  -- output an Octothorpe of the object's column attributes
+* `alerts` -- return an array of Alerts (which I'll explain later)
 
 (Note that we say "record" not record. The data source might not be a database.
 Your model instance might be represented on the data source as several records,
 or something else entirely.)
 
-There is one more operation - **list**. Call this on the model class itself,
+There is one more operation - `list`. Call this on the model class itself,
 and it will return an array of model instances that match the criteria you
 pass. What you can pass to list depends on your model class (of course); by
 default it also depends on the interface the model uses. But normally it should
@@ -151,7 +151,7 @@ except a hash, like so:
 
     ExampleModel.list(:one => "a")  #-> Array of ExampleModel where one = "a"
 
-Additionally, you can chain `._or_die` onto any model method to get it to raise
+Additionally, you can chain `or_die` onto any model method to get it to raise
 exceptions if something is wrong on the model. If you don't want exceptions,
 you can check the model's model_status attribute, or just look at the alerts.
 
@@ -165,6 +165,9 @@ A Simple Model
 
 Here is the model and interface definition that goes with the above example:
 
+    require 'pod4'
+    require 'pod4/pg_interface'
+    
     class ExampleModel < Pod4::Model
 
       class ExampleInterface < Pod4::PgInterface
@@ -181,6 +184,8 @@ table 'example'. The table has a primary key field 'id' and columns which
 correspond to our three attributes one, two and three.  There is no validation
 or error control.
 
+Note that we have to require pg_interface seperately. I won't bother to show this in any more model examples.
+
 ### Interface ###
 
 Let's start with the interface definition.  Remember, the interface class is
@@ -194,11 +199,11 @@ Inside your interface class you must call some DSLish methods to tell the
 interface how to talk to the data. What they are depends on the interface, but
 the ones for PgInterface are pretty common:
 
-* set_schema -- optional -- the name of the schema to find the table in
-* set_table  -- mandatory -- the name of the database table to use
-* set_id_fld -- mandatory -- the name of the column that makes the record unique
+* `set_schema` -- optional -- the name of the schema to find the table in
+* `set_table`  -- mandatory -- the name of the database table to use
+* `set_id_fld` -- mandatory -- the name of the column that makes the record unique
 
-Actually, _every_ interface defines set_id_fld. Instances of a model _must_ be
+Actually, _every_ interface defines `set_id_fld`. Instances of a model _must_ be
 represented by a single ID field that provides a unique identifier. Pod4 does
 not care what it's called or what data type it is -- if you say that's what
 makes it unique, that's good enough.
@@ -211,8 +216,8 @@ much. So that's probably going to be it for your Interface definition.
 
 Models have two of their own DSLish methods:
 
-* set_interface -- here is where you instantiate your Interface class
-* attr_columns  -- like attr_accessor, but letting the model know to care.
+* `set_interface` -- here is where you instantiate your Interface class
+* `attr_columns`  -- like `attr_accessor`, but letting the model know to care.
 
 You can see that interfaces are instantiated when the model is required.
 Exactly what you need to pass to the interface to instantiate it depends on the
@@ -220,22 +225,22 @@ interface. SequelInterface wants the Sequel DB object (which means you have to
 require sequel, connect, and *then* require your models); the other interfaces
 only want connection hashes.  
 
-Any attributes you define using attr_columns are treated specially by
-Pod4::Model. You get all the effect of the standard Ruby attr_accessor call,
+Any attributes you define using `attr_columns` are treated specially by
+Pod4::Model. You get all the effect of the standard Ruby `attr_accessor` call,
 but in addition, the attribute will be passed to and from the interface, and to
 and from your external code, by the standard model methods.
 
 In addition to the ones above, we have:
 
-* validate         -- override this to provide validation
-* map_to_model     -- controls how the interface sets attributes on the model
-* map_to_interface -- controls how the model sends data to the interface
-* add_alert        -- adds an alert to the model
+* `validate`         -- override this to provide validation
+* `map_to_model`     -- controls how the interface sets attributes on the model
+* `map_to_interface` -- controls how the model sends data to the interface
+* `add_alert`        -- adds an alert to the model
 
 A model also has some built-in attributes of its own:
 
-* model_id     -- this is the value of the ID column you set in the interface.
-* model_status -- one of :error :warning :okay :deleted :empty 
+* `model_id`     -- this is the value of the ID column you set in the interface.
+* `model_status` -- one of :error :warning :okay :deleted :empty 
 
 We'll deal with all these below.
 
@@ -246,17 +251,16 @@ Adding Validation
 Built into the model is an array of alerts (Pod4::Alert) which are messages
 that have been raised against the instance of the model class. Each alert can
 have a status of :error, :warning, :info or :success. If any alert has a status
-of :error :warning or :success then that is reflected in the models model_status
+of :error :warning or :success then that is reflected in the model's `model_status`
 attribute. 
 
 (As to those other two possible statuses -- models are :empty when first created
 and :deleted after a call to delete.)
 
 You can raise alerts yourself, and you normally do so by overriding
-Pod4::Model.validate.  This method is called after a read, and before an update
-or create, so that every model instance should have a model_status reflecting
-its "correctness" regardless of whether it came from the data source or your
-application.
+`validate`.  This method is called after a read, and before an update or create, so 
+that every model instance should have a model_status reflecting its "correctness" 
+regardless of whether it came from the data source or your application.
 
 Here's a model with some validation:
 
@@ -297,7 +301,7 @@ decimals, dates and datatimes should all end up as the right type in the model.
 aren't you?) But maybe you want more than that.
 
 Let's imagine you have a database table in PostreSQL with a column called cost
-that uses the money type. And you want it to be a BigDecimal in the model.
+that uses the money type. And you want it to be a `BigDecimal` in the model.
 Well, Pod4 won't do that for you -- for all I know someone might have a problem
 with my requiring BigDecimal -- but it's not hard to do yourself.
 
@@ -323,17 +327,17 @@ with my requiring BigDecimal -- but it's not hard to do yourself.
 
     end
 
-map_to_model gets called when the model wants to write data from the interface
+`map_to_model` gets called when the model wants to write data from the interface
 on the model; it takes an Octothorpe from the interface as a parameter. By
-default it behaves as set does.
+default it behaves as `set` does.
 
-map_to_interface is the opposite: it gets called when the model wants to write
+`map_to_interface` is the opposite: it gets called when the model wants to write
 data on the interface from the model. It _returns_ an Octothorpe to the
-interface. By default it behaves as to_ot does. (Since OTs are read only, you
+interface. By default it behaves as `to_ot` does. (Since OTs are read only, you
 must modify it using merge.)
 
 By the way: sometimes I need to validate on the data before I convert it. It's
-fine to put a call to add_alert in map_to_model.
+fine to put a call to `add_alert` in `map_to_model`.
 
 
 Relations
@@ -384,7 +388,7 @@ you automatically. There is a perfectly well documented, very popular DSL with
 lots of examples to solve this problem. It's called SQL. 
 
 If your interface is connected to a SQL database, it should provide two more
-methods: execute and select.  
+methods: `execute` and `select`.  
 
     class BlogPost < Pod4::Model
 
@@ -419,7 +423,7 @@ methods: execute and select.
 
     end
 
-Neither execute nor select care about the table or ID field you passed to the
+Neither `execute` nor `select` care about the table or ID field you passed to the
 interface. They only run pure SQL. The only difference between them is that
 select expects to return an array of results.
 
@@ -449,9 +453,9 @@ name.
 
 Pod4::BasicModel gives you:
 
-* set_interface
-* the model_id, model_status and alerts attributes
-* add_alert
+* `set_interface`
+* the `model_id`, `model_status` and `alerts` attributes
+* `add_alert`
 
 ...and nothing else. But that's enough to make a model, your way, using the
 methods on the interface. These are the same CRUDL methods that Pod4::Model

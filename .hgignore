@@ -14,4 +14,5 @@ syntax: glob
 *.a
 mkmf.log
 .ruby-gemset
+.rbenv-gemsets
 .Project
