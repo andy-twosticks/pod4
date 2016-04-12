@@ -170,7 +170,7 @@ module Pod4
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       read(id) # to raise Pod4::DatabaseError if id does not exist
-      sets = record.map {|k,v| %Q|    "#{k}" = #{quote v}| }.join(',')
+      sets = record.map {|k,v| %Q| "#{k}" = #{quote v}| }.join(',')
 
       sql = %Q|update #{quoted_table} set
                    #{sets}
@@ -362,6 +362,8 @@ module Pod4
           "'#{fld}'" 
         when BigDecimal
           fld.to_f
+        when nil
+          'NULL'
         else 
           fld
       end

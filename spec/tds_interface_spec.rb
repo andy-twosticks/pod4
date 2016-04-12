@@ -251,6 +251,13 @@ describe TestTdsInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'shouldnt have a problem with record values of nil' do
+      hash2 = {name: 'Ranger', price: nil}
+      expect{ interface.create(hash2) }.not_to raise_exception
+      id = interface.create(hash2)
+      expect( interface.read(id).to_h ).to include(hash2)
+    end
+
   end
   ##
 
@@ -373,6 +380,12 @@ describe TestTdsInterface do
       expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
+    end
+
+    it 'shouldnt have a problem with record values of nil' do
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
     end
 
   end

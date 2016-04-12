@@ -349,6 +349,8 @@ module Pod4
           %Q|'#{fld}'|
         when BigDecimal
           fld.to_f
+        when nil
+          'NULL'
         else 
           fld
       end

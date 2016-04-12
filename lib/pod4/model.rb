@@ -311,7 +311,7 @@ module Pod4
         unless ot.kind_of?(Hash) || ot.kind_of?(Octothorpe)
 
       columns.each do |col|
-        instance_variable_set("@#{col}".to_sym, ot[col])
+        instance_variable_set("@#{col}".to_sym, ot[col]) if ot[col]
       end
     end
 

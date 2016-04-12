@@ -377,6 +377,16 @@ describe 'CustomerModel' do
       model.set(ot)
     end
 
+    it 'only sets the attributes on the model that it is given' do
+      otx = Octothorpe.new(name: 'Piggy', price: 98.76, weapon: 'rake')
+
+      expect{ model3.set(otx) }.not_to raise_exception
+      expect( model3.id     ).to eq 40
+      expect( model3.name   ).to eq 'Piggy'
+      expect( model3.price  ).to eq 98.76
+      expect( model3.groups ).to eq( ot.>>.groups.split(',') )
+    end
+
   end
   ##
 

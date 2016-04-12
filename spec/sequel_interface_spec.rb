@@ -188,6 +188,13 @@ describe TestSequelInterface do
       expect{ interface.create(name: :Booboo) }.not_to raise_exception
     end
 
+    it 'shouldnt have a problem with record values of nil' do
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
   end
   ##
 
@@ -309,6 +316,12 @@ describe TestSequelInterface do
     it 'does not freak out if the hash has symbol values' do
       # Which, Sequel does
       expect{ interface.update(id, name: :Booboo) }.not_to raise_exception
+    end
+
+    it 'shouldnt have a problem with record values of nil' do
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
     end
 
   end

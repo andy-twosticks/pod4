@@ -222,6 +222,13 @@ describe TestPgInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'shouldnt have a problem with record values of nil' do
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
   end
   ##
 
@@ -342,6 +349,12 @@ describe TestPgInterface do
       expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
+    end
+
+    it 'shouldnt have a problem with record values of nil' do
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
     end
 
   end
