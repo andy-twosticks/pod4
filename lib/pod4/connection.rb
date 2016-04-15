@@ -19,6 +19,12 @@ module Pod4
 
 
     ##
+    # Return the value of the init thing, whatever it is
+    #
+    def init_thing; @init_thing.dup; end
+
+
+    ##
     # When an interface wants a connection, it calls connection.connection.
     # If the connection does not have one, it asks the interface for one....
     #
@@ -31,6 +37,17 @@ module Pod4
     def connection(interface)
       raise Pod4::Something unless interface.kind_of?(@ifce_class)
       @connection ||= interface.new_connection(@init_thing)
+    end
+
+
+    ##
+    # Allows a user to manually set a connection
+    #
+    # You might want to do this to defer Sequel DB init until after models are
+    # required, for example.
+    #
+    def set_connection(connection)
+      @connection = connection
     end
 
   end
