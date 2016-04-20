@@ -65,12 +65,7 @@ class FakeRequester
 
       when 'custread'
         record = @data[paramStr.to_i]
-        hash2 = 
-          if record
-            { stompBody: (record ? record.to_json : ''.to_json) }
-          else
-            {verb: 'error'}
-          end
+        hash2  = { stompBody: (record ? record.to_json : ''.to_json) }
 
       when 'custupdate'
         hash2 = update(*array) ? {verb: 'success'} : {verb: 'error' }
@@ -206,8 +201,10 @@ describe TestNebulousInterface do
 
     end
 
-    it 'raises a Pod4::CantContinue if the ID is bad' do
-      expect{ interface.read(:foo) }.to raise_exception CantContinue
+    it 'returns an empty Octothorpe if no record matches the ID' do
+      expect{ interface.read(99) }.not_to raise_exception
+      expect( interface.read(99) ).to be_a_kind_of Octothorpe
+      expect( interface.read(99) ).to be_empty
     end
 
   end

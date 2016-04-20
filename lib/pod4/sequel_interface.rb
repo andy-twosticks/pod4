@@ -106,11 +106,8 @@ module Pod4
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
-      rec = @table[@id_fld => id]
-      raise CantContinue, "'No record found with ID '#{id}'" if rec.nil?
-
       Pod4.logger.debug(__FILE__) { "Reading where #{@id_fld}=#{id}" }
-      Octothorpe.new(rec)
+      Octothorpe.new( @table[@id_fld => id] )
 
     rescue Sequel::DatabaseError
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?"
@@ -125,7 +122,7 @@ module Pod4
     # record should be a Hash or Octothorpe.
     #
     def update(id, record)
-      read(id) # to check it exists
+      read_or_die(id)
 
       Pod4.logger.debug(__FILE__) do 
         "Updating where #{@id_fld}=#{id}: #{record.inspect}"
@@ -142,7 +139,7 @@ module Pod4
     # ID is whatever you set in the interface using set_id_fld
     #
     def delete(id)
-      read(id) # to check it exists
+      read_or_die(id)
       Pod4.logger.debug(__FILE__) { "Deleting where #{@id_fld}=#{id}" }
       @table.where(@id_fld => id).delete
       self
@@ -231,6 +228,14 @@ module Pod4
 
       end
 
+    end
+
+
+    private
+
+
+    def read_or_die(id)
+      raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
   end

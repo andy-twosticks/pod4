@@ -205,9 +205,14 @@ describe TestSequelInterface do
       expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
-    it 'raises a Pod4::CantContinue if anything goes wrong with the ID' do
+    it 'raises a Pod4::CantContinue if the ID is bad' do
       expect{ interface.read(:foo) }.to raise_exception CantContinue
-      expect{ interface.read(99)   }.to raise_exception CantContinue
+    end
+
+    it 'returns an empty Octothorpe if no record matches the ID' do
+      expect{ interface.read(99) }.not_to raise_exception
+      expect( interface.read(99) ).to be_a_kind_of Octothorpe
+      expect( interface.read(99) ).to be_empty
     end
 
     it 'returns real fields as Float' do

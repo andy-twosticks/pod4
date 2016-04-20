@@ -161,8 +161,15 @@ module Pod4
     # Call this to fetch the data for this instance from the data source
     #
     def read
-      map_to_model( interface.read(@model_id) )
-      @model_status = :okay if @model_status == :empty
+      r = interface.read(@model_id)
+
+      if r.empty?
+        add_alert(:error, "Record ID '#@model_id' not found on the data source")
+      else
+        map_to_model(r)
+        @model_status = :okay if @model_status == :empty
+      end
+
       self
     end
 

@@ -553,7 +553,6 @@ describe 'CustomerModel' do
     end
 
     it 'calls read on the interface' do
-      # calls set, allegedly, but we don't 'know' that
       expect( model.interface ).
         to receive(:read).
         and_return( records_as_ot.first )
@@ -597,6 +596,20 @@ describe 'CustomerModel' do
       model.fake_an_alert(:warning, :price, 'qar')
       model.read
       expect( model.model_status ).to eq :warning
+    end
+
+    context 'if the interface.read returns an empty Octothorpe' do
+      let(:missing) { CustomerModel.new(99) }
+
+      it 'doesn\'t throw an exception' do
+        expect{ missing.read }.not_to raise_exception
+      end
+
+      it 'raises an error alert' do
+        expect( missing.read.model_status ).to eq :error
+        expect( missing.read.alerts.first.type ).to eq :error
+      end
+
     end
 
   end

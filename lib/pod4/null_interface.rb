@@ -79,8 +79,6 @@ module Pod4
       raise(ArgumentError, "Read requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
-      raise Pod4::CantContinue, "'No record found with ID '#{id}'" if rec.nil?
-
       Octothorpe.new(rec)
 
     rescue => e
@@ -97,7 +95,7 @@ module Pod4
       raise(ArgumentError, "Update requires an ID") if id.nil?
 
       rec = @data.find{|x| x[@id_fld] == id }
-      raise Pod4::CantContinue if rec.nil?
+      raise Pod4::CantContinue, "No record found with ID '#{id}'" unless rec
 
       rec.merge!(record.to_h)
       self
@@ -112,7 +110,9 @@ module Pod4
     def delete(id)
       raise(ArgumentError, "Delete requires an ID")  if id.nil?
 
-      read(id) # to see if it exists
+      raise Pod4::CantContinue, "'No record found with ID '#{id}'" \
+        if read(id).empty?
+
       @data.delete_if {|r| r[@id_fld] == id }
       self
     rescue => e

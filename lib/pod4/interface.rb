@@ -71,7 +71,8 @@ module Pod4
 
     ##
     # Read accepts an ID, and returns an Octothorpe representing the unique
-    # record for that ID.
+    # record for that ID. If there is no record matching the ID then it returns
+    # an empty Octothorpe.
     #
     def read(id)
       raise NotImplemented, "Interface needs to define 'read' method"
