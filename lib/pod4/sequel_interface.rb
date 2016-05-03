@@ -27,13 +27,18 @@ module Pod4
   class SequelInterface < Interface
 
     class << self
-      attr_reader :table, :id_fld
+      attr_reader :schema, :table, :id_fld
 
       #---
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
       #+++
+
+      ##
+      # Use this to set the schema name (optional)
+      #
+      def set_schema(schema); @schema = schema.to_s.to_sym; end
 
       ##
       # Set the table name. 
@@ -63,12 +68,26 @@ module Pod4
         if self.class.id_fld.nil?
 
       @db     = db # referemce to the db object
-      @table  = db[self.class.table]
+      @table  = db[schema ? "#{schema}__#{table}" : table]
       @id_fld = self.class.id_fld
 
     rescue => e
       handle_error(e)
     end
+
+
+    def schema; self.class.schema; end
+    def table;  self.class.table;  end
+    def id_fld; self.class.id_fld; end
+
+    def quoted_table
+      if schema 
+        %Q|#{@db.quote_identifier schema}.#{@db.quote_identifier table}|
+      else
+        @db.quote_identifier(table)
+      end
+    end
+
 
 
     ##

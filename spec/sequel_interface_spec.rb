@@ -12,6 +12,12 @@ class TestSequelInterface < SequelInterface
   set_id_fld :id
 end
 
+class SchemaSequelInterface < SequelInterface
+  set_schema :public
+  set_table  :customer
+  set_id_fld :id
+end
+
 class BadSequelInterface1 < SequelInterface
   set_table :customer
 end
@@ -107,6 +113,27 @@ describe TestSequelInterface do
   ##
 
 
+  describe 'SequelInterface.set_schema' do
+    it 'takes one argument' do
+      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'SequelInterface.schema' do
+    it 'returns the schema' do
+      expect( SchemaSequelInterface.schema ).to eq :public
+    end
+
+    it 'is optional' do
+      expect{ TestSequelInterface.schema }.not_to raise_exception
+      expect( TestSequelInterface.schema ).to eq nil
+    end
+  end
+  ##
+
+
   describe 'SequelInterface.set_table' do
     it 'takes one argument' do
       expect( SequelInterface ).to respond_to(:set_table).with(1).argument
@@ -153,6 +180,21 @@ describe TestSequelInterface do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
       expect{ BadSequelInterface1.new(db)   }.to raise_exception Pod4Error
       expect{ BadSequelInterface2.new(db)   }.to raise_exception Pod4Error
+    end
+
+  end
+  ##
+
+
+  describe '#quoted_table' do
+
+    it 'returns just the table when the schema is not set' do
+      expect( interface.quoted_table ).to eq( %Q|`customer`| )
+    end
+
+    it 'returns the schema plus table when the schema is set' do
+      ifce = SchemaSequelInterface.new(db)
+      expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
     end
 
   end
