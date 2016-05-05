@@ -275,8 +275,18 @@ module Pod4
       # This gives us type mapping for integers, floats, booleans, and dates
       # -- but annoyingly the PostgreSQL types 'numeric' and 'money' remain as
       # strings... we fudge that elsewhere.
-      client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
-      client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
+      #
+      # NOTE we now deal with ALL mapping elsewhere, since pg_jruby does
+      # not support type mapping. Also: no annoying error messages, and it
+      # seems to be a hell of a lot faster now...
+      # 
+      # if defined?(PG::BasicTypeMapForQueries)
+      #   client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
+      # end
+      #
+      # if defined?(PG::BasicTypeMapForResults)
+      #   client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
+      # end
 
       @client = client
       self
@@ -389,16 +399,33 @@ module Pod4
     # There is definitely a way to tell pg to cast money and numeric as
     # BigDecimal, but, it's not documented and no one can tell me how to do it!
     #
+    # Also, for the pg_jruby gem, type mapping doesn't work at all?
+    #
     def cast_row_fudge(row, oids)
+      lBool   =->(s) { s.to_i = 1 || s.upcase == 'TRUE' }
+      lFloat  =->(s) { Float(s) rescue s }
+      lInt    =->(s) { Integer(s) rescue s }
+      lTime   =->(s) { Time.parse(s) rescue s }
+      lDate   =->(s) { Date.parse(s) rescue s }
+      lBigDec =->(s) { BigDecimal.new(s) rescue s }
 
       row.each_with_object({}) do |(k,v),h|
         key = k.to_sym
+        oid = oids[key]
 
         h[key] = 
           case
-            when v.nil? then nil
-            when oids[key] == 1700 then BigDecimal.new(v)        # numeric
-            when oids[key] == 790  then BigDecimal.new(v[1..-1]) # "£1.23"
+            when v.class != String then v # assume already converted
+
+            when oid == 1700 then lBigDec.(v)        # numeric
+            when oid == 790  then lBigDec.(v[1..-1]) # "£1.23"
+            when oid == 1082 then lDate.(v)
+
+            when [16, 1560].include?(oid)   then lBool.(v)
+            when [700, 701].include?(oid)   then lFloat.(v)
+            when [20, 21, 23].include?(oid) then lInt.(v)
+            when [1114, 1184].include?(oid) then lTime.(v)
+
             else v
           end
 

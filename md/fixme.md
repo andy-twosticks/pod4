@@ -20,3 +20,10 @@ Things To Do
 * Sequel_interface has no quoted_table, table, etc methods. We need to rule
   whether these are part of the contract or not. If so, we need to add them to
   the tests (and add them to SequelInterface).
+
+    * As soon as you try to use the selection parameter of list, you are going
+      to notice that it doesn't quote the values.  That would be a bug.
+
+* PgInterface works pretty well for the PG gem, but not the pg_jruby gem. We
+  need to take a rather more paranoid approach to the thing; how we go about
+  adding test coverage for this I have literally no idea...
