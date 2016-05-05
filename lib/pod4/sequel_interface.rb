@@ -68,7 +68,7 @@ module Pod4
         if self.class.id_fld.nil?
 
       @db     = db # referemce to the db object
-      @table  = db[schema ? "#{schema}__#{table}" : table]
+      @table  = db[schema ? "#{schema}__#{table}".to_sym : table]
       @id_fld = self.class.id_fld
 
     rescue => e
