@@ -320,7 +320,7 @@ module Pod4
 
     def test_for_octo(param)
       raise ArgumentError, 'Parameter must be a Hash or Octothorpe' \
-        unless ot.kind_of?(Hash) || ot.kind_of?(Octothorpe)
+        unless param.kind_of?(Hash) || param.kind_of?(Octothorpe)
 
     end
 
