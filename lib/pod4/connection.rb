@@ -1,7 +1,12 @@
+require_relative 'interface'
+
+
 module Pod4
 
 
   class Connection
+
+    attr_reader :interface
 
 
     ##
@@ -11,9 +16,12 @@ module Pod4
     # Klass is an interface base type, it's basically there for documentation
     # as much as for validation. 
     #
-    def initialize(ifceClass, *args)
-      @init_thing = args.size == 1 ? args.first : args
-      @ifce_class = ifceClass
+    def initialize(interface, *args)
+      raise ArgumentError, "#{interface} is not an Interface" \
+        unless interface.kind_of? Interface
+
+      @interface  = interface
+      @init_thing = args.count == 1 ? args.first : args
       @connection = nil
     end
 
@@ -28,15 +36,11 @@ module Pod4
     # When an interface wants a connection, it calls connection.connection.
     # If the connection does not have one, it asks the interface for one....
     #
-    # bamf: do we want to use a new method `new_connection` on the interface?
-    # Or have it call the existing `open` method? 
-    #
     # bamf: for SequelInterface, are we passing $db to this class or the
     # connection hash?
     #
-    def connection(interface)
-      raise Pod4::Something unless interface.kind_of?(@ifce_class)
-      @connection ||= interface.new_connection(@init_thing)
+    def connection
+      @connection ||= @interface.new_connection(@init_thing)
     end
 
 
@@ -48,6 +52,15 @@ module Pod4
     #
     def set_connection(connection)
       @connection = connection
+    end
+
+
+    ##
+    # In the unlikely) event we want to close a connection, we should know how
+    # to do it (or how to ask the interface to do it, anyway).
+    #
+    def close
+      @connection = @interface.close_connection
     end
 
   end

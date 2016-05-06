@@ -33,7 +33,7 @@ end
 describe TestTdsInterface do
 
   def db_setup(connect)
-    client = TinyTds::Client.new(connect)
+    client = TinyTds::Client.new(connect.dup)
     client.execute(%Q|use [pod4_test];|).do
 
     # Our SQL Server does not support DROP TABLE IF EXISTS !
