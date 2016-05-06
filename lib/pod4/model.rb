@@ -178,7 +178,7 @@ module Pod4
     def update
       fail_invalid_status(:update) if [:empty, :deleted].include? @model_status
 
-      @alerts = []; validate 
+      clear_alerts; validate 
       interface.update(@model_id, map_to_interface) \
         unless @model_status == :error
 
@@ -194,7 +194,7 @@ module Pod4
     def delete
       fail_invalid_status(:delete) if [:empty, :deleted].include? @model_status
 
-      @alerts = []; validate
+      clear_alerts; validate 
       interface.delete(@model_id)
       @model_status = :deleted
       self

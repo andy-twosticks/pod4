@@ -42,7 +42,11 @@ class CustomerModel < Pod4::Model
   end
 
   def fake_an_alert(*args)
-    add_alert(*args) #protected method
+    add_alert(*args) #private method
+  end
+
+  def validate 
+    add_alert(:error, "falling over now") if name == "fall over"
   end
 
   def reset_alerts; @alerts = []; end
@@ -662,13 +666,26 @@ describe 'CustomerModel' do
     it 'doesnt call update on the interface if the validation fails' do
       expect( model3.interface ).not_to receive(:update)
 
-      model3.fake_an_alert(:error, :price, 'qar')
+      model3.name = "fall over"  # triggers validation
       model3.update
     end
 
     it 'calls map_to_interface to get record data' do
       expect( model3 ).to receive(:map_to_interface)
       model3.update
+    end
+
+    context 'when the record already has error alerts' do
+
+      it 'passes if there is no longer anything wrong' do
+        expect( model3.interface ).
+          to receive(:update).
+          and_return( model3.interface )
+
+        model3.fake_an_alert(:error, "bad things")
+        model3.update
+      end
+
     end
 
 
