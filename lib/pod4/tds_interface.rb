@@ -160,10 +160,7 @@ module Pod4
                    from #{quoted_table} 
                    where [#{id_fld}] = #{quote id};|
 
-      record = select(sql) {|r| Octothorpe.new(r) }
-
-      raise CantContinue, "'No record found with ID '#{id}'" if record == []
-      record.first
+      Octothorpe.new( select(sql).first )
 
     rescue => e
       # select already wrapped any error in a Pod4::DatabaseError, but in this
@@ -185,7 +182,7 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      read(id) # to raise Pod4::DatabaseError if id does not exist
+      read_or_die(id)
 
       sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
 
@@ -205,7 +202,7 @@ module Pod4
     # ID is whatever you set in the interface using set_id_fld
     #
     def delete(id)
-      read(id) # to raise Pod4::DatabaseError if id does not exist
+      read_or_die(id)
       execute( %Q|delete #{quoted_table} where [#{id_fld}] = #{quote id};| )
 
       self
@@ -355,6 +352,11 @@ module Pod4
           fld
       end
 
+    end
+
+
+    def read_or_die(id)
+      raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
 

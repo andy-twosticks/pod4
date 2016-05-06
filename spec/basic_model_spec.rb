@@ -168,6 +168,25 @@ describe 'WeirdModel' do
   ##
 
 
+  describe '#clear_alerts' do
+    before do
+      model.fake_an_alert(:error, "bad stuff")
+      model.clear_alerts
+    end
+
+    it 'resets the @alerts array' do
+      expect( model.alerts ).to eq([])
+    end
+
+    it 'sets model_status to :okay' do
+      expect( model.model_status ).to eq :okay
+    end
+
+
+  end
+  ##
+
+
   describe '#raise_exceptions' do
 
     it 'is also known as .or_die' do

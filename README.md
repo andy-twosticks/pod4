@@ -184,7 +184,8 @@ table 'example'. The table has a primary key field 'id' and columns which
 correspond to our three attributes one, two and three.  There is no validation
 or error control.
 
-Note that we have to require pg_interface seperately. I won't bother to show this in any more model examples.
+Note that we have to require pg_interface seperately. I won't bother to show
+this in any more model examples.
 
 ### Interface ###
 

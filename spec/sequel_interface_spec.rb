@@ -12,6 +12,12 @@ class TestSequelInterface < SequelInterface
   set_id_fld :id
 end
 
+class SchemaSequelInterface < SequelInterface
+  set_schema :public
+  set_table  :customer
+  set_id_fld :id
+end
+
 class BadSequelInterface1 < SequelInterface
   set_table :customer
 end
@@ -107,6 +113,27 @@ describe TestSequelInterface do
   ##
 
 
+  describe 'SequelInterface.set_schema' do
+    it 'takes one argument' do
+      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
+    end
+  end
+  ##
+
+
+  describe 'SequelInterface.schema' do
+    it 'returns the schema' do
+      expect( SchemaSequelInterface.schema ).to eq :public
+    end
+
+    it 'is optional' do
+      expect{ TestSequelInterface.schema }.not_to raise_exception
+      expect( TestSequelInterface.schema ).to eq nil
+    end
+  end
+  ##
+
+
   describe 'SequelInterface.set_table' do
     it 'takes one argument' do
       expect( SequelInterface ).to respond_to(:set_table).with(1).argument
@@ -159,6 +186,21 @@ describe TestSequelInterface do
   ##
 
 
+  describe '#quoted_table' do
+
+    it 'returns just the table when the schema is not set' do
+      expect( interface.quoted_table ).to eq( %Q|`customer`| )
+    end
+
+    it 'returns the schema plus table when the schema is set' do
+      ifce = SchemaSequelInterface.new(db)
+      expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
+    end
+
+  end
+  ##
+
+
   describe '#create' do
 
     let(:hash) { {name: 'Bam-Bam', price: 4.44} }
@@ -205,9 +247,14 @@ describe TestSequelInterface do
       expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
-    it 'raises a Pod4::CantContinue if anything goes wrong with the ID' do
+    it 'raises a Pod4::CantContinue if the ID is bad' do
       expect{ interface.read(:foo) }.to raise_exception CantContinue
-      expect{ interface.read(99)   }.to raise_exception CantContinue
+    end
+
+    it 'returns an empty Octothorpe if no record matches the ID' do
+      expect{ interface.read(99) }.not_to raise_exception
+      expect( interface.read(99) ).to be_a_kind_of Octothorpe
+      expect( interface.read(99) ).to be_empty
     end
 
     it 'returns real fields as Float' do

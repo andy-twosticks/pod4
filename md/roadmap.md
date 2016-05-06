@@ -37,3 +37,33 @@ control and run to update a data model is enough, really.
 I'm not yet sure of the least useless way to implement it.  Again, I favour SQL
 as the DSL.
 
+
+JDBC-SQL interface
+==================
+
+For the jdbc-msssqlserver gem.  Doable ... I *think*.
+
+    driver = Java::com.microsoft.sqlserver.jdbc.SQLServerDriver.new
+    props = java.util.Properties.new
+    props.setProperty("user", "username")
+    props.setProperty("password", "password")
+    url = 'jdbc:sqlserver://servername;instanceName=instance;databaseName=DbName;'
+
+    conn = driver.connect(url, props)
+    #or maybe conn = driver.get_connection(url, "username", "password")
+
+    stmt = conn.create_statement
+    sql = %Q|blah;|
+
+    rsS = stmt.execute_query(sql)
+
+    while (rsS.next) do
+      veg = Hash.new
+      veg["vegName"] = rsS.getObject("name")
+      # etc
+    end
+
+    stmt.close
+    conn.close
+
+    see https://github.com/jruby/jruby/wiki/JDBC

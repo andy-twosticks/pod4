@@ -78,6 +78,20 @@ module Pod4
 
 
     ##
+    # Clear down the alerts.
+    #
+    # Note that set model_status to :okay. Theoretically it might need to be
+    # :empty or :deleted, but if you are calling clear_alerts before a call to
+    # `read` or after a call to `delete`, then you have more problems than I
+    # can solve.
+    #
+    def clear_alerts
+      @alerts       = []
+      @model_status = :okay
+    end
+
+
+    ##
     # Raise a SwingShift exception for the model if any alerts are status
     # :error; otherwise do nothing.
     #

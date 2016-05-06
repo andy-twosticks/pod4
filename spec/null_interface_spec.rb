@@ -68,8 +68,10 @@ describe NullInterface do
 
     end
 
-    it 'raises a Pod4::CantContinue if the ID goes wrong' do
-      expect{ interface.read(:foo) }.to raise_exception CantContinue
+    it 'returns an empty Octothorpe if no record matches the ID' do
+      expect{ interface.read(:foo) }.not_to raise_exception
+      expect( interface.read(:foo) ).to be_a_kind_of Octothorpe
+      expect( interface.read(:foo) ).to be_empty
     end
 
   end

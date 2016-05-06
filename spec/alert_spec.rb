@@ -110,29 +110,6 @@ describe Alert do
   ##
 
 
-
-=begin
-  describe '#bootstrap_class' do
-
-    it 'outputs the bootstrap class name for the alert type' do
-      h = { error:   'alert-danger',
-            warning: 'alert-warning',
-            info:    'alert-info',
-            success: 'alert-success' }
-
-      h.each do |q,a|
-        expect( Alert.new(q, 'foo').bootstrap_class ).
-          to eq(a), "Alert.new(#{q.inspect}...) = #{a.inspect}"
-
-      end
-
-    end
-
-  end
-  ##
-=end
-
-
   describe '#log' do
 
     after do

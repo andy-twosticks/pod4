@@ -27,13 +27,18 @@ module Pod4
   class SequelInterface < Interface
 
     class << self
-      attr_reader :table, :id_fld
+      attr_reader :schema, :table, :id_fld
 
       #---
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
       #+++
+
+      ##
+      # Use this to set the schema name (optional)
+      #
+      def set_schema(schema); @schema = schema.to_s.to_sym; end
 
       ##
       # Set the table name. 
@@ -63,7 +68,7 @@ module Pod4
         if self.class.id_fld.nil?
 
       @db     = db # referemce to the db object
-      @table  = db[self.class.table]
+      @table  = db[schema ? "#{schema}__#{table}".to_sym : table]
       @id_fld = self.class.id_fld
 
     rescue => e
@@ -71,12 +76,30 @@ module Pod4
     end
 
 
+    def schema; self.class.schema; end
+    def table;  self.class.table;  end
+    def id_fld; self.class.id_fld; end
+
+    def quoted_table
+      if schema 
+        %Q|#{@db.quote_identifier schema}.#{@db.quote_identifier table}|
+      else
+        @db.quote_identifier(table)
+      end
+    end
+
+
+
     ##
     # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
       sel = sanitise_hash(selection)
-      Pod4.logger.debug(__FILE__) { "Listing: #{sel.inspect}" }
+
+      Pod4.logger.debug(__FILE__) do
+        "Listing #{self.class.table}: #{sel.inspect}"
+      end
+
       (sel ? @table.where(sel) : @table.all).map {|x| Octothorpe.new(x) }
     rescue => e
       handle_error(e)
@@ -92,7 +115,10 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      Pod4.logger.debug(__FILE__) { "Creating: #{record.inspect}" }
+      Pod4.logger.debug(__FILE__) do
+        "Creating #{self.class.table}: #{record.inspect}"
+      end
+
       @table.insert( sanitise_hash(record.to_h) )
 
     rescue => e
@@ -106,11 +132,11 @@ module Pod4
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
-      rec = @table[@id_fld => id]
-      raise CantContinue, "'No record found with ID '#{id}'" if rec.nil?
+      Pod4.logger.debug(__FILE__) do
+        "Reading #{self.class.table} where #{@id_fld}=#{id}"
+      end
 
-      Pod4.logger.debug(__FILE__) { "Reading where #{@id_fld}=#{id}" }
-      Octothorpe.new(rec)
+      Octothorpe.new( @table[@id_fld => id] )
 
     rescue Sequel::DatabaseError
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?"
@@ -125,10 +151,10 @@ module Pod4
     # record should be a Hash or Octothorpe.
     #
     def update(id, record)
-      read(id) # to check it exists
+      read_or_die(id)
 
       Pod4.logger.debug(__FILE__) do 
-        "Updating where #{@id_fld}=#{id}: #{record.inspect}"
+        "Updating #{self.class.table} where #{@id_fld}=#{id}: #{record.inspect}"
       end
 
       @table.where(@id_fld => id).update( sanitise_hash(record.to_h) )
@@ -142,8 +168,12 @@ module Pod4
     # ID is whatever you set in the interface using set_id_fld
     #
     def delete(id)
-      read(id) # to check it exists
-      Pod4.logger.debug(__FILE__) { "Deleting where #{@id_fld}=#{id}" }
+      read_or_die(id)
+
+      Pod4.logger.debug(__FILE__) do
+        "Deleting #{self.class.table} where #{@id_fld}=#{id}"
+      end
+
       @table.where(@id_fld => id).delete
       self
     rescue => e
@@ -231,6 +261,14 @@ module Pod4
 
       end
 
+    end
+
+
+    private
+
+
+    def read_or_die(id)
+      raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
   end
