@@ -234,7 +234,6 @@ module Pod4
     #
     def set(ot)
       merge(ot)
-      validate 
       self
     end
 

@@ -64,8 +64,8 @@ Thanks
 ======
 
 This code was developed, by me, during working hours at [James Hall & Co.
-Ltd](https://www.jameshall.co.uk/). I'm incredibly greatful that they have permitted
-me to open-source it.
+Ltd](https://www.jameshall.co.uk/). I'm incredibly greatful that they have 
+permitted me to open-source it.
 
 
 Installation
@@ -291,6 +291,12 @@ Here's a model with some validation:
 
 (Note: as a general principal, you should always call super when overriding a
 method in Pod4 model, unless you have good reason not to.)
+
+Because validation is not called on `set`, it's entirely possible to set a
+model to an invalid state and not raise any alerts against it until you go to
+commit to the database -- at which point the commit will fail.  If you want to
+change the state of the model and then validate it before that, you must call
+`validate` by hand.
 
 
 Changing How a Model Represents Data
