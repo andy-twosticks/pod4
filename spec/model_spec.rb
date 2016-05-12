@@ -376,11 +376,6 @@ describe 'CustomerModel' do
       expect( model.price ).to eq ot.>>.price
     end
     
-    it 'runs validate' do
-      expect( model ).to receive(:validate)
-      model.set(ot)
-    end
-
     it 'only sets the attributes on the model that it is given' do
       otx = Octothorpe.new(name: 'Piggy', price: 98.76, weapon: 'rake')
 
