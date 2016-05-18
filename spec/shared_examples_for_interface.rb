@@ -157,5 +157,14 @@ RSpec.shared_examples 'an interface' do
   ##
   
 
+  describe '#new_connection' do
+    pending
+  end
+
+
+  describe '#close_connection' do
+    pending
+  end
+
 end
 

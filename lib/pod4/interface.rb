@@ -97,6 +97,22 @@ module Pod4
     end
 
 
+    ##
+    # Called by a Connection object to start a database connection
+    #
+    def new_connection(args)
+      raise NotImplemented, "Interface needs to define 'new_connection' method"
+    end
+
+
+    ##
+    # Called by a Connection Object to close the connection.
+    #
+    def close_connection
+      raise NotImplemented, "Interface needs to define 'close_connection' method"
+    end
+
+
   end
 
 

@@ -189,12 +189,15 @@ describe TestTdsInterface do
 
   describe '#new' do
 
-    it 'requires a TinyTds connection string' do
+    it 'requires a TinyTds connection string, or a Connection' do
+      con = Connection.new(@connect_hash)
+
       expect{ TestTdsInterface.new        }.to raise_exception ArgumentError
       expect{ TestTdsInterface.new(nil)   }.to raise_exception ArgumentError
       expect{ TestTdsInterface.new('foo') }.to raise_exception ArgumentError
 
       expect{ TestTdsInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ TestTdsInterface.new(con) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
@@ -488,6 +491,12 @@ describe TestTdsInterface do
 
   end
   ##
+
+
+  # BAMF -- might not need these here; might just go with shared_examples tests
+  describe '#new_connection'
+
+  describe '#close'
 
 
 end

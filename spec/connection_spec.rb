@@ -15,25 +15,18 @@ describe Connection do
 
   let(:interface) {ConnectionTestingI.new}
 
-  let(:conn) { Connection.new(interface, :bar) }
+  let(:conn) { Connection.new(:bar) }
 
 
   describe "#new" do
 
-    it "takes an interface class" do
-      expect{ Connection.new     }.to raise_exception ArgumentError
-      expect{ Connection.new(14) }.to raise_exception ArgumentError
-
-      expect{ Connection.new(interface) }.not_to raise_exception
-    end
-
     it "will take any number of other arguments as the connection thing" do
-      expect{ Connection.new(interface, :one)       }.not_to raise_exception
-      expect{ Connection.new(interface, :one, :two) }.not_to raise_exception
-      expect{ Connection.new(interface, 1, 2, 3)    }.not_to raise_exception
+      expect{ Connection.new(:one)       }.not_to raise_exception
+      expect{ Connection.new(:one, :two) }.not_to raise_exception
+      expect{ Connection.new(1, 2, 3)    }.not_to raise_exception
 
-      expect( Connection.new(interface, "one"  ).init_thing ).to eq "one"
-      expect( Connection.new(interface, 1, 2, 3).init_thing ).to eq([1,2,3])
+      expect( Connection.new("one"  ).init_thing ).to eq "one"
+      expect( Connection.new(1, 2, 3).init_thing ).to eq([1,2,3])
     end
 
   end
@@ -42,10 +35,16 @@ describe Connection do
 
   describe "#set_connection" do
 
+    it "takes an interface class" do
+      expect{ conn.set_connection     }.to raise_exception ArgumentError
+      expect{ conn.set_connection(14) }.to raise_exception ArgumentError
+
+      expect{ conn.set_connection(interface, :bar) }.not_to raise_exception
+    end
+
     it "sets the connection object" do
-      conn = Connection.new(interface)
-      conn.set_connection(:foo)
-      expect( conn.connection ).to eq :foo
+      conn.set_connection(interface, :foo)
+      expect( conn.connection(interface) ).to eq :foo
     end
 
   end
@@ -56,6 +55,8 @@ describe Connection do
 
     it "calls close on the interface" do
       expect(interface).to receive(:close_connection)
+
+      conn.set_connection(interface, :foo)
       conn.close
     end
 
@@ -64,12 +65,18 @@ describe Connection do
 
 
   describe "#connection" do
+    it "takes an interface class" do
+      expect{ conn.connection     }.to raise_exception ArgumentError
+      expect{ conn.connection(14) }.to raise_exception ArgumentError
+
+      expect{ conn.connection(interface) }.not_to raise_exception
+    end
 
     context "when it has no connection" do
 
       it "calls new_connection on the interface" do
         expect(interface).to receive(:new_connection).with(:bar)
-        conn.connection
+        conn.connection(interface)
       end
 
     end
@@ -81,8 +88,8 @@ describe Connection do
           to receive(:new_connection).
           and_return(19,99)
 
-        conn.connection
-        expect( conn.connection ).to eq 19
+        conn.connection(interface)
+        expect( conn.connection(interface) ).to eq 19
       end
 
     end

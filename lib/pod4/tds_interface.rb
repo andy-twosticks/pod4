@@ -70,7 +70,7 @@ module Pod4
 
       case connection
         when Connection then @connection = connection
-        when Hash       then @connection = Connection.new(self, connection)
+        when Hash       then @connection = Connection.new(connection)
         else raise(ArgumentError, 'invalid connection parameter')
       end
 
@@ -325,7 +325,7 @@ module Pod4
     def open
       return if connected?
 
-      @client = @connection.connection
+      @client = @connection.connection(self)
       raise "Bad Connection" unless @client.active?
       execute("use [#{self.class.db}]")
 
