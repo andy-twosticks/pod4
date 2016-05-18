@@ -27,3 +27,7 @@ Things To Do
 * PgInterface works pretty well for the PG gem, but not the pg_jruby gem. We
   need to take a rather more paranoid approach to the thing; how we go about
   adding test coverage for this I have literally no idea...
+
+* TinyTDS just updated to 1.0 and ... fell over.  We need to work out what's
+  going on there.
+
