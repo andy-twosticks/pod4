@@ -168,17 +168,6 @@ describe TestPgInterface do
       expect{ TestPgInterface.new(@connect_hash) }.not_to raise_exception
     end
 
-    it 'requires the table and id field to be defined in the class' do
-      expect{ PgInterface.new(@connect_hash) }.to raise_exception Pod4Error
-
-      expect{ BadPgInterface1.new(@connect_hash) }.
-        to raise_exception Pod4Error
-
-      expect{ BadPgInterface2.new(@connect_hash) }.
-        to raise_exception Pod4Error
-
-    end
-
   end
   ##
   

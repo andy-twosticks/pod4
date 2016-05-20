@@ -61,6 +61,8 @@ module Pod4
   #
   class NebulousInterface < Interface
 
+    attr_reader :id_fld
+
     # The NebResponse object from the last message sent, or nil otherwise
     attr_reader :response 
     
@@ -81,8 +83,6 @@ module Pod4
 
 
     class << self
-      attr_reader :target, :verbs, :id_fld
-
       #--
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
@@ -96,42 +96,58 @@ module Pod4
       # * parameters - array of symbols to order the hash passed to create, etc
       #
       def set_verb(action, verb, *paramKeys)
-        raise ArgumentError, "bad action" \
+        raise ArgumentError, "Bad action" \
           unless Interface::ACTIONS.include? action
 
-        @verbs ||= {}
-        @verbs[action] = Verb.new( verb, paramKeys.flatten )
+        v = verbs.dup
+        v[action] = Verb.new( verb, paramKeys.flatten )
+
+        define_class_method(:verbs) {v}
       end
+
+      def verbs; {}; end
+
 
       ##
       # Set the name of the Nebulous target in the interface definition
       #
       # a reference to the interface object.
-      def set_target(target); @target = target.to_s; end
+      def set_target(target)
+        define_class_method(:target) {target.to_s}
+      end
+
+      def target
+        raise Pod4Error, "You need to use set_target on your interface"
+      end
+
+
+      ##
+      # Set the name of the ID parameter (needs to be in the CRUD verbs param
+      # list)
+      def set_id_fld(idFld)
+        define_class_method(:id_fld) {idFld}
+      end
+
+      def id_fld
+        raise Pod4Error, "You need to use set_id_fld"
+      end
 
       
-      ##
-      # Set the name of the ID parameter (needs to be in CRUD verbs param list)
-      #
-      def set_id_fld(idFld); @id_fld = idFld; end 
-
       ##
       # Make sure all of the above is consistent
       #
       def validate_params
-        raise Pod4Error, "You need to use set_target" unless @target
-        raise Pod4Error, "You need to use set_id_fld" unless @id_fld
-        raise Pod4Error, "You need to use set_verb"   if @verbs.nil?
+        raise Pod4Error, "You need to use set_verb" if verbs == {}
 
         %i|create read update delete|.each do |action|
           raise Pod4Error, "set_verb #{action} is missing a parameter list" \
-            if @verbs[action] && !@verbs[action].params == []
+            if verbs[action] && !verbs[action].params == []
 
         end
 
         %i|read update delete|.each do |action|
-          raise Pod4Error, "#{action} verb doesn't have an #@id_fld key" \
-            if @verbs[action] && !@verbs[action].params.include?(@id_fld)
+          raise Pod4Error, "#{action} verb doesn't have an #{id_fld} key" \
+            if verbs[action] && !verbs[action].params.include?(id_fld)
 
         end
 

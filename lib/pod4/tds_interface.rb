@@ -26,34 +26,62 @@ module Pod4
   #
   class TdsInterface < Interface
 
-    class << self
-      attr_reader :db, :schema, :table, :id_fld
+    attr_reader :id_fld
 
+
+    class << self
       #--
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
       #++
 
+
       ##
       # Use this to set the database name.
       #
-      def set_db(db);         @db     = db.to_s.to_sym;     end
+      def set_db(db)
+        define_class_method(:db) {db.to_s.to_sym}
+      end
+
+      def db 
+        raise Pod4Error, "You need to use set_db to set the database name"
+      end
+
 
       ##
       # Use this to set the schema name (optional)
       #
-      def set_schema(schema); @schema = schema.to_s.to_sym; end
+      def set_schema(schema)
+        define_class_method(:schema) {schema.to_s.to_sym}
+      end
+
+      def schema; nil; end
+
 
       ##
       # Use this to set the name of the table
       #
-      def set_table(table);   @table  = table.to_s.to_sym;  end
+      def set_table(table)
+        define_class_method(:table) {table.to_s.to_sym}
+      end
+
+      def table
+        raise Pod4Error, "You need to use set_table to set the table name"
+      end
+
 
       ##
       # This sets the column that holds the unique id for the table
       #
-      def set_id_fld(idFld) ; @id_fld = idFld.to_s.to_sym;  end
+      def set_id_fld(idFld) 
+        define_class_method(:id_fld) {idFld.to_s.to_sym}
+      end
+
+      def id_fld
+        raise Pod4Error, "You need to use set_table to set the table name"
+      end
+
     end
     ##
 

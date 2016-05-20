@@ -26,30 +26,49 @@ module Pod4
   #
   class SequelInterface < Interface
 
-    class << self
-      attr_reader :schema, :table, :id_fld
+    attr_reader :id_fld
 
+
+    class << self
       #---
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
       #+++
 
+
       ##
       # Use this to set the schema name (optional)
       #
-      def set_schema(schema); @schema = schema.to_s.to_sym; end
+      def set_schema(schema)
+        define_class_method(:schema) {schema.to_s.to_sym}
+      end
+
+      def schema; nil; end
+
 
       ##
       # Set the table name. 
       #
-      def set_table(table);  @table  = table.to_s.to_sym; end
+      def set_table(table)
+        define_class_method(:table) {table.to_s.to_sym}
+      end
+
+      def table
+        raise Pod4Error, "You need to use set_table to set the table name"
+      end
 
 
       ##
       # Set the unique id field on the table.
       #
-      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end
+      def set_id_fld(idFld)
+        define_class_method(:id_fld) {idFld.to_s.to_sym}
+      end
+
+      def id_fld
+        raise Pod4Error, "You need to use set_id_fld to set the ID column name"
+      end
 
     end
     ##

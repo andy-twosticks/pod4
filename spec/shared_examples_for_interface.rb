@@ -39,9 +39,8 @@ RSpec.shared_examples 'an interface' do
 
 
   describe '#id_fld' do
-    it 'is an attribute that stores a symbol' do
+    it 'is an attribute' do
       expect( interface.id_fld ).not_to be_nil
-      expect( interface.id_fld ).to be_a_kind_of Symbol
     end
   end
   ##

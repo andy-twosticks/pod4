@@ -1,3 +1,4 @@
+require_relative 'metaxing'
 require_relative 'errors'
 
 
@@ -28,11 +29,17 @@ module Pod4
   # were the latter in most cases.)
   #
   class Interface
+    extend Metaxing
+
 
     ACTIONS = [ :list, :create, :read, :update, :delete ]
 
+    ##
     # A field name in the data source, the name of the unique ID field.
-    attr_reader :id_fld
+    #
+    def id_fld
+      raise NotImplemented, "Interface needs to define an 'id_fld' method"
+    end
 
 
     ##
