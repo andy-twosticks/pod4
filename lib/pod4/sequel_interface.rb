@@ -242,18 +242,25 @@ module Pod4
 
       case err
 
-        when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
+        # Just raise the error as is
+        when ArgumentError, 
+             Pod4::Pod4Error, 
+             Pod4::CantContinue
+
           raise err.class, err.message, kaller
 
-        when Sequel::ValidationFailed
+        # Special Case for validation
+        when Sequel::ValidationFailed,
+             Sequel::UniqueConstraintViolation,
+             Sequel::ForeignKeyConstraintViolation
+
           raise Pod4::ValidationError, err.message, kaller
 
-        when Sequel::UniqueConstraintViolation,
-             Sequel::ForeignKeyConstraintViolation,
-             Sequel::DatabaseError
-
+        # This is more serious
+        when Sequel::DatabaseError
           raise Pod4::DatabaseError, err.message, kaller
 
+        # The default is to raise a generic Pod4 error.
         else
           raise Pod4::Pod4Error, err.message, kaller
 

@@ -196,7 +196,7 @@ module Pod4
       fail_invalid_status(:delete) if [:empty, :deleted].include? @model_status
 
       clear_alerts; validate 
-      interface.delete(@model_id)
+      interface.delete(@model_id) 
       @model_status = :deleted
       self
     end

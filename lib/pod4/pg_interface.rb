@@ -417,7 +417,7 @@ module Pod4
     def cast_row_fudge(row, oids)
       lBool   =->(s) { s.to_i = 1 || s.upcase == 'TRUE' }
       lFloat  =->(s) { Float(s) rescue s }
-      lInt    =->(s) { Integer(s) rescue s }
+      lInt    =->(s) { Integer(s,10) rescue s }
       lTime   =->(s) { Time.parse(s) rescue s }
       lDate   =->(s) { Date.parse(s) rescue s }
       lBigDec =->(s) { BigDecimal.new(s) rescue s }

@@ -108,7 +108,7 @@ module Pod4
     alias :or_die :raise_exceptions
 
 
-    protected
+    private
 
     
     ##
