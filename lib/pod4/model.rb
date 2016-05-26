@@ -88,8 +88,9 @@ module Pod4
       # `map_to_interface` will try to help you with.
       #
       def attr_columns(*cols)
-        @columns ||= []
-        @columns += cols
+        c = columns.dup
+        c += cols
+        define_class_method(:columns) {c}
         attr_accessor *cols
       end
 
@@ -98,7 +99,7 @@ module Pod4
       # Returns the list of columns from attr_columns
       #
       def columns 
-        @columns || []
+        []
       end
 
 
@@ -195,7 +196,7 @@ module Pod4
       fail_invalid_status(:delete) if [:empty, :deleted].include? @model_status
 
       clear_alerts; validate 
-      interface.delete(@model_id)
+      interface.delete(@model_id) 
       @model_status = :deleted
       self
     end
@@ -234,7 +235,6 @@ module Pod4
     #
     def set(ot)
       merge(ot)
-      validate 
       self
     end
 

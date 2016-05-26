@@ -28,11 +28,3 @@ task :retag do
   sh "ripper-tags -R"
 end
 
-desc "Release to GemInABox"
-task :boxpush do
-  gem_server_url = 'http://centos7andy.jhallpr.com:4242'
-  sh("gem inabox --host #{gem_server_url}")
-end
-
-   
-

@@ -64,8 +64,8 @@ Thanks
 ======
 
 This code was developed, by me, during working hours at [James Hall & Co.
-Ltd](https://www.jameshall.co.uk/). I'm incredibly greatful that they have permitted
-me to open-source it.
+Ltd](https://www.jameshall.co.uk/). I'm incredibly greatful that they have 
+permitted me to open-source it.
 
 
 Installation
@@ -252,16 +252,17 @@ Adding Validation
 Built into the model is an array of alerts (Pod4::Alert) which are messages
 that have been raised against the instance of the model class. Each alert can
 have a status of :error, :warning, :info or :success. If any alert has a status
-of :error :warning or :success then that is reflected in the model's `model_status`
-attribute. 
+of :error :warning or :success then that is reflected in the model's
+`model_status` attribute. 
 
 (As to those other two possible statuses -- models are :empty when first created
 and :deleted after a call to delete.)
 
-You can raise alerts yourself, and you normally do so by overriding
-`validate`.  This method is called after a read, and before an update or create, so 
-that every model instance should have a model_status reflecting its "correctness" 
-regardless of whether it came from the data source or your application.
+You can raise alerts yourself, and you normally do so by overriding `validate`.
+This method is called after a read, and before an update create or delete, so
+that every model instance should have a model_status reflecting its
+"correctness" regardless of whether it came from the data source or your
+application.
 
 Here's a model with some validation:
 
@@ -291,6 +292,16 @@ Here's a model with some validation:
 
 (Note: as a general principal, you should always call super when overriding a
 method in Pod4 model, unless you have good reason not to.)
+
+If the model has a status of :error, then an update or create will fail. A
+delete, however, will succeed -- if you want to create validation that aborts a
+delete operation, you should override the `delete` method and only call super
+if the validation passes.
+
+Also, because validation is not called on `set`, it's entirely possible to set
+a model to an invalid state and not raise any alerts against it until you go to
+commit to the database.  If you want to change the state of the model and then
+validate it before that, you must call `validate` by hand.
 
 
 Changing How a Model Represents Data

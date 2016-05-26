@@ -21,6 +21,9 @@ module Pod4
   #
   class NullInterface < Interface
 
+    attr_reader :id_fld
+
+
     ##
     # Initialise the interface by passing it a list of columns and an array of
     # hashes to fill them.

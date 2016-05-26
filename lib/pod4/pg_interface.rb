@@ -26,9 +26,10 @@ module Pod4
   #
   class PgInterface < Interface
 
-    class << self
-      attr_reader :schema, :table, :id_fld
+    attr_reader :id_fld
 
+
+    class << self
       #--
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
@@ -38,17 +39,36 @@ module Pod4
       ## 
       # Set the name of the schema. This is optional.
       # 
-      def set_schema(schema); @schema = schema.to_s.to_sym; end
+      def set_schema(schema) 
+        define_class_method(:schema) {schema.to_s.to_sym}
+      end
+
+      def schema; nil; end
+        
 
       ##
       # Set the name of the database table
       #
-      def set_table(table);   @table  = table.to_s.to_sym;  end
+      def set_table(table)
+        define_class_method(:table) {table.to_s.to_sym}
+      end
+
+      def table
+        raise Pod4Error, "You need to use set_table to set the table name"
+      end
+
 
       ##
       # Set the name of the column that holds the unique id for the table.
       #
-      def set_id_fld(idFld);  @id_fld = idFld.to_s.to_sym;  end
+      def set_id_fld(idFld)
+        define_class_method(:id_fld) {idFld.to_s.to_sym}
+      end
+
+      def id_fld
+        raise Pod4Error, "You need to use set_id_fld to set the ID column"
+      end
+
     end
     ##
 
@@ -59,13 +79,6 @@ module Pod4
     # Pg client, in which case the hash is pretty much ignored.
     #
     def initialize(connectHash, testClient=nil)
-
-      raise(Pod4Error, 'no call to set_table in the interface definition') \
-        if self.class.table.nil?
-
-      raise(Pod4Error, 'no call to set_id_fld in the interface definition') \
-        if self.class.id_fld.nil?
-
       raise(ArgumentError, 'invalid connection hash') \
         unless connectHash.kind_of?(Hash)
 
@@ -404,7 +417,7 @@ module Pod4
     def cast_row_fudge(row, oids)
       lBool   =->(s) { s.to_i = 1 || s.upcase == 'TRUE' }
       lFloat  =->(s) { Float(s) rescue s }
-      lInt    =->(s) { Integer(s) rescue s }
+      lInt    =->(s) { Integer(s,10) rescue s }
       lTime   =->(s) { Time.parse(s) rescue s }
       lDate   =->(s) { Date.parse(s) rescue s }
       lBigDec =->(s) { BigDecimal.new(s) rescue s }

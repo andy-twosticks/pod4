@@ -26,30 +26,49 @@ module Pod4
   #
   class SequelInterface < Interface
 
-    class << self
-      attr_reader :schema, :table, :id_fld
+    attr_reader :id_fld
 
+
+    class << self
       #---
       # These are set in the class because it keeps the model code cleaner: the
       # definition of the interface stays in the interface, and doesn't leak
       # out into the model.
       #+++
 
+
       ##
       # Use this to set the schema name (optional)
       #
-      def set_schema(schema); @schema = schema.to_s.to_sym; end
+      def set_schema(schema)
+        define_class_method(:schema) {schema.to_s.to_sym}
+      end
+
+      def schema; nil; end
+
 
       ##
       # Set the table name. 
       #
-      def set_table(table);  @table  = table.to_s.to_sym; end
+      def set_table(table)
+        define_class_method(:table) {table.to_s.to_sym}
+      end
+
+      def table
+        raise Pod4Error, "You need to use set_table to set the table name"
+      end
 
 
       ##
       # Set the unique id field on the table.
       #
-      def set_id_fld(idFld); @id_fld = idFld.to_s.to_sym; end
+      def set_id_fld(idFld)
+        define_class_method(:id_fld) {idFld.to_s.to_sym}
+      end
+
+      def id_fld
+        raise Pod4Error, "You need to use set_id_fld to set the ID column name"
+      end
 
     end
     ##
@@ -223,18 +242,25 @@ module Pod4
 
       case err
 
-        when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
+        # Just raise the error as is
+        when ArgumentError, 
+             Pod4::Pod4Error, 
+             Pod4::CantContinue
+
           raise err.class, err.message, kaller
 
-        when Sequel::ValidationFailed
+        # Special Case for validation
+        when Sequel::ValidationFailed,
+             Sequel::UniqueConstraintViolation,
+             Sequel::ForeignKeyConstraintViolation
+
           raise Pod4::ValidationError, err.message, kaller
 
-        when Sequel::UniqueConstraintViolation,
-             Sequel::ForeignKeyConstraintViolation,
-             Sequel::DatabaseError
-
+        # This is more serious
+        when Sequel::DatabaseError
           raise Pod4::DatabaseError, err.message, kaller
 
+        # The default is to raise a generic Pod4 error.
         else
           raise Pod4::Pod4Error, err.message, kaller
 

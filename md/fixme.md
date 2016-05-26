@@ -1,29 +1,32 @@
-Things To Do
-============
+Things I Wish I Could Do
+========================
 
-* PG gem fails to cast date fields as date. Nothing we can do about it.
+* TinyTds gem fails to cast date fields as date. Nothing we can do about that,
+  AFAICS.
 
 * PG gem raises lots of "please cast this type explicitly" warnings for money,
   numeric types. There is no documentation for how to do this, and apparently
   no-one knows how /O\
 
-* If you subclass Pod4::Model, as you should, fine. If you subclass THAT class,
-  it does not inherit columns, interface, etc etc. It looks as if the problem
-  is in Model.columns; you can set @columns but that value does not carry over
-  to the subclass, which, well, is right; it's a true class variable and we use
-  that syntax for precisely that reason. But unfortunate in this case. What we
-  need is a class attribute which is inherited like a method, but the actual
-  variable is not shared between the parent and the child. I think we need to
-  do that manually by initialising @columns to the value from the parent class
-  if it exists.
 
-* Sequel_interface has no quoted_table, table, etc methods. We need to rule
-  whether these are part of the contract or not. If so, we need to add them to
-  the tests (and add them to SequelInterface).
+Things To Do
+============
 
-    * As soon as you try to use the selection parameter of list, you are going
-      to notice that it doesn't quote the values.  That would be a bug.
+* I had a note here on how SequelInterface does not support the table and
+  quoted_table variables. Well, these definitely aren't part of the contract:
+  how would NebulousInterface support them? But there might be an issue with
+  passing selection parameters to SequelInterface.list if the schema is set. We
+  need to tie down a test for that and fix it if it exists.
 
 * PgInterface works pretty well for the PG gem, but not the pg_jruby gem. We
   need to take a rather more paranoid approach to the thing; how we go about
   adding test coverage for this I have literally no idea...
+
+* TinyTDS just updated to 1.0 and ... fell over.  We need to work out what's
+  going on there.
+
+* Ideally interfaces should support parameterised insertion. Ideally in a
+  manner consistent for all interfaces...
+
+* We should have a test suite for jRuby.
+

@@ -1,5 +1,6 @@
 require 'octothorpe'
 
+require_relative 'metaxing'
 require_relative 'errors'
 require_relative 'alert'
 
@@ -17,6 +18,8 @@ module Pod4
   # See Pod4::Model for documentation about Models.
   #
   class BasicModel
+    extend Metaxing
+
     
     # The value of the ID field on the record
     attr_reader :model_id
@@ -35,15 +38,11 @@ module Pod4
       # interface. 
       #
       def set_interface(interface)
-        @interface = interface  # a *reference* to the interface object.
+        define_class_method(:interface) {interface}
       end
 
-
       def interface
-        raise NotImplemented, "no call to set_interface in the model" \
-          unless @interface
-
-        @interface
+        raise NotImplemented, "no call to set_interface in the model"
       end
 
     end
@@ -109,7 +108,7 @@ module Pod4
     alias :or_die :raise_exceptions
 
 
-    protected
+    private
 
     
     ##
