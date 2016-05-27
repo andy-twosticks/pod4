@@ -299,7 +299,7 @@ module Pod4
     # caller will find it useful.
     #
     def close
-      @connection.close 
+      @connection.close(self)
     end
 
 

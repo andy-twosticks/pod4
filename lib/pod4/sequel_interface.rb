@@ -75,7 +75,8 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it the Sequel DB object.
+    # Initialise the interface by passing it the Sequel DB object. Or a Sequel
+    # connection string. Or a Pod4::Connection object. BAMF
     #
     def initialize(db)
       raise(ArgumentError, "Bad database") unless db.kind_of? Sequel::Database
