@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
     inheritance.
   DESC
 
-  #spec.homepage      = ""
+  spec.homepage      = "https://bitbucket.org/andy-twosticks/pod4"
   spec.license       = "MIT"
 
   spec.files         = `hg status -macn0`.split("\x0")
