@@ -36,9 +36,9 @@ Gem::Specification.new do |spec|
   # For testing
   spec.add_development_dependency "sequel",          "~> 4.35"
   spec.add_development_dependency "sqlite3",         "~> 1.3"
-  spec.add_development_dependency "tiny_tds",        "~> 0.7.0"
+  spec.add_development_dependency "tiny_tds",        "~> 0"
   spec.add_development_dependency "pg",              "~> 0"
-  spec.add_development_dependency "nebulous_stomp" , "~> 1.1"
+  spec.add_development_dependency "nebulous_stomp" , "~> 2"
 
   # Development tools
   spec.add_development_dependency "pry"

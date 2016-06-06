@@ -1,4 +1,4 @@
-require 'nebulous'
+require 'nebulous_stomp'
 
 require_relative 'interface'
 require_relative 'errors'
@@ -287,7 +287,7 @@ module Pod4
     # if we think things look fishy.
     #
     def send_message(verb, paramStr, with_cache=true)
-      unless Nebulous.on? 
+      unless NebulousStomp.on? 
         @response_status = :off
         raise Pod4::DatabaseError, "Nebulous is turned off!"
       end
@@ -358,11 +358,11 @@ module Pod4
         when ArgumentError, Pod4::Pod4Error
           raise err.class, err.message, kaller
 
-        when Nebulous::NebulousTimeout
+        when NebulousStomp::NebulousTimeout
             @response_status = :timeout
             raise Pod4::CantContinue, err.message, kaller
 
-        when Nebulous::NebulousError
+        when NebulousStomp::NebulousError
           raise Pod4::DatabaseError, err.message, kaller
 
         else
@@ -385,7 +385,7 @@ module Pod4
         if @request_object
           @request_object.send(verb, paramStr, with_cache)
         else
-          Nebulous::NebRequest.new(self.class.target, verb, paramStr)
+          NebulousStomp::NebRequest.new(self.class.target, verb, paramStr)
         end
 
       if @clear_cache

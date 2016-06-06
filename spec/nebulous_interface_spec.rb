@@ -1,7 +1,7 @@
 require 'pod4/nebulous_interface'
 
-require 'nebulous'
-require 'nebulous/nebrequest_null'
+require 'nebulous_stomp'
+require 'nebulous_stomp/nebrequest_null'
 
 require_relative 'shared_examples_for_interface'
 
@@ -87,8 +87,8 @@ class FakeRequester
 
     end
 
-    req = Nebulous::NebRequestNull.new('faketarget', verb, paramStr)
-    mess = Nebulous::Message.from_cache( hash1.merge(hash2).to_json )
+    req = NebulousStomp::NebRequestNull.new('faketarget', verb, paramStr)
+    mess = NebulousStomp::Message.from_cache( hash1.merge(hash2).to_json )
     req.insert_fake_stomp(mess)
     req
   end
@@ -122,15 +122,15 @@ describe TestNebulousInterface do
                    reliable: false }
 
     # We turn Redis off for this test; we're not testing Nebulous here.
-    Nebulous.init( :stompConnectHash => stomp_hash,
-                   :redisConnectHash => {},
-                   :messageTimeout   => 5,
-                   :cacheTimeout     => 20 )
+    NebulousStomp.init( :stompConnectHash => stomp_hash,
+                        :redisConnectHash => {},
+                        :messageTimeout   => 5,
+                        :cacheTimeout     => 20 )
 
-    Nebulous.add_target( :faketarget,
-                         :sendQueue      => "/queue/fake.in",
-                         :receiveQueue   => "/queue/fake.out",
-                         :messageTimeout => 1 )
+    NebulousStomp.add_target( :faketarget,
+                              :sendQueue      => "/queue/fake.in",
+                              :receiveQueue   => "/queue/fake.out",
+                              :messageTimeout => 1 )
 
   end
 
