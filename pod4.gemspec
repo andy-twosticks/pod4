@@ -28,22 +28,21 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "octothorpe", '~>0.1'
 
   # for bundler, management, etc etc
-  spec.add_development_dependency "bundler", "~> 1.6"
-  spec.add_development_dependency "rake",    "~> 10.0"
-  spec.add_development_dependency "rspec"
+  spec.add_development_dependency "bundler", "~> 1.11"
+  spec.add_development_dependency "rake",    "~> 10.5"
+  spec.add_development_dependency "rspec",   "~> 3.4"
   spec.add_development_dependency "rdoc"
   
   # For testing
-  spec.add_development_dependency "sequel"
-  spec.add_development_dependency "sqlite3"
-  spec.add_development_dependency "tiny_tds"
-  spec.add_development_dependency "pg"
-  spec.add_development_dependency "nebulous"
+  spec.add_development_dependency "sequel",          "~> 4.35"
+  spec.add_development_dependency "sqlite3",         "~> 1.3"
+  spec.add_development_dependency "tiny_tds",        "~> 0.7.0"
+  spec.add_development_dependency "pg",              "~> 0"
+  spec.add_development_dependency "nebulous_stomp" , "~> 1.1"
 
   # Development tools
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-doc"
   spec.add_development_dependency "ripper-tags"
-  spec.add_development_dependency "geminabox"
 
 end
