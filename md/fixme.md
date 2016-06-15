@@ -8,6 +8,9 @@ Things I Wish I Could Do
   numeric types. There is no documentation for how to do this, and apparently
   no-one knows how /O\
 
+* Like an idiot I've made some tidying "raise an error" instance methods .. and
+  then called them from class methods.  ::headdesk::
+
 
 Things To Do
 ============

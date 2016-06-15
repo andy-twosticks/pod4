@@ -123,7 +123,7 @@ module Pod4
     end
 
 
-    protected
+    private
 
 
     def handle_error(err, kaller=nil)

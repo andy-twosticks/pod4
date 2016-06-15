@@ -130,6 +130,41 @@ module Pod4
 
       end
 
+
+      def test_for_octo(param)
+        raise( ArgumentError, 
+               'Parameter must be a Hash or Octothorpe',
+               caller ) \
+          unless param.kind_of?(Hash) || param.kind_of?(Octothorpe)
+
+      end
+
+
+      def test_for_invalid_status(action, status)
+        raise( Pod4Error, 
+               "Invalid model status for an action of #{action}",
+               caller ) \
+          if [:empty, :deleted].include? status
+
+      end
+
+
+
+      def fail_no_id_fld
+        raise POd4Error, 
+              "No ID field defined in interface",
+              caller
+
+      end
+
+
+      def fail_no_id
+        raise Pod4Error, 
+              "ID field missing from record",
+              caller
+
+      end
+
     end
     ##
 
@@ -177,7 +212,7 @@ module Pod4
     # Call this to update the data source with the current attribute values
     #
     def update
-      fail_invalid_status(:update) if [:empty, :deleted].include? @model_status
+      Model.test_for_invalid_status(:update, @model_status)
 
       clear_alerts; validate 
       interface.update(@model_id, map_to_interface) \
@@ -193,8 +228,7 @@ module Pod4
     # Note: does not delete the instance...
     #
     def delete
-      fail_invalid_status(:delete) if [:empty, :deleted].include? @model_status
-
+      Model.test_for_invalid_status(:delete, @model_status)
       clear_alerts; validate 
       interface.delete(@model_id) 
       @model_status = :deleted
@@ -310,34 +344,13 @@ module Pod4
     # Merge an OT with our columns
     #
     def merge(ot)
-      test_for_octo(ot)
+      Model.test_for_octo(ot)
 
       columns.each do |col|
         instance_variable_set("@#{col}".to_sym, ot[col]) if ot.has_key?(col)
       end
     end
 
-
-    def test_for_octo(param)
-      raise ArgumentError, 'Parameter must be a Hash or Octothorpe' \
-        unless param.kind_of?(Hash) || param.kind_of?(Octothorpe)
-
-    end
-
-
-    def fail_no_id_fld
-      raise POd4Error, "No ID field defined in interface"
-    end
-
-
-    def fail_no_id
-      raise Pod4Error, "ID field missing from record" 
-    end
-
-
-    def fail_invalid_status(action)
-      raise Pod4Error, "Invalid model status for an action of #{action}" 
-    end
 
   end
   ##
