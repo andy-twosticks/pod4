@@ -1,0 +1,1 @@
+../spec_common/basic_model_spec.rb

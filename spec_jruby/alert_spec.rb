@@ -1,0 +1,1 @@
+../spec_common/alert_spec.rb

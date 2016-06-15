@@ -1,0 +1,1 @@
+../spec_common/shared_examples_for_interface.rb
