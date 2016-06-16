@@ -17,12 +17,12 @@ namespace :rspec do
 
   desc "run tests (mri)"
   task :mri do
-    sh "rspec --default-path spec_mri"
+    sh "rspec spec/common spec/mri"
   end
 
   desc "run tests (jRuby)"
   task :jruby do
-    sh "rspec --default-path spec_jruby"
+    sh "rspec spec/common spec/jruby"
   end
 
 end

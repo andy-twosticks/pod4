@@ -1,187 +1,167 @@
-require 'pod4/tds_interface'
+require 'pod4/sequel_interface'
 
+require 'sequel'
 require 'date'
+require 'time'
+require 'bigdecimal'
 
 require_relative 'shared_examples_for_interface'
-require_relative 'fixtures/database'
 
 
-class TestTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_table  :customer
+class TestSequelInterface < SequelInterface
+  set_table :customer
   set_id_fld :id
 end
 
-class SchemaTdsInterface < TdsInterface
-  set_db     :pod4_test
+class SchemaSequelInterface < SequelInterface
   set_schema :public
   set_table  :customer
   set_id_fld :id
 end
 
-class BadTdsInterface1 < TdsInterface
-  set_db :pod4_test
+class BadSequelInterface1 < SequelInterface
   set_table :customer
 end
 
-class BadTdsInterface2 < TdsInterface
-  set_db :pod4_test
+class BadSequelInterface2 < SequelInterface
   set_id_fld :id
 end
 
 
-describe TestTdsInterface do
+describe TestSequelInterface do
 
-  def db_setup(connect)
-    client = TinyTds::Client.new(connect)
-    client.execute(%Q|use [pod4_test];|).do
+  # We actually connect to a special test database for this. I don't generally
+  # like unit tests to involve other classes at all, but otherwise we are
+  # hardly testing anything, and in any case we do need to test that this class
+  # successfully interfaces with Sequel. We can't really do that without
+  # talking to a database.
 
-    # Our SQL Server does not support DROP TABLE IF EXISTS !
-    # This is apparently an SQL-agnostic way of doing it:
-    client.execute(%Q|
-      if exists (select * from INFORMATION_SCHEMA.TABLES 
-                     where TABLE_NAME   = 'customer' 
-                       AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;| ).do
+  let(:data) do
+    d = []
+    d << { name:      'Barney',
+           level:     1.23,
+           day:       Date.parse("2016-01-01"),
+           timestamp: Time.parse('2015-01-01 12:11'),
+           price:     BigDecimal.new("1.24") }
 
-    client.execute(%Q|
-      create table dbo.customer ( 
-        id        int identity(1,1) not null,
-        name      nvarchar(max),
-        level     real         null,
-        day       date         null,
-        timestamp datetime     null,
-        price     money        null,
-        qty       numeric(5,2) null );| ).do
+    d << { name:      'Fred',
+           level:     2.34,
+           day:       Date.parse("2016-02-02"),
+           timestamp: Time.parse('2015-01-02 12:22'),
+           price:     BigDecimal.new("2.35") }
 
-  ensure
-    client.close if client
+    d << { name:      'Betty',
+           level:     3.45,
+           day:       Date.parse("2016-03-03"),
+           timestamp: Time.parse('2015-01-03 12:33'),
+           price:     BigDecimal.new("3.46") }
+
+    d
   end
-
 
   def fill_data(ifce)
-    @data.each{|r| ifce.create(r) }
+    data.each{|r| ifce.create(r) }
   end
 
-
-  before(:all) do
-    @connect_hash = DB[:tds]
-    db_setup(@connect_hash)
-
-    @data = []
-    @data << { name:      'Barney', 
-               level:     1.23, 
-               day:       Date.parse("2016-01-01"),
-               timestamp: Time.parse('2015-01-01 12:11'),
-               price:     BigDecimal.new("1.24"), 
-               qty:       BigDecimal.new("1.25") }
-
-    @data << { name:      'Fred', 
-               level:     2.34, 
-               day:       Date.parse("2016-02-02"),
-               timestamp: Time.parse('2015-01-02 12:22'),
-               price:     BigDecimal.new("2.35"), 
-               qty:       BigDecimal.new("2.36") }
-
-    @data << { name:      'Betty', 
-               level:     3.45, 
-               day:       Date.parse("2016-03-03"),
-               timestamp: Time.parse('2015-01-03 12:33'),
-               price:     BigDecimal.new("3.46"), 
-               qty:       BigDecimal.new("3.47") }
-
+  # This is stolen almost verbatim from the Sequel Readme. We use an in-memory
+  # sqlite database, and we assume that Sequel is sane and behaves broadly the
+  # same for our limited purposes as it would when talking to TinyTDS or Pg.
+  # This may be an entirely unwarranted assumption. If so, we will have to
+  # change this. But in any case, we are not in the business of testing Sequel:
+  # just our interface to it.
+  let (:db) do
+    db = Sequel.sqlite
+    db.create_table :customer do
+      primary_key :id
+      String      :name
+      Float       :level
+      Date        :day
+      Time        :timestamp
+      BigDecimal  :price, :size=>[10.2] # Sequel doesn't support money
+    end
+    db
   end
 
+  let(:interface) { TestSequelInterface.new(db) }
 
   before do
-    # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer;|)
+    fill_data(interface)
   end
 
-
-  let(:interface) do
-    TestTdsInterface.new(@connect_hash)
-  end
-
-  #####
+  ##
 
 
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestTdsInterface.new(@connect_hash)
+      db2 = Sequel.sqlite
+      db2.create_table :customer do
+        primary_key :id
+        String      :name
+        Float       :level
+        Date        :day
+        Time        :timestamp
+        BigDecimal  :price, :size=>[10.2] 
+      end
+
+      TestSequelInterface.new(db2)
     end
 
-    let(:record) { {name: 'Barney'} }
+    let(:record)    { {name: 'Barney', price: 1.11} }
+    #let(:record_id) { 'Barney' }
 
   end
   ##
- 
 
-  describe 'TdsInterface.set_db' do
+
+  describe 'SequelInterface.set_schema' do
     it 'takes one argument' do
-      expect( TdsInterface ).to respond_to(:set_db).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
 
 
-  describe 'TdsInterface.db' do
-    it 'returns the table' do
-      expect( TestTdsInterface.db ).to eq :pod4_test
-    end
-  end
-  ##
-
-
-  describe 'TdsInterface.set_schema' do
-    it 'takes one argument' do
-      expect( TdsInterface ).to respond_to(:set_schema).with(1).argument
-    end
-  end
-  ##
-
-
-  describe 'TdsInterface.schema' do
+  describe 'SequelInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaTdsInterface.schema ).to eq :public
+      expect( SchemaSequelInterface.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestTdsInterface.schema }.not_to raise_exception
-      expect( TestTdsInterface.schema ).to eq nil
+      expect{ TestSequelInterface.schema }.not_to raise_exception
+      expect( TestSequelInterface.schema ).to eq nil
     end
   end
   ##
 
 
-  describe 'TdsInterface.set_table' do
+  describe 'SequelInterface.set_table' do
     it 'takes one argument' do
-      expect( TdsInterface ).to respond_to(:set_table).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
 
 
-  describe 'TdsInterface.table' do
+  describe 'SequelInterface.table' do
     it 'returns the table' do
-      expect( TestTdsInterface.table ).to eq :customer
+      expect( TestSequelInterface.table ).to eq :customer
     end
   end
   ##
 
 
-  describe 'TdsInterface.set_id_fld' do
+  describe 'SequelInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( TdsInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
 
 
-  describe 'TdsInterface.id_fld' do
+  describe 'SequelInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestTdsInterface.id_fld ).to eq :id
+      expect( TestSequelInterface.id_fld ).to eq :id
     end
   end
   ##
@@ -189,23 +169,18 @@ describe TestTdsInterface do
 
   describe '#new' do
 
-    it 'requires a TinyTds connection string' do
-      expect{ TestTdsInterface.new        }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new('foo') }.to raise_exception ArgumentError
+    it 'requires a Sequel DB object' do
+      expect{ TestSequelInterface.new        }.to raise_exception ArgumentError
+      expect{ TestSequelInterface.new(nil)   }.to raise_exception ArgumentError
+      expect{ TestSequelInterface.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestTdsInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ TestSequelInterface.new(db) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
-      expect{ TdsInterface.new(@connect_hash) }.to raise_exception Pod4Error
-
-      expect{ BadTdsInterface1.new(@connect_hash) }.
-        to raise_exception Pod4Error
-
-      expect{ BadTdsInterface2.new(@connect_hash) }.
-        to raise_exception Pod4Error
-
+      expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
+      expect{ BadSequelInterface1.new(db)   }.to raise_exception Pod4Error
+      expect{ BadSequelInterface2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
@@ -215,12 +190,12 @@ describe TestTdsInterface do
   describe '#quoted_table' do
 
     it 'returns just the table when the schema is not set' do
-      expect( interface.quoted_table ).to eq( %Q|[customer]| )
+      expect( interface.quoted_table ).to eq( %Q|`customer`| )
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaTdsInterface.new(@connect_hash)
-      expect( ifce.quoted_table ).to eq( %|[public].[customer]| )
+      ifce = SchemaSequelInterface.new(db)
+      expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
     end
 
   end
@@ -251,11 +226,16 @@ describe TestTdsInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.create(name: :Booboo) }.not_to raise_exception
+    end
+
     it 'shouldnt have a problem with record values of nil' do
-      hash2 = {name: 'Ranger', price: nil}
-      expect{ interface.create(hash2) }.not_to raise_exception
-      id = interface.create(hash2)
-      expect( interface.read(id).to_h ).to include(hash2)
+      record = {name: 'Ranger', price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
     end
 
   end
@@ -263,15 +243,12 @@ describe TestTdsInterface do
 
 
   describe '#read' do
-    before { fill_data(interface) }
 
     it 'returns the record for the id as an Octothorpe' do
-      rec = interface.read(2)
-      expect( rec ).to be_a_kind_of Octothorpe
-      expect( rec.>>.name ).to eq 'Fred'
+      expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
-    it 'raises a Pod4::CantContinue if anything goes wrong with the ID' do
+    it 'raises a Pod4::CantContinue if the ID is bad' do
       expect{ interface.read(:foo) }.to raise_exception CantContinue
     end
 
@@ -285,44 +262,36 @@ describe TestTdsInterface do
       level = interface.read(1).>>.level
 
       expect( level ).to be_a_kind_of Float
-      expect( level ).to be_within(0.001).of( @data.first[:level] )
+      expect( level ).to be_within(0.001).of( data.first[:level] )
     end
 
     it 'returns date fields as Date' do
-      pending "not supported by TinyTds ¬_¬ "
       date = interface.read(1).>>.day
 
       expect( date ).to be_a_kind_of Date
-      expect( date ).to eq @data.first[:day]
+      expect( date ).to eq data.first[:day]
     end
 
     it 'returns datetime fields as Time' do
       timestamp = interface.read(1).>>.timestamp
 
       expect( timestamp ).to be_a_kind_of Time
-      expect( timestamp ).to eq @data.first[:timestamp]
+      expect( timestamp ).to eq data.first[:timestamp]
     end
 
     it 'returns numeric fields as BigDecimal' do
-      qty = interface.read(1).>>.qty
-
-      expect( qty ).to be_a_kind_of BigDecimal
-      expect( qty ).to eq @data.first[:qty]
-    end
-
-    it 'returns money fields as BigDecimal' do
-      price   = interface.read(1).>>.price
+      price = interface.read(1).>>.price
 
       expect( price ).to be_a_kind_of BigDecimal
-      expect( price ).to eq @data.first[:price]
+      expect( price ).to eq data.first[:price]
     end
 
   end
   ##
 
 
+
   describe '#list' do
-    before { fill_data(interface) }
 
     it 'has an optional selection parameter, a hash' do
       # Actually it does not have to be a hash, but FTTB we only support that.
@@ -330,10 +299,10 @@ describe TestTdsInterface do
     end
 
     it 'returns an array of Octothorpes that match the records' do
-      list = interface.list
+      # convert each OT to a hash and remove the ID key
+      arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
 
-      expect( list.first ).to be_a_kind_of Octothorpe
-      expect( list.map{|x| x.>>.name} ).to match_array @data.map{|y| y[:name]}
+      expect( arr ).to match_array data
     end
 
     it 'returns a subset of records based on the selection parameter' do
@@ -352,27 +321,32 @@ describe TestTdsInterface do
       expect{ interface.list('foo') }.to raise_exception Pod4::DatabaseError
     end
 
+    it 'returns an empty array if there is no data' do
+      interface.list.each {|x| interface.delete(x[interface.id_fld]) }
+      expect( interface.list ).to eq([])
+    end
+
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.list(name: :Barney) }.not_to raise_exception
+    end
+
+
   end
   ##
   
 
   describe '#update' do
-    before { fill_data(interface) }
 
     let(:id) { interface.list.first[:id] }
-
-    def float_price(row)
-      row[:price] = row[:price].to_f
-      row
-    end
 
     it 'updates the record at ID with record parameter' do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      # It so happens that TinyTds returns money as BigDecimal --
-      # this is a really good thing, even though it screws with our test.
-      expect( float_price( interface.read(id).to_h ) ).to include(record)
+      booboo = interface.read(id)
+      expect( booboo.>>.name       ).to eq( record[:name] )
+      expect( booboo.>>.price.to_f ).to eq( record[:price] )
     end
 
     it 'raises a CantContinue if anything weird happens with the ID' do
@@ -381,10 +355,15 @@ describe TestTdsInterface do
 
     end
 
-    it 'raises a DatabaseError if anything weird happens with the record' do
+    it 'raises a DatabaseError if anything weird happensi with the record' do
       expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
+    end
+
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.update(id, name: :Booboo) }.not_to raise_exception
     end
 
     it 'shouldnt have a problem with record values of nil' do
@@ -405,8 +384,6 @@ describe TestTdsInterface do
 
     let(:id) { interface.list.first[:id] }
 
-    before { fill_data(interface) }
-
     it 'raises CantContinue if anything hinky happens with the ID' do
       expect{ interface.delete(:foo) }.to raise_exception CantContinue
       expect{ interface.delete(99)   }.to raise_exception CantContinue
@@ -426,8 +403,6 @@ describe TestTdsInterface do
 
     let(:sql) { 'delete from customer where price < 2.0;' }
 
-    before { fill_data(interface) }
-
     it 'requires an SQL string' do
       expect{ interface.execute      }.to raise_exception ArgumentError
       expect{ interface.execute(nil) }.to raise_exception ArgumentError
@@ -442,7 +417,7 @@ describe TestTdsInterface do
 
     it 'executes the string' do
       expect{ interface.execute(sql) }.not_to raise_exception
-      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.size ).to eq(data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
     end
 
@@ -451,8 +426,6 @@ describe TestTdsInterface do
 
 
   describe '#select' do
-
-    before { fill_data(interface) }
 
     it 'requires an SQL string' do
       expect{ interface.select      }.to raise_exception ArgumentError
@@ -480,7 +453,7 @@ describe TestTdsInterface do
       sql = 'delete from customer where price < 2.0;'
       ret = interface.select(sql)
 
-      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.size ).to eq(data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end

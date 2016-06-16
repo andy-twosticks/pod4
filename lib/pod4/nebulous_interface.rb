@@ -1,5 +1,3 @@
-require 'nebulous_stomp'
-
 require_relative 'interface'
 require_relative 'errors'
 

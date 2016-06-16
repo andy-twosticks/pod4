@@ -1,4 +1,3 @@
-require 'tiny_tds'
 require 'octothorpe'
 require 'date'
 require 'time'

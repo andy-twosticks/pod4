@@ -1,7 +1,8 @@
 require 'pod4/pg_interface'
+require 'pg'
 
-require_relative 'shared_examples_for_interface'
-require_relative 'fixtures/database'
+require_relative '../common/shared_examples_for_interface'
+require_relative '../fixtures/database'
 
 
 class TestPgInterface < PgInterface

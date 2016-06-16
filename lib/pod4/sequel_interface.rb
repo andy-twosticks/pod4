@@ -1,4 +1,3 @@
-require 'sequel'
 require 'octothorpe'
 
 require_relative 'interface'

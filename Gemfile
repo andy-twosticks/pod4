@@ -24,6 +24,7 @@ group :development, :test do
 
   platforms :jruby do
     gem "jruby-lint"
+    gem "pg", git: 'git://github.com/headinus/jruby-pg/git', branch: :master
   end
 
 

@@ -1,1 +1,0 @@
-../spec_common/nebulous_interface_spec.rb
