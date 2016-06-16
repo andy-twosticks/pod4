@@ -5,7 +5,7 @@ require 'date'
 require 'time'
 require 'bigdecimal'
 
-require_relative 'shared_examples_for_interface'
+require_relative '../common/shared_examples_for_interface'
 
 
 class TestSequelInterface < SequelInterface

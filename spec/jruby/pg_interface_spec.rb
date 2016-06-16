@@ -1,3 +1,6 @@
+# This is a copy of spec/mri/pg_interface_spec.rb; you can use it to judge
+# whether pg_jruby is currently a good drop-in replacement for pg...  :(
+
 require 'pod4/pg_interface'
 require 'pg'
 
