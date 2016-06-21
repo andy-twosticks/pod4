@@ -5,6 +5,7 @@ require 'bigdecimal'
 
 require_relative 'interface'
 require_relative 'errors'
+require_relative 'sql_helper'
 
 
 module Pod4
@@ -24,6 +25,7 @@ module Pod4
   #     end
   #
   class PgInterface < Interface
+    include SQLHelper
 
     attr_reader :id_fld
 
@@ -94,10 +96,6 @@ module Pod4
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
 
-    def quoted_table
-      schema ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
-    end
-
 
     ##
     # Selection is whatever Sequel's `where` supports.
@@ -106,6 +104,7 @@ module Pod4
       raise(ArgumentError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
+=begin
       if selection
         sel = selection.map {|k,v| %Q|"#{k}" = #{quote v}| }.join(" and ")
         sql = %Q|select * 
@@ -115,7 +114,9 @@ module Pod4
       else
         sql = %Q|select * from #{quoted_table};|
       end
+=end
 
+      sql = sql_select(nil, selection) % selection.values.map{|v| quote v }
       select(sql) {|r| Octothorpe.new(r) }
 
     rescue => e
@@ -132,6 +133,7 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
+=begin
       ks = record.keys.map   {|k| %Q|"#{k}"| }.join(',')
       vs = record.values.map {|v| quote v }.join(',')
 
@@ -139,7 +141,9 @@ module Pod4
                    ( #{ks} )
                    values( #{vs} )
                    returning "#{id_fld}";| 
+=end
 
+      sql = sql_insert(id_fld, record) % record.values.map{|v| quote v}
       x = select(sql)
       x.first[id_fld]
 
@@ -154,10 +158,13 @@ module Pod4
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
+=begin
       sql = %Q|select * 
                    from #{quoted_table} 
                    where "#{id_fld}" = #{quote id};|
+=end
 
+      sql = sql_select(nil, id_fld => id) % quote(id)
       Octothorpe.new( select(sql).first )
 
     rescue => e
@@ -179,12 +186,15 @@ module Pod4
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       read_or_die(id)
-      sets = record.map {|k,v| %Q| "#{k}" = #{quote v}| }.join(',')
 
+=begin
+      sets = record.map {|k,v| %Q| "#{k}" = #{quote v}| }.join(',')
       sql = %Q|update #{quoted_table} set
                    #{sets}
                    where "#{id_fld}" = #{quote id};|
+=end
 
+      sql = sql_update(record, id_fld => id) % quote(id)
       execute(sql)
 
       self
@@ -199,7 +209,13 @@ module Pod4
     #
     def delete(id)
       read_or_die(id)
+
+=begin
       execute( %Q|delete from #{quoted_table} where "#{id_fld}" = #{quote id};| )
+=end
+
+      sql = sql_delete(id_fld => id) % quote(id)
+      execute(sql)
 
       self
 
