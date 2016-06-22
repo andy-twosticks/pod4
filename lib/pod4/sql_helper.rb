@@ -6,8 +6,8 @@ module Pod4
   #
   module SQLHelper
 
-    def sql_select(fldsValues, selection))
-      flds = fldsValues ? sql_fields(fldsValues) : "*"
+    def sql_select(fldsValues, selection)
+      flds = fldsValues ? sql_fields(fldsValues) : ["*"]
 
       %Q|select #{flds.join ','}
                    from #{quoted_table}
@@ -29,7 +29,7 @@ module Pod4
 
 
     def sql_update(fldsValues, selection)
-      sets = fldsValues.map {|k,_| %Q| #{quote_fld k} = #{placeholder}| }
+      sets = fldsValues.map {|k,_| %Q| #{quote_field k} = #{placeholder}| }
 
       %Q|update #{quoted_table}
            set #{sets.join ','}
@@ -45,12 +45,12 @@ module Pod4
 
     def sql_where(selection)
       return "" if (selection.nil? || selection == {})
-      selection.map {|k,_| %Q|#{quote_fld k} = #{placeholder}| }.join(" and ")
+      selection.map {|k,_| %Q|#{quote_field k} = #{placeholder}| }.join(" and ")
     end
 
 
     def sql_fields(hash)
-      hash.keys.map{|f| quote_fld f.to_s }
+      hash.keys.map{|f| quote_field f.to_s }
     end
 
 
