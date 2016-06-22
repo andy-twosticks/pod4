@@ -18,7 +18,7 @@ group :development, :test do
 
   platforms :ruby do
     gem "sqlite3",  "~> 1.3"
-    gem "tiny_tds", "~> 0"
+    gem "tiny_tds", "~> 1.0"
     gem "pg"
   end
 
