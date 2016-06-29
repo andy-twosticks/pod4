@@ -13,10 +13,9 @@ module Pod4
   ##
   # Pod4 Interface for requests on a SQL table via pg, the PostgresQL adapter.
   #
-  # If your DB table is one-one with your model, you shouldn't need to override
-  # anything.
-  #
+  # If your DB table is one-one with your model, you shouldn't need to override anything.
   # Example:
+  #
   #     class CustomerInterface < SwingShift::PgInterface
   #       set_schema :public    # optional
   #       set_table  :customer
@@ -30,9 +29,8 @@ module Pod4
 
     class << self
       #--
-      # These are set in the class because it keeps the model code cleaner: the
-      # definition of the interface stays in the interface, and doesn't leak
-      # out into the model.
+      # These are set in the class because it keeps the model code cleaner: the definition of the
+      # interface stays in the interface, and doesn't leak out into the model.
       #++
 
       ## 
@@ -73,13 +71,12 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a Pg connection hash.
-    # For testing ONLY you can also pass an object which pretends to be a
-    # Pg client, in which case the hash is pretty much ignored.
+    # Initialise the interface by passing it a Pg connection hash. For testing ONLY you can also
+    # pass an object which pretends to be a Pg client, in which case the hash is pretty much
+    # ignored.
     #
     def initialize(connectHash, testClient=nil)
-      raise(ArgumentError, 'invalid connection hash') \
-        unless connectHash.kind_of?(Hash)
+      raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
 
       @connect_hash = connectHash.dup
       @test_client  = testClient 
@@ -125,8 +122,9 @@ module Pod4
 
     ##
     # Record is a hash of field: value
-    # By a happy coincidence, insert returns the unique ID for the record,
-    # which is just what we want to do, too.
+    #
+    # By a happy coincidence, insert returns the unique ID for the record, which is just what we
+    # want to do, too.
     #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
@@ -161,8 +159,8 @@ module Pod4
       Octothorpe.new( select(sql).first )
 
     rescue => e
-      # Select has already wrapped the error in a Pod4Error, but in this case
-      # we want to catch something
+      # Select has already wrapped the error in a Pod4Error, but in this case we want to catch
+      # something
       raise CantContinue, "That doesn't look like an ID" \
         if e.cause.class == PG::InvalidTextRepresentation
 
@@ -171,8 +169,8 @@ module Pod4
 
 
     ##
-    # ID is whatever you set in the interface using set_id_fld
-    # record should be a Hash or Octothorpe.
+    # ID is whatever you set in the interface using set_id_fld record should be a Hash or
+    # Octothorpe.
     #
     def update(id, record)
       raise(ArgumentError, "Bad type for record parameter") \
@@ -211,15 +209,14 @@ module Pod4
     ##
     # Run SQL code on the server. Return the results.
     #
-    # Will return an array of records, or you can use it in block mode, like
-    # this:
+    # Will return an array of records, or you can use it in block mode, like this:
     #
     #     select("select * from customer") do |r|
     #       # r is a single record
     #     end
     #
-    # The returned results will be an array of hashes (or if you passed a
-    # block, of whatever you returned from the block).
+    # The returned results will be an array of hashes (or if you passed a block, of whatever you
+    # returned from the block).
     #
     def select(sql)
       raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
@@ -284,21 +281,19 @@ module Pod4
       raise DataBaseError, "Bad Connection" \
         unless client.status == PG::CONNECTION_OK
 
-      # This gives us type mapping for integers, floats, booleans, and dates
-      # -- but annoyingly the PostgreSQL types 'numeric' and 'money' remain as
-      # strings... we fudge that elsewhere.
+      # This gives us type mapping for integers, floats, booleans, and dates -- but annoyingly the
+      # PostgreSQL types 'numeric' and 'money' remain as strings... we fudge that elsewhere.
       #
-      # NOTE we now deal with ALL mapping elsewhere, since pg_jruby does
-      # not support type mapping. Also: no annoying error messages, and it
-      # seems to be a hell of a lot faster now...
+      # NOTE we now deal with ALL mapping elsewhere, since pg_jruby does not support type mapping.
+      # Also: no annoying error messages, and it seems to be a hell of a lot faster now...
       # 
-      # if defined?(PG::BasicTypeMapForQueries)
-      #   client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
-      # end
+      #     if defined?(PG::BasicTypeMapForQueries)
+      #       client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
+      #     end
       #
-      # if defined?(PG::BasicTypeMapForResults)
-      #   client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
-      # end
+      #     if defined?(PG::BasicTypeMapForResults)
+      #       client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
+      #     end
 
       @client = client
       self
@@ -310,8 +305,9 @@ module Pod4
 
     ##
     # Close the connection to the database.
-    # We don't actually use this, but it's here for completeness. Maybe a
-    # caller will find it useful.
+    #
+    # We don't actually use this, but it's here for completeness. Maybe a caller will find it
+    # useful.
     #
     def close
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }
@@ -339,8 +335,7 @@ module Pod4
 
 
     ##
-    # Since pg gives us @client.reset to reconnect, we should use it rather
-    # than just call open
+    # Since pg gives us @client.reset to reconnect, we should use it rather than just call open
     #
     def ensure_connection
 
@@ -407,9 +402,9 @@ module Pod4
 
     ##
     # Cast a query row
-    # This is to step around problems with pg type mapping
-    # There is definitely a way to tell pg to cast money and numeric as
-    # BigDecimal, but, it's not documented and no one can tell me how to do it!
+    #
+    # This is to step around problems with pg type mapping There is definitely a way to tell pg to
+    # cast money and numeric as BigDecimal, but, it's not documented...
     #
     # Also, for the pg_jruby gem, type mapping doesn't work at all?
     #
@@ -447,13 +442,10 @@ module Pod4
 
 
     def read_or_die(id)
-      raise CantContinue, "'No record found with ID '#{id}'" \
-        if read(id).empty?
-
+      raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
-
-
   end
+
 
 end

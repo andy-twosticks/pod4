@@ -9,11 +9,11 @@ module Pod4
 
 
   ##
-  # The ultimate parent of all models. It has an interface, an id, a status, 
-  # and alerts. That's pretty much it.
+  # The ultimate parent of all models. It has an interface, an id, a status, and alerts. That's
+  # pretty much it.
   #
-  # This is useful to the user for weirder models -- for example, where the
-  # datasource records and the model instances don't map one-to-one.
+  # This is useful to the user for weirder models -- for example, where the datasource records and
+  # the model instances don't map one-to-one.
   #
   # See Pod4::Model for documentation about Models.
   #
@@ -34,8 +34,7 @@ module Pod4
     class << self
 
       ##
-      # You MUST call this in your model definition to give it an instance of an
-      # interface. 
+      # You MUST call this in your model definition to give it an instance of an interface. 
       #
       def set_interface(interface)
         define_class_method(:interface) {interface}
@@ -61,8 +60,7 @@ module Pod4
 
 
     ##
-    # Syntactic sugar; same as self.class.interface, which returns the
-    # interface instance.
+    # Syntactic sugar; same as self.class.interface, which returns the interface instance.
     #
     def interface; self.class.interface; end
 
@@ -70,8 +68,7 @@ module Pod4
     ##
     # Return the list of alerts. 
     #
-    # We don't use attr_reader for this because it won't protect an array from
-    # external changes.
+    # We don't use attr_reader for this because it won't protect an array from external changes.
     #
     def alerts; @alerts.dup; end
 
@@ -79,10 +76,9 @@ module Pod4
     ##
     # Clear down the alerts.
     #
-    # Note that set model_status to :okay. Theoretically it might need to be
-    # :empty or :deleted, but if you are calling clear_alerts before a call to
-    # `read` or after a call to `delete`, then you have more problems than I
-    # can solve.
+    # Note that set model_status to :okay. Theoretically it might need to be :empty or :deleted,
+    # but if you are calling clear_alerts before a call to `read` or after a call to `delete`, then
+    # you have more problems than I can solve.
     #
     def clear_alerts
       @alerts       = []
@@ -91,12 +87,12 @@ module Pod4
 
 
     ##
-    # Raise a SwingShift exception for the model if any alerts are status
-    # :error; otherwise do nothing.
+    # Raise a SwingShift exception for the model if any alerts are status :error; otherwise do
+    # nothing.
     #
-    # Note the alias of or_die for this method, which means that if you have
-    # kept to the idiom of CRUD methods returning self, then you can steal a
-    # lick from Perl and say:
+    # Note the alias of or_die for this method, which means that if you have kept to the idiom of
+    # CRUD methods returning self, then you can steal a lick from Perl and say:
+    #
     #     MyModel.new(14).read.or_die
     #
     def raise_exceptions
