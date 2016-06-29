@@ -18,12 +18,12 @@ module Pod4
 
     def sql_insert(id_fld, fldsValues)
       flds = sql_fields(fldsValues)
-      vals = placeholder * flds.count
+      vals = Array(placeholder).flatten * flds.count
 
       %Q|insert into #{quoted_table}
            ( #{flds.join ','} )
            values( #{vals.join ','} )
-           returning #{quote_fld id_fld};| 
+           returning #{quote_field id_fld};| 
 
     end
 
@@ -45,7 +45,7 @@ module Pod4
 
     def sql_where(selection)
       return "" if (selection.nil? || selection == {})
-      selection.map {|k,_| %Q|#{quote_field k} = #{placeholder}| }.join(" and ")
+      "where " + selection.map {|k,_| %Q|#{quote_field k} = #{placeholder}| }.join(" and ")
     end
 
 
@@ -55,7 +55,7 @@ module Pod4
 
 
     def quoted_table
-      defined?(schema) ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
+      defined?(schema) && schema ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
     end
 
 
@@ -66,6 +66,17 @@ module Pod4
 
     def placeholder
       "%s"
+    end
+
+
+    def sql_subst(sql, array)
+      args = Array(array).flatten.map(&:to_s)
+
+      case 
+        when args.empty?    then sql
+        when args.size == 1 then sql.gsub("%s", args.first) 
+        else sql % args
+      end
     end
 
   end

@@ -113,8 +113,10 @@ module Pod4
       end
 =end
 
-      sql = sql_select(nil, selection) % selection.values.map{|v| quote v }
-      select(sql) {|r| Octothorpe.new(r) }
+      sql  = sql_select(nil, selection)
+      vals = selection ? selection.values.map{|v| quote v} : nil
+
+      select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -141,8 +143,10 @@ module Pod4
                    returning "#{id_fld}";| 
 =end
 
-      sql = sql_insert(id_fld, record) % record.values.map{|v| quote v}
-      x = select(sql)
+      sql  = sql_insert(id_fld, record) 
+      vals = record.values.map{|v| quote v}
+
+      x = select( sql_subst(sql, vals) )
       x.first[id_fld]
 
     rescue => e
@@ -162,8 +166,9 @@ module Pod4
                    where "#{id_fld}" = #{quote id};|
 =end
 
-      sql = sql_select(nil, id_fld => id) % quote(id)
-      Octothorpe.new( select(sql).first )
+      sql  = sql_select(nil, id_fld => id) % quote(id)
+      rows = select( sql_subst(sql, quote(id)) )
+      Octothorpe.new(rows.first)
 
     rescue => e
       # Select has already wrapped the error in a Pod4Error, but in this case we want to catch
@@ -192,8 +197,8 @@ module Pod4
                    where "#{id_fld}" = #{quote id};|
 =end
 
-      sql = sql_update(record, id_fld => id) % quote(id)
-      execute(sql)
+      sql = sql_update(record, id_fld => id)
+      execute( sql_subst(sql, quote(id)) )
 
       self
 
@@ -212,8 +217,8 @@ module Pod4
       execute( %Q|delete from #{quoted_table} where "#{id_fld}" = #{quote id};| )
 =end
 
-      sql = sql_delete(id_fld => id) % quote(id)
-      execute(sql)
+      sql = sql_delete(id_fld => id)
+      execute( sql_subst(sql, quote(id)) )
 
       self
 
