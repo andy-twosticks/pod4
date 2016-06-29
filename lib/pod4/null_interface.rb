@@ -16,8 +16,8 @@ module Pod4
   #       set_interface NullInterface.new( :one, :two [ {one: 1, two: 2} ] )
   #       ...
   #
-  # The first column passed is taken to be the ID.
-  # Note that ID is not auto-assigned; you need to specify it in the record.
+  # The first column passed is taken to be the ID. Note that ID is not auto-assigned; you need to
+  # specify it in the record.
   #
   class NullInterface < Interface
 
@@ -25,8 +25,7 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a list of columns and an array of
-    # hashes to fill them.
+    # Initialise the interface by passing it a list of columns and an array of hashes to fill them.
     #
     def initialize(*cols, data)
       raise ArgumentError, "no columns"  if cols.nil? || cols == []
@@ -60,12 +59,11 @@ module Pod4
 
     ##
     # Record is a hash of field: value
-    # Note that we will store any old crap, not just the fields you named in
-    # new().
+    #
+    # Note that we will store any old crap, not just the fields you named in new().
     #
     def create(record)
-      raise(ArgumentError, "Create requires an ID") \
-        if record.nil? || ! record.respond_to?(:to_h)
+      raise(ArgumentError, "Create requires an ID") if record.nil? || ! record.respond_to?(:to_h)
 
       @data << record.to_h
       record[@id_fld]
@@ -90,8 +88,7 @@ module Pod4
 
 
     ##
-    # ID is the first column you named in new()
-    # record should be a Hash or Octothorpe.
+    # ID is the first column you named in new(). Record should be a Hash or Octothorpe.
     # Again, note that we don't care what columns you send us.
     #
     def update(id, record)
@@ -112,9 +109,7 @@ module Pod4
     #
     def delete(id)
       raise(ArgumentError, "Delete requires an ID")  if id.nil?
-
-      raise Pod4::CantContinue, "'No record found with ID '#{id}'" \
-        if read(id).empty?
+      raise(Pod4::CantContinue, "'No record found with ID '#{id}'") if read(id).empty?
 
       @data.delete_if {|r| r[@id_fld] == id }
       self

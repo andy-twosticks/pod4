@@ -10,8 +10,7 @@ module Pod4
   ##
   # Pod4 Interface for a Sequel table.
   #
-  # If your DB table is one-one with your model, you shouldn't need to override
-  # anything.
+  # If your DB table is one-one with your model, you shouldn't need to override anything.
   #
   # Example:
   #     class CustomerInterface < SwingShift::SequelInterface
@@ -19,9 +18,9 @@ module Pod4
   #       set_id_fld :id
   #     end
   #
-  # Data types: Sequel itself will translate to BigDecimal, Float, Integer,
-  # date, and datetime as appropriate -- but it also depends on the underlying
-  # adapter.  TinyTds maps dates to strings, for example. 
+  # Data types: Sequel itself will translate to BigDecimal, Float, Integer, date, and datetime as
+  # appropriate -- but it also depends on the underlying adapter.  TinyTds maps dates to strings,
+  # for example. 
   #
   class SequelInterface < Interface
 
@@ -30,9 +29,8 @@ module Pod4
 
     class << self
       #---
-      # These are set in the class because it keeps the model code cleaner: the
-      # definition of the interface stays in the interface, and doesn't leak
-      # out into the model.
+      # These are set in the class because it keeps the model code cleaner: the definition of the
+      # interface stays in the interface, and doesn't leak out into the model.
       #+++
 
 
@@ -78,12 +76,8 @@ module Pod4
     #
     def initialize(db)
       raise(ArgumentError, "Bad database") unless db.kind_of? Sequel::Database
-
-      raise(Pod4Error, 'no call to set_table in the interface definition') \
-        if self.class.table.nil?
-
-      raise(Pod4Error, 'no call to set_id_fld in the interface definition') \
-        if self.class.id_fld.nil?
+      raise(Pod4Error, 'no call to set_table in the interface definition') if self.class.table.nil?
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') if self.class.id_fld.nil?
 
       @db     = db # referemce to the db object
       @table  = db[schema ? "#{schema}__#{table}".to_sym : table]
@@ -113,10 +107,7 @@ module Pod4
     #
     def list(selection=nil)
       sel = sanitise_hash(selection)
-
-      Pod4.logger.debug(__FILE__) do
-        "Listing #{self.class.table}: #{sel.inspect}"
-      end
+      Pod4.logger.debug(__FILE__) { "Listing #{self.class.table}: #{sel.inspect}" }
 
       (sel ? @table.where(sel) : @table.all).map {|x| Octothorpe.new(x) }
     rescue => e
@@ -126,16 +117,15 @@ module Pod4
 
     ##
     # Record is a hash of field: value
-    # By a happy coincidence, insert returns the unique ID for the record,
-    # which is just what we want to do, too.
+    #
+    # By a happy coincidence, insert returns the unique ID for the record, which is just what we
+    # want to do, too.
     #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      Pod4.logger.debug(__FILE__) do
-        "Creating #{self.class.table}: #{record.inspect}"
-      end
+      Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{record.inspect}" }
 
       @table.insert( sanitise_hash(record.to_h) )
 
@@ -149,10 +139,7 @@ module Pod4
     #
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
-
-      Pod4.logger.debug(__FILE__) do
-        "Reading #{self.class.table} where #{@id_fld}=#{id}"
-      end
+      Pod4.logger.debug(__FILE__) { "Reading #{self.class.table} where #{@id_fld}=#{id}" }
 
       Octothorpe.new( @table[@id_fld => id] )
 
@@ -165,8 +152,8 @@ module Pod4
 
 
     ##
-    # ID is whatever you set in the interface using set_id_fld
-    # record should be a Hash or Octothorpe.
+    # ID is whatever you set in the interface using set_id_fld record should be a Hash or
+    # Octothorpe.
     #
     def update(id, record)
       read_or_die(id)
@@ -213,8 +200,7 @@ module Pod4
 
 
     ## 
-    # Bonus method: execute arbitrary SQL and return the resulting dataset as a
-    # Hash.
+    # Bonus method: execute arbitrary SQL and return the resulting dataset as a Hash.
     #
     def select(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
@@ -231,8 +217,9 @@ module Pod4
 
     ##
     # Helper routine to handle or re-raise the right exception.
-    # Unless kaller is passed, we re-raise on the caller of the caller, which
-    # is likely the original bug
+    #
+    # Unless kaller is passed, we re-raise on the caller of the caller, which is likely the
+    # original bug
     # 
     def handle_error(err, kaller=nil)
       kaller ||= caller[1..-1]
@@ -269,9 +256,9 @@ module Pod4
 
 
     ##
-    # Sequel behaves VERY oddly if you pass a symbol as a value to the hash you
-    # give to a selection,etc on a dataset. (It raises an error complaining that
-    # the symbol does not exist as a column in the table...)
+    # Sequel behaves VERY oddly if you pass a symbol as a value to the hash you give to a
+    # selection,etc on a dataset. (It raises an error complaining that the symbol does not exist as
+    # a column in the table...)
     #
     def sanitise_hash(sel)
 
@@ -300,3 +287,4 @@ module Pod4
 
 
 end
+

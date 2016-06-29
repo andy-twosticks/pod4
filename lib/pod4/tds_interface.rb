@@ -13,8 +13,7 @@ module Pod4
   ##
   # Pod4 Interface for requests on a SQL table via TinyTds.
   #
-  # If your DB table is one-one with your model, you shouldn't need to override
-  # anything.
+  # If your DB table is one-one with your model, you shouldn't need to override anything.
   #
   # Example:
   #     class CustomerInterface < SwingShift::TdsInterface
@@ -30,9 +29,8 @@ module Pod4
 
     class << self
       #--
-      # These are set in the class because it keeps the model code cleaner: the
-      # definition of the interface stays in the interface, and doesn't leak
-      # out into the model.
+      # These are set in the class because it keeps the model code cleaner: the definition of the
+      # interface stays in the interface, and doesn't leak out into the model.
       #++
 
 
@@ -86,23 +84,15 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a TinyTds connection hash.
-    # For testing ONLY you can also pass an object which pretends to be a
-    # TinyTds client, in which case the hash is pretty much ignored.
+    # Initialise the interface by passing it a TinyTds connection hash.# For testing ONLY you can
+    # also pass an object which pretends to be a TinyTds client, in which case the hash is pretty
+    # much ignored.
     #
     def initialize(connectHash, testClient=nil)
-
-      raise(Pod4Error, 'no call to set_db in the interface definition') \
-        if self.class.db.nil?
-
-      raise(Pod4Error, 'no call to set_table in the interface definition') \
-        if self.class.table.nil?
-
-      raise(Pod4Error, 'no call to set_id_fld in the interface definition') \
-        if self.class.id_fld.nil?
-
-      raise(ArgumentError, 'invalid connection hash') \
-        unless connectHash.kind_of?(Hash)
+      raise(Pod4Error, 'no call to set_db in the interface definition') if self.class.db.nil?
+      raise(Pod4Error, 'no call to set_table in the interface definition') if self.class.table.nil?
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') if self.class.id_fld.nil?
+      raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
 
       @connect_hash = connectHash.dup
       @test_client  = testClient 
@@ -127,8 +117,8 @@ module Pod4
 
 
     ##
-    # Selection is a hash or something like it: keys should be field names. We
-    # return any records where the given fields equal the given values.
+    # Selection is a hash or something like it: keys should be field names. We return any records
+    # where the given fields equal the given values.
     #
     def list(selection=nil)
 
@@ -154,8 +144,9 @@ module Pod4
 
     ##
     # Record is a hash of field: value
-    # By a happy coincidence, insert returns the unique ID for the record,
-    # which is just what we want to do, too.
+    #
+    # By a happy coincidence, insert returns the unique ID for the record, which is just what we
+      # want to do, too.
     #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
@@ -190,9 +181,8 @@ module Pod4
       Octothorpe.new( select(sql).first )
 
     rescue => e
-      # select already wrapped any error in a Pod4::DatabaseError, but in this
-      # case we want to try to catch something. (Side note: TinyTds' error
-      # class structure is a bit poor...)
+      # select already wrapped any error in a Pod4::DatabaseError, but in this case we want to try
+      # to catch something. (Side note: TinyTds' error class structure is a bit poor...)
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?" \
         if e.cause.class   == TinyTds::Error \
         && e.cause.message =~ /invalid column/i
@@ -202,8 +192,8 @@ module Pod4
 
 
     ##
-    # ID is whatever you set in the interface using set_id_fld
-    # record should be a Hash or Octothorpe.
+    # ID is whatever you set in the interface using set_id_fld record should be a Hash or
+      # Octothorpe.
     #
     def update(id, record)
       raise(ArgumentError, "Bad type for record parameter") \
@@ -242,15 +232,14 @@ module Pod4
     ##
     # Run SQL code on the server. Return the results.
     #
-    # Will return an array of records, or you can use it in block mode, like
-    # this:
+    # Will return an array of records, or you can use it in block mode, like this:
     #
     #     select("select * from customer") do |r|
     #       # r is a single record
     #     end
     #
-    # The returned results will be an array of hashes (or if you passed a
-    # block, of whatever you returned from the block).
+    # The returned results will be an array of hashes (or if you passed a block, of whatever you
+    # returned from the block).
     #
     def select(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
@@ -323,8 +312,9 @@ module Pod4
 
     ##
     # Close the connection to the database.
-    # We don't actually use this, but it's here for completeness. Maybe a
-    # caller will find it useful.
+    #
+    # We don't actually use this, but it's here for completeness. Maybe a caller will find it
+    # useful.
     #
     def close
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }
@@ -386,8 +376,8 @@ module Pod4
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
-
   end
 
 
 end
+

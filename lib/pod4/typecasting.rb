@@ -6,13 +6,11 @@ module Pod4
 
 
   ##
-  # A mixin to give you some more options to control how Pod4 maps the
-  # interface to the model.
+  # A mixin to give you some more options to control how Pod4 maps the interface to the model.
   #
-  # Eventually we will actually have typecasting in here. For now all this
-  # allows you to do is enforce an encoding -- which will be of use if you are
-  # dealing with MSSQL, or with certain interfaces which appear to deal with
-  # the code page poorly:
+  # Eventually we will actually have typecasting in here. For now all this allows you to do is
+  # enforce an encoding -- which will be of use if you are dealing with MSSQL, or with certain
+  # interfaces which appear to deal with the code page poorly:
   #
   #     class FOo < Pod4::Model
   #       include Pod4::TypeCasting
@@ -27,10 +25,9 @@ module Pod4
     ##
     # A little bit of magic, for which I apologise. 
     #
-    # When you include this module it actually adds the methods in ClassMethods
-    # to the class as if you had called `extend TypeCasting:ClassMethds` *AND*
-    # adds the methods in InstanceMethods as if you had written `prepend
-    # TypeCasting::InstanceMethods`.  
+    # When you include this module it actually adds the methods in ClassMethods to the class as if
+    # you had called `extend TypeCasting:ClassMethds` *AND* adds the methods in InstanceMethods as
+    # if you had written `prepend TypeCasting::InstanceMethods`.  
     #
     # In my defence: I didn't want to have to make you remember to do that...
     #
