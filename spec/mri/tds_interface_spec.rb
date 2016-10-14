@@ -259,6 +259,13 @@ describe TestTdsInterface do
       expect( interface.read(id).to_h ).to include(hash2)
     end
 
+    it 'shouldnt have a problem with strings containing special characters' do
+      hash2 = {name: "T'Challa[]", price: nil}
+      expect{ interface.create(hash2) }.not_to raise_exception
+      id = interface.create(hash2)
+      expect( interface.read(id).to_h ).to include(hash2)
+    end
+
   end
   ##
 
@@ -390,6 +397,12 @@ describe TestTdsInterface do
 
     it 'shouldnt have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldnt have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end

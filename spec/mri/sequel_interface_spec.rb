@@ -238,6 +238,13 @@ describe TestSequelInterface do
       expect( interface.read(id).to_h ).to include(record)
     end
 
+    it 'shouldnt have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
   end
   ##
 
@@ -368,6 +375,12 @@ describe TestSequelInterface do
 
     it 'shouldnt have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldnt have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end
