@@ -372,8 +372,12 @@ module Pod4
     def quote(fld)
 
       case fld
-        when String, Date, Time, Symbol
+        when Date, Time
           "'#{fld}'" 
+        when String
+          "'#{fld.gsub("'", "''")}'" 
+        when Symbol
+          "'#{fld.to_s.gsub("'", "''")}'" 
         when BigDecimal
           fld.to_f
         when nil

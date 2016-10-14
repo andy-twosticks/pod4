@@ -359,8 +359,10 @@ module Pod4
       case fld
         when DateTime, Time
           %Q|'#{fld.to_s[0..-7]}'|
-        when String, Date
+        when Date
           %Q|'#{fld}'|
+        when String
+          %Q|'#{fld.gsub("'", "''")}'|
         when BigDecimal
           fld.to_f
         when nil
