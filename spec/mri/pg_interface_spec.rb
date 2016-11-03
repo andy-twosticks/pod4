@@ -8,6 +8,9 @@ require_relative '../fixtures/database'
 class TestPgInterface < PgInterface
   set_table  :customer
   set_id_fld :id
+
+  # We open a lot of connections, unusually
+  def stop; close; end
 end
 
 class SchemaPgInterface < PgInterface
@@ -84,6 +87,12 @@ describe TestPgInterface do
   before do
     # TRUNCATE TABLE also resets the identity counter
     interface.execute(%Q|truncate table customer restart identity;|)
+  end
+
+
+  after do
+    # We open a lot of connections, unusually
+    interface.stop if interface
   end
 
 
