@@ -113,8 +113,8 @@ module Pod4
       end
 =end
 
-      sql  = sql_select(nil, selection)
-      vals = selection ? selection.values.map{|v| quote v} : nil
+      sql, vals  = sql_select(nil, selection)
+      #vals = selection ? selection.values.map{|v| quote v} : nil
 
       select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
 
@@ -143,8 +143,8 @@ module Pod4
                    returning "#{id_fld}";| 
 =end
 
-      sql  = sql_insert(id_fld, record) 
-      vals = record.values.map{|v| quote v}
+      sql, vals  = sql_insert(id_fld, record) 
+      #vals = record.values.map{|v| quote v}
 
       x = select( sql_subst(sql, vals) )
       x.first[id_fld]
@@ -166,8 +166,8 @@ module Pod4
                    where "#{id_fld}" = #{quote id};|
 =end
 
-      sql  = sql_select(nil, id_fld => id) % quote(id)
-      rows = select( sql_subst(sql, quote(id)) )
+      sql, vals = sql_select(nil, id_fld => id) 
+      rows = select( sql_subst(sql, vals) )
       Octothorpe.new(rows.first)
 
     rescue => e
@@ -197,8 +197,9 @@ module Pod4
                    where "#{id_fld}" = #{quote id};|
 =end
 
-      sql = sql_update(record, id_fld => id)
-      execute( sql_subst(sql, quote(id)) )
+      sql, vals = sql_update(record, id_fld => id)
+      binding.pry #bamf
+      execute sql_subst(sql, vals)
 
       self
 
@@ -217,8 +218,8 @@ module Pod4
       execute( %Q|delete from #{quoted_table} where "#{id_fld}" = #{quote id};| )
 =end
 
-      sql = sql_delete(id_fld => id)
-      execute( sql_subst(sql, quote(id)) )
+      sql, vals = sql_delete(id_fld => id)
+      execute sql_subst(sql, vals)
 
       self
 
@@ -389,7 +390,7 @@ module Pod4
 
     end
 
-
+=begin
     def quote(fld)
 
       case fld
@@ -408,6 +409,7 @@ module Pod4
       end
 
     end
+=end
     
 
     private

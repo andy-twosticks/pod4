@@ -6,51 +6,63 @@ module Pod4
   #
   module SQLHelper
 
-    def sql_select(fldsValues, selection)
-      flds = fldsValues ? sql_fields(fldsValues) : ["*"]
+    private
 
-      %Q|select #{flds.join ','}
-                   from #{quoted_table}
-                   #{sql_where selection};|
+    def sql_select(fields, selection)
+      flds = fields ? fields.map{|f| quote_field f} : ["*"]
 
+      wsql, wvals = sql_where(selection)
+
+      sql = %Q|select #{flds.join ','}
+                 from #{quoted_table}
+                 #{wsql};|
+
+      [sql, wvals]
     end
 
 
     def sql_insert(id_fld, fldsValues)
-      flds = sql_fields(fldsValues)
-      vals = Array(placeholder).flatten * flds.count
+      flds, vals = parse_hash(fldsValues)
+      ph = Array(placeholder).flatten * flds.count
 
-      %Q|insert into #{quoted_table}
-           ( #{flds.join ','} )
-           values( #{vals.join ','} )
-           returning #{quote_field id_fld};| 
+      sql = %Q|insert into #{quoted_table}
+                 ( #{flds.join ','} )
+                 values( #{ph.join ','} )
+                 returning #{quote_field id_fld};| 
 
+      [sql, vals]
     end
 
 
     def sql_update(fldsValues, selection)
-      sets = fldsValues.map {|k,_| %Q| #{quote_field k} = #{placeholder}| }
+      flds, vals = parse_hash(fldsValues)
+      sets = flds.map {|f| %Q| #{f} = #{placeholder}| }
 
-      %Q|update #{quoted_table}
-           set #{sets.join ','}
-           #{sql_where selection};|
-      
+      wsql, wvals = sql_where(selection)
+
+      sql = %Q|update #{quoted_table}
+                 set #{sets.join ','}
+                 #{wsql};|
+                 
+      [sql, vals + wvals]
     end
 
 
     def sql_delete(selection)
-      %Q|delete from #{quoted_table} #{sql_where selection};|
+      wsql, wval = sql_where(selection)
+      [ %Q|delete from #{quoted_table} #{wsql};|, 
+        wval ]
     end
 
 
     def sql_where(selection)
-      return "" if (selection.nil? || selection == {})
-      "where " + selection.map {|k,_| %Q|#{quote_field k} = #{placeholder}| }.join(" and ")
-    end
+      return ["", []] if (selection.nil? || selection == {})
 
+      flds, vals = parse_hash(selection)
 
-    def sql_fields(hash)
-      hash.keys.map{|f| quote_field f.to_s }
+      [ "where " + flds.map {|f| %Q|#{f} = #{placeholder}| }.join(" and "),
+        vals ]
+
     end
 
 
@@ -63,6 +75,26 @@ module Pod4
       %Q|"#{fld}"|
     end
 
+
+    def quote(fld)
+
+      case fld
+        when Date, Time
+          "'#{fld}'" 
+        when String
+          "'#{fld.gsub("'", "''")}'" 
+        when Symbol
+          "'#{fld.to_s.gsub("'", "''")}'" 
+        when BigDecimal
+          fld.to_f
+        when nil
+          'NULL'
+        else 
+          fld
+      end
+
+    end
+    
 
     def placeholder
       "%s"
@@ -77,6 +109,14 @@ module Pod4
         when args.size == 1 then sql.gsub("%s", args.first) 
         else sql % args
       end
+    end
+
+
+    private
+
+
+    def parse_hash(hash)
+      hash.map{|k,v| [quote_field(k.to_s), quote(v)] }
     end
 
   end

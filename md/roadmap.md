@@ -15,6 +15,9 @@ then gets passed to the interface. When the interface wants a connection, then
 it asks the connection object. If the connection object doesn't have one, then
 the interface connects, and gives the connection to the connection object.
 
+It's looking as if we don't need this right now. One connection per model might not be as daft as
+it seems.
+
 
 Transactions
 ============
@@ -23,7 +26,9 @@ We really need this, because without it we can't even pretend to be doing
 proper pessimistic locking.
 
 I've got a pretty solid idea for a nice, simple way to make this happen. It
-will be in place soon.
+will be in place soon.  
+
+...I did. Needs more thought. Not soon after all.
 
 
 Migrations
@@ -67,3 +72,15 @@ For the jdbc-msssqlserver gem.  Doable ... I *think*.
     conn.close
 
     see https://github.com/jruby/jruby/wiki/JDBC
+
+
+SQL Injection Projection
+========================
+
+We need this.  I want to abstract out all the common SQL for interfaces to a helper mixin, then
+have the interfaces call whatever methods their data source provides to insert values into SQL with
+placeholders.  We fall back to doing this ourselves, which is considerably less secure, but even so
+better than what we have now.
+
+Can't really claim to be generally usable without this functionality.
+

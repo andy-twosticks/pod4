@@ -346,8 +346,6 @@ describe TestPgInterface do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      # It so happens that TinyTds returns money as BigDecimal --
-      # this is a really good thing, even though it screws with our test.
       expect( float_price( interface.read(id).to_h ) ).to include(record)
     end
 
