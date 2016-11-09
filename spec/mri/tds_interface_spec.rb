@@ -61,7 +61,7 @@ describe TestTdsInterface do
 
 
   def fill_data(ifce)
-    @data.each{|r| binding.pry; ifce.create(r) }
+    @data.each{|r| ifce.create(r) }
   end
 
 
@@ -273,7 +273,7 @@ describe TestTdsInterface do
   describe '#read' do
     before { fill_data(interface) }
 
-    fit 'returns the record for the id as an Octothorpe' do
+    it 'returns the record for the id as an Octothorpe' do
       rec = interface.read(2)
       expect( rec ).to be_a_kind_of Octothorpe
       expect( rec.>>.name ).to eq 'Fred'

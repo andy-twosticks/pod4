@@ -141,11 +141,11 @@ module Pod4
 
       case fld
         when Date, Time
-          "'#{fld}'" 
+          %Q|'#{fld}'|
         when String
-          "'#{fld.gsub("'", "''")}'" 
+          %Q|'#{fld.gsub("'", "''")}'|
         when Symbol
-          "'#{fld.to_s.gsub("'", "''")}'" 
+          %Q|'#{fld.to_s.gsub("'", "''")}'|
         when BigDecimal
           fld.to_f
         when nil

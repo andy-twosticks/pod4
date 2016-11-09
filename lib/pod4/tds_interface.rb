@@ -136,20 +136,6 @@ module Pod4
       sql, vals = sql_select(nil, selection)
       select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
 
-=begin
-      if selection
-        sel = selection.map {|k,v| "[#{k}] = #{quote v}" }.join(" and ")
-        sql = %Q|select * 
-                     from #{quoted_table}
-                     where #{sel};|
-
-      else
-        sql = %Q|select * from #{quoted_table};|
-      end
-
-      select(sql) {|r| Octothorpe.new(r) }
-=end
-
     rescue => e
       handle_error(e)
     end
@@ -176,19 +162,6 @@ module Pod4
       x = select( sql_subst(sql, vals) )
       x.first[id_fld]
 
-=begin
-      ks = record.keys.map   {|k| "[#{k}]" }
-      vs = record.values.map {|v| quote v } 
-
-      sql = "insert into #{quoted_table}\n"
-      sql << "    ( " << ks.join(",") << ")\n"
-      sql << "    output inserted.[#{id_fld}]\n"
-      sql << "    values( " << vs.join(",") << ");"
-
-      x = select(sql)
-      x.first[id_fld]
-=end
-
     rescue => e
       handle_error(e) 
     end
@@ -204,20 +177,13 @@ module Pod4
       rows = select( sql_subst(sql, vals) )
       Octothorpe.new(rows.first)
 
-=begin
-      sql = %Q|select * 
-                   from #{quoted_table} 
-                   where [#{id_fld}] = #{quote id};|
-
-      Octothorpe.new( select(sql).first )
-=end
-
     rescue => e
       # select already wrapped any error in a Pod4::DatabaseError, but in this case we want to try
       # to catch something. (Side note: TinyTds' error class structure is a bit poor...)
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?" \
         if e.cause.class   == TinyTds::Error \
-        && e.cause.message =~ /invalid column/i
+        && e.cause.message =~ /conversion failed/i
+
 
       handle_error(e)
     end
@@ -236,15 +202,6 @@ module Pod4
       sql, vals = sql_update(record, id_fld => id)
       execute sql_subst(sql, vals)
 
-=begin
-      sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
-
-      sql = "update #{quoted_table} set\n"
-      sql << sets.join(",") << "\n"
-      sql << "where [#{id_fld}] = #{quote id};"
-      execute(sql)
-=end
-
       self
 
     rescue => e
@@ -260,10 +217,6 @@ module Pod4
 
       sql, vals = sql_delete(id_fld => id)
       execute sql_subst(sql, vals)
-
-=begin
-      execute( %Q|delete #{quoted_table} where [#{id_fld}] = #{quote id};| )
-=end
 
       self
 
@@ -397,26 +350,16 @@ module Pod4
     end
 
 
-=begin
     def quote(fld)
 
       case fld
         when DateTime, Time
           %Q|'#{fld.to_s[0..-7]}'|
-        when Date
-          %Q|'#{fld}'|
-        when String
-          %Q|'#{fld.gsub("'", "''")}'|
-        when BigDecimal
-          fld.to_f
-        when nil
-          'NULL'
-        else 
-          fld
+        else
+          super
       end
 
     end
-=end
 
 
     def read_or_die(id)
