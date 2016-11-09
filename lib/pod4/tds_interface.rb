@@ -5,6 +5,7 @@ require 'bigdecimal'
 
 require_relative 'interface'
 require_relative 'errors'
+require_relative 'sql_helper'
 
 
 module Pod4
@@ -23,6 +24,7 @@ module Pod4
   #     end
   #
   class TdsInterface < Interface
+    include SQLHelper
 
     attr_reader :id_fld
 
@@ -89,9 +91,10 @@ module Pod4
     # much ignored.
     #
     def initialize(connectHash, testClient=nil)
-      raise(Pod4Error, 'no call to set_db in the interface definition') if self.class.db.nil?
-      raise(Pod4Error, 'no call to set_table in the interface definition') if self.class.table.nil?
-      raise(Pod4Error, 'no call to set_id_fld in the interface definition') if self.class.id_fld.nil?
+      sc = self.class
+      raise(Pod4Error, 'no call to set_db in the interface definition')     if sc.db.nil?
+      raise(Pod4Error, 'no call to set_table in the interface definition')  if sc.table.nil?
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') if sc.id_fld.nil?
       raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
 
       @connect_hash = connectHash.dup
@@ -115,6 +118,11 @@ module Pod4
       schema ? %Q|[#{schema}].[#{table}]| : %Q|[#{table}]|
     end
 
+    def quote_field(fld)
+      super
+      %Q|[#{fld}]|
+    end
+
 
     ##
     # Selection is a hash or something like it: keys should be field names. We return any records
@@ -125,6 +133,10 @@ module Pod4
       raise(Pod4::DatabaseError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
+      sql, vals = sql_select(nil, selection)
+      select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
+
+=begin
       if selection
         sel = selection.map {|k,v| "[#{k}] = #{quote v}" }.join(" and ")
         sql = %Q|select * 
@@ -136,6 +148,7 @@ module Pod4
       end
 
       select(sql) {|r| Octothorpe.new(r) }
+=end
 
     rescue => e
       handle_error(e)
@@ -146,12 +159,24 @@ module Pod4
     # Record is a hash of field: value
     #
     # By a happy coincidence, insert returns the unique ID for the record, which is just what we
-      # want to do, too.
+    # want to do, too.
     #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
             unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
+      flds, vals = parse_fldsvalues(record)
+      ph = Array(placeholder).flatten * flds.count
+
+      sql = %Q|insert into #{quoted_table}
+                 ( #{flds.join ','} )
+                 output inserted.#{quote_field id_fld}
+                 values( #{ph.join ','} );|
+
+      x = select( sql_subst(sql, vals) )
+      x.first[id_fld]
+
+=begin
       ks = record.keys.map   {|k| "[#{k}]" }
       vs = record.values.map {|v| quote v } 
 
@@ -162,6 +187,7 @@ module Pod4
 
       x = select(sql)
       x.first[id_fld]
+=end
 
     rescue => e
       handle_error(e) 
@@ -174,11 +200,17 @@ module Pod4
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
+      sql, vals = sql_select(nil, id_fld => id) 
+      rows = select( sql_subst(sql, vals) )
+      Octothorpe.new(rows.first)
+
+=begin
       sql = %Q|select * 
                    from #{quoted_table} 
                    where [#{id_fld}] = #{quote id};|
 
       Octothorpe.new( select(sql).first )
+=end
 
     rescue => e
       # select already wrapped any error in a Pod4::DatabaseError, but in this case we want to try
@@ -193,7 +225,7 @@ module Pod4
 
     ##
     # ID is whatever you set in the interface using set_id_fld record should be a Hash or
-      # Octothorpe.
+    # Octothorpe.
     #
     def update(id, record)
       raise(ArgumentError, "Bad type for record parameter") \
@@ -201,12 +233,17 @@ module Pod4
 
       read_or_die(id)
 
+      sql, vals = sql_update(record, id_fld => id)
+      execute sql_subst(sql, vals)
+
+=begin
       sets = record.map {|k,v| "    [#{k}] = #{quote v}" }
 
       sql = "update #{quoted_table} set\n"
       sql << sets.join(",") << "\n"
       sql << "where [#{id_fld}] = #{quote id};"
       execute(sql)
+=end
 
       self
 
@@ -220,7 +257,13 @@ module Pod4
     #
     def delete(id)
       read_or_die(id)
+
+      sql, vals = sql_delete(id_fld => id)
+      execute sql_subst(sql, vals)
+
+=begin
       execute( %Q|delete #{quoted_table} where [#{id_fld}] = #{quote id};| )
+=end
 
       self
 
@@ -354,6 +397,7 @@ module Pod4
     end
 
 
+=begin
     def quote(fld)
 
       case fld
@@ -372,6 +416,7 @@ module Pod4
       end
 
     end
+=end
 
 
     def read_or_die(id)

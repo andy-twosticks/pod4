@@ -95,26 +95,12 @@ module Pod4
 
 
     ##
-    # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
       raise(ArgumentError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
-=begin
-      if selection
-        sel = selection.map {|k,v| %Q|"#{k}" = #{quote v}| }.join(" and ")
-        sql = %Q|select * 
-                     from #{quoted_table}
-                     where #{sel};|
-
-      else
-        sql = %Q|select * from #{quoted_table};|
-      end
-=end
-
-      sql, vals  = sql_select(nil, selection)
-      #vals = selection ? selection.values.map{|v| quote v} : nil
+      sql, vals = sql_select(nil, selection)
 
       select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
 
@@ -133,18 +119,7 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-=begin
-      ks = record.keys.map   {|k| %Q|"#{k}"| }.join(',')
-      vs = record.values.map {|v| quote v }.join(',')
-
-      sql = %Q|insert into #{quoted_table}
-                   ( #{ks} )
-                   values( #{vs} )
-                   returning "#{id_fld}";| 
-=end
-
-      sql, vals  = sql_insert(id_fld, record) 
-      #vals = record.values.map{|v| quote v}
+      sql, vals = sql_insert(record) 
 
       x = select( sql_subst(sql, vals) )
       x.first[id_fld]
@@ -159,12 +134,6 @@ module Pod4
     #
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
-
-=begin
-      sql = %Q|select * 
-                   from #{quoted_table} 
-                   where "#{id_fld}" = #{quote id};|
-=end
 
       sql, vals = sql_select(nil, id_fld => id) 
       rows = select( sql_subst(sql, vals) )
@@ -190,15 +159,7 @@ module Pod4
 
       read_or_die(id)
 
-=begin
-      sets = record.map {|k,v| %Q| "#{k}" = #{quote v}| }.join(',')
-      sql = %Q|update #{quoted_table} set
-                   #{sets}
-                   where "#{id_fld}" = #{quote id};|
-=end
-
       sql, vals = sql_update(record, id_fld => id)
-      binding.pry #bamf
       execute sql_subst(sql, vals)
 
       self
@@ -213,10 +174,6 @@ module Pod4
     #
     def delete(id)
       read_or_die(id)
-
-=begin
-      execute( %Q|delete from #{quoted_table} where "#{id_fld}" = #{quote id};| )
-=end
 
       sql, vals = sql_delete(id_fld => id)
       execute sql_subst(sql, vals)
@@ -390,27 +347,6 @@ module Pod4
 
     end
 
-=begin
-    def quote(fld)
-
-      case fld
-        when Date, Time
-          "'#{fld}'" 
-        when String
-          "'#{fld.gsub("'", "''")}'" 
-        when Symbol
-          "'#{fld.to_s.gsub("'", "''")}'" 
-        when BigDecimal
-          fld.to_f
-        when nil
-          'NULL'
-        else 
-          fld
-      end
-
-    end
-=end
-    
 
     private
 

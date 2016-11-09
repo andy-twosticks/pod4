@@ -27,11 +27,11 @@ describe "SQLHelper" do
   describe "quoted_table" do
 
     it "will be quoted with double quotes" do
-      expect( tester2.send :quoted_table ).to eq %Q|"polo"|
+      expect( tester2.quoted_table ).to eq %Q|"polo"|
     end
 
     it "will the schema plus the table if the schema is set" do
-      expect( tester1.send :quoted_table ).to eq %Q|"marco"."polo"|
+      expect( tester1.quoted_table ).to eq %Q|"marco"."polo"|
     end
 
   end

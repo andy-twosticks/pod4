@@ -16,6 +16,18 @@ module Pod4
   # that; you should call the parameterised query routines for the data source library instead.
   #
   module SQLHelper
+    
+   
+    ##
+    # Return the name of the table quoted as for inclusion in SQL. Might include the name of the
+    # schema, too, if you have set one.
+    #
+    # table() is mandatory for an Interface, and if we have a schema it will be schema().
+    #
+    def quoted_table
+      defined?(schema) && schema ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
+    end
+
 
     private
 
@@ -45,7 +57,7 @@ module Pod4
     def sql_insert(fldsValues)
       raise ArgumentError, "Needs a field:value hash" if fldsValues.nil? || fldsValues.empty?
 
-      flds, vals = parse_hash(fldsValues)
+      flds, vals = parse_fldsvalues(fldsValues)
       ph = Array(placeholder).flatten * flds.count
 
       sql = %Q|insert into #{quoted_table}
@@ -64,7 +76,7 @@ module Pod4
     def sql_update(fldsValues, selection)
       raise ArgumentError, "Needs a field:value hash" if fldsValues.nil? || fldsValues.empty?
 
-      flds, vals = parse_hash(fldsValues)
+      flds, vals = parse_fldsvalues(fldsValues)
       sets = flds.map {|f| %Q| #{f} = #{placeholder}| }
 
       wsql, wvals = sql_where(selection)
@@ -97,22 +109,11 @@ module Pod4
     def sql_where(selection)
       return ["", []] if (selection.nil? || selection == {})
 
-      flds, vals = parse_hash(selection)
+      flds, vals = parse_fldsvalues(selection)
 
       [ "where " + flds.map {|f| %Q|#{f} = #{placeholder}| }.join(" and "),
         vals ]
 
-    end
-
-
-    ##
-    # Return the name of the table quoted as for inclusion in SQL. Might include the name of the
-    # schema, too, if you have set one.
-    #
-    # table() is mandatory for an Interface, and if we have a schema it will be schema().
-    #
-    def quoted_table
-      defined?(schema) && schema ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
     end
 
 
@@ -200,7 +201,7 @@ module Pod4
     # Helper routine: given a hash, quote the keys as column names and the values as column values.
     # Return the hash as two arrays, to ensure the ordering is consistent.
     #
-    def parse_hash(hash)
+    def parse_fldsvalues(hash)
       flds = []; vals = []
 
       hash.each do|f, v|
