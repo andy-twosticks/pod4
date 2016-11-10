@@ -23,6 +23,8 @@ module Pod4
   #       set_id_fld :id
   #     end
   #
+  # Note: TinyTDS does not appear to support parameterised queries! 
+  #
   class TdsInterface < Interface
     include SQLHelper
 
@@ -119,8 +121,7 @@ module Pod4
     end
 
     def quote_field(fld)
-      super
-      %Q|[#{fld}]|
+      "[#{super(fld, nil)}]"
     end
 
 
@@ -134,7 +135,7 @@ module Pod4
         unless selection.nil? || selection.respond_to?(:keys)
 
       sql, vals = sql_select(nil, selection)
-      select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
+      select( sql_subst(sql, vals.map{|v| quote v}) ) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -159,7 +160,7 @@ module Pod4
                  output inserted.#{quote_field id_fld}
                  values( #{ph.join ','} );|
 
-      x = select( sql_subst(sql, vals) )
+      x = select sql_subst(sql, vals.map{|v| quote v})
       x.first[id_fld]
 
     rescue => e
@@ -174,7 +175,7 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       sql, vals = sql_select(nil, id_fld => id) 
-      rows = select( sql_subst(sql, vals) )
+      rows = select sql_subst(sql, vals.map{|v| quote v}) 
       Octothorpe.new(rows.first)
 
     rescue => e
@@ -200,7 +201,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_update(record, id_fld => id)
-      execute sql_subst(sql, vals)
+      execute sql_subst(sql, vals.map{|v| quote v})
 
       self
 
@@ -216,7 +217,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_delete(id_fld => id)
-      execute sql_subst(sql, vals)
+      execute sql_subst(sql, vals.map{|v| quote v})
 
       self
 
@@ -280,6 +281,15 @@ module Pod4
 
     rescue => e
       handle_error(e)
+    end
+
+
+    ##
+    # Wrapper for the data source library escape routine, which is all we can offer in terms of SQL
+    # injection protection. (Its not much.)
+    #
+    def escape(string)
+      @client.escape(string)
     end
 
 
@@ -350,11 +360,18 @@ module Pod4
     end
 
 
+    ##
+    # Overrride the quote routine in sql_helper.
+    #
+    # * TinyTDS doesn't cope with datetime
+    # * We might as well use it to escape strings, since that's the best we can do
+    #
     def quote(fld)
-
       case fld
         when DateTime, Time
           %Q|'#{fld.to_s[0..-7]}'|
+        when String, Symbol
+          %Q|'#{escape fld.to_s}'|
         else
           super
       end

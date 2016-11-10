@@ -121,11 +121,12 @@ module Pod4
     # Given a string which is supposedly the name of a column, return a string with the column name
     # quoted for inclusion to SQL.
     #
-    # Defaults to SQL standard double quotes. Override if you want something else.
+    # Defaults to SQL standard double quotes. If you want something else, pass the new quote
+    # character as the optional second parameter, and/or override the method.
     #
-    def quote_field(fld)
+    def quote_field(fld, qc=%q|"|)
       raise ArgumentError, "bad field name" unless fld.kind_of?(String) || fld.kind_of?(Symbol)
-      %Q|"#{fld}"|
+      %Q|#{qc}#{fld}#{qc}|
     end
 
 
@@ -133,23 +134,24 @@ module Pod4
     # Given some value, quote it for inclusion in SQL.
     #
     # Tries to follow the generic SQL standard -- single quotes for strings, NULL for nil, etc.
-    # Override it if you want something else.
+    # If you want something else, pass a different quote character as the second parameter, and/or 
+    # override the method.
     #
-    # Note that this also turns "O'Claire" into "O''Claire", as required by SQL.
+    # Note that this also turns 'O'Claire' into 'O''Claire', as required by SQL.
     #
-    def quote(fld)
+    def quote(fld, qc=%q|'|)
 
       case fld
         when Date, Time
-          %Q|'#{fld}'|
+          %Q|#{qc}#{fld}#{qc}|
         when String
-          %Q|'#{fld.gsub("'", "''")}'|
+          %Q|#{qc}#{fld.gsub("#{qc}", "#{qc}#{qc}")}#{qc}|
         when Symbol
-          %Q|'#{fld.to_s.gsub("'", "''")}'|
+          %Q|#{qc}#{fld.to_s.gsub("#{qc}", "#{qc}#{qc}")}#{qc}|
         when BigDecimal
           fld.to_f
         when nil
-          'NULL'
+          "NULL"
         else 
           fld
       end
@@ -167,25 +169,31 @@ module Pod4
 
 
     ##
-    # Given an SQL string and an array of values as returned by sql_select() etc above -- combine
-    # the two to make valid SQL.
+    # Given a string (SQL) with %s placeholders and a a value or an array of values -- substitute
+    # the values for the placeholders.
+    #
+    #     sql_subst("foo %s bar %s", ["$1", "$2"]) #-> "foo $1 bar $2"
+    #     sql_subst("foo %s bar %s", "$$"]       ) #-> "foo $$ bar $$"
+    #
+    # You can use this to configure your SQL ready for the parameterised query routine that comes
+    # with your data library. Note: this does not work if you redefine placeholder().
+    #
+    # You could also use it to turn a sql-with-placeholders string into valid SQL, by passing the
+    # (quoted) values array that you got from sql_select, etc.:
+    #
+    #     sql, vals =  sql_select(nil, id => 4)
+    #     validSQL = sql_subst( sql, vals.map{|v| quote v} )
     #
     # Note: Don't do this. Dreadful idea. 
     # If at all possible you should instead get the data source library to combine these two
     # things. This will protect you against SQL injection (or if not, the library has screwed up).
     #
-    # Note also that in order for this to work, you must have not overridden placeholder().
-    #
     def sql_subst(sql, array)
-      raise ArgumentError, "bad SQL" unless sql.kind_of? String
-      raise ArgumentError, "missing SQL" if sql.empty?
+      raise ArgumentError, "bad SQL"        unless sql.kind_of? String
+      raise ArgumentError, "missing SQL"    if sql.empty?
+      raise ArgumentError, "missing values" if array.kind_of?(Array) && array.any?(&:nil?)
 
-      begin
-        args = Array(array).flatten.map(&:to_s)
-      rescue 
-        raise ArgumentError, "Bad values", $!
-      end
-      raise ArgumentError, "missing values" if args.any?{|a| a.empty? }
+      args = Array(array).flatten.map(&:to_s)
 
       case 
         when args.empty?    then sql
@@ -198,7 +206,10 @@ module Pod4
 
 
     ##
-    # Helper routine: given a hash, quote the keys as column names and the values as column values.
+    # Helper routine: given a hash, quote the keys as column names and keep the values as they are
+    # (since we don't know whether your parameterised query routine in your data source library
+    # does that for you).
+    #
     # Return the hash as two arrays, to ensure the ordering is consistent.
     #
     def parse_fldsvalues(hash)
@@ -206,7 +217,7 @@ module Pod4
 
       hash.each do|f, v|
         flds << quote_field(f.to_s)
-        vals << quote(v)
+        vals << v
       end
 
       [flds, vals]

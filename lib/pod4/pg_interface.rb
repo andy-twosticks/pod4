@@ -101,8 +101,7 @@ module Pod4
         unless selection.nil? || selection.respond_to?(:keys)
 
       sql, vals = sql_select(nil, selection)
-
-      select( sql_subst(sql, vals) ) {|r| Octothorpe.new(r) }
+      selectp(sql, vals) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -120,8 +119,7 @@ module Pod4
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       sql, vals = sql_insert(record) 
-
-      x = select( sql_subst(sql, vals) )
+      x = selectp(sql, vals)
       x.first[id_fld]
 
     rescue => e
@@ -136,7 +134,7 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       sql, vals = sql_select(nil, id_fld => id) 
-      rows = select( sql_subst(sql, vals) )
+      rows = selectp(sql, vals)
       Octothorpe.new(rows.first)
 
     rescue => e
@@ -160,7 +158,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_update(record, id_fld => id)
-      execute sql_subst(sql, vals)
+      executep(sql, vals)
 
       self
 
@@ -176,7 +174,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_delete(id_fld => id)
-      execute sql_subst(sql, vals)
+      executep(sql, vals)
 
       self
 
@@ -230,6 +228,44 @@ module Pod4
 
 
     ##
+    # Run SQL code on the server as per select() but with parameter insertion.
+    #
+    # Placeholders in the SQL string should all be %s as per sql_helper methods.
+    # Values should be an array as returned by sql_helper methods.
+    #
+    def selectp(sql, vals)
+      raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
+
+      ensure_connection
+
+      Pod4.logger.debug(__FILE__){ "select: #{sql} #{vals.inspect}" }
+
+      rows = []
+      @client.exec_params( *parse_for_params(sql, vals) ) do |query|
+        oids = make_oid_hash(query)
+
+        query.each do |r| 
+          row = cast_row_fudge(r, oids)
+
+          if block_given? 
+            rows << yield(row)
+          else
+            rows << row
+          end
+
+        end
+      end
+
+      @client.cancel 
+
+      rows
+
+    rescue => e
+      handle_error(e)
+    end
+
+
+    ##
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
@@ -239,6 +275,25 @@ module Pod4
 
       Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
       @client.exec(sql)
+
+    rescue => e
+      handle_error(e)
+    end
+
+
+    ##
+    # Run SQL code on the server as per execute() but with parameter insertion.
+    #
+    # Placeholders in the SQL string should all be %s as per sql_helper methods.
+    # Values should be an array as returned by sql_helper methods.
+    #
+    def executep(sql, vals)
+      raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
+
+      ensure_connection
+
+      Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
+      @client.exec_params( *parse_for_params(sql, vals) )
 
     rescue => e
       handle_error(e)
@@ -407,6 +462,15 @@ module Pod4
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
+
+
+    def parse_for_params(sql, vals)
+      new_params = sql.scan("%s").map.with_index{|e,i| "$#{i + 1}" }
+      new_vals   = vals.map{|v| v ? quote(v, nil).to_s : nil }
+      
+      [ sql_subst(sql, new_params), new_vals ]
+    end
+
 
   end
 

@@ -37,7 +37,7 @@ describe TestPgInterface do
 
     client.exec(%Q|
       create table customer ( 
-        id        serial,
+        id        serial primary key,
         name      text,
         level     real      null,
         day       date      null,

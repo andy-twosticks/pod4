@@ -46,7 +46,7 @@ describe "SQLHelper" do
   end
 
     
-  describe "quote_field(fld)" do
+  describe "quote_field" do
 
     it "will wrap the field in double quotes" do
       expect( tester1.send :quote_field, "thing" ).to eq %Q|"thing"|
@@ -57,10 +57,15 @@ describe "SQLHelper" do
       expect{ tester1.send :quote_field     }.to raise_error ArgumentError
     end
 
+    it "will wrap the field in some other character if you pass that" do
+      expect( tester1.send :quote_field, "thing", nil ).to eq %Q|thing|
+      expect( tester1.send :quote_field, "thing", "x" ).to eq %Q|xthingx|
+    end
+
   end
 
     
-  describe "quote(fld)" do
+  describe "quote" do
     let(:datetime) { "2055-12-31 11:23:36+04"             }
     let(:dtmatch)  { /'2055.12.31[T ]11.23.36 ?\+04:?00'/ }
 
@@ -96,6 +101,14 @@ describe "SQLHelper" do
       expect( tester1.send :quote, nil ).to eq %Q|NULL|
     end
 
+    it "will wrap the value in some other character if you pass that" do
+      bd = BigDecimal.new("14.98")
+      expect( tester1.send :quote, "thing", nil ).to eq %Q|thing|
+      expect( tester1.send :quote, "thing", "x" ).to eq %Q|xthingx|
+      expect( tester1.send :quote, bd ).to eq 14.98
+      expect( tester1.send :quote, "G'Kar", "a" ).to eq %Q|aG'Kaara|
+    end
+
   end
 
 
@@ -106,11 +119,11 @@ describe "SQLHelper" do
     end
 
 
-    it "returns valid SQL and array of values for the selection hash" do
+    it "returns valid SQL and unchanged array of values for the selection hash" do
       sql, vals = tester1.send :sql_where, {lambs: "baah", pigs: "moo"}
 
       expect( sql  ).to match %r|where\s+"lambs"\s*=\s*%s\s+and\s+"pigs"\s*=\s*%s|i
-      expect( vals ).to eq( [%q|'baah'|, %q|'moo'|] )
+      expect( vals ).to eq( [%q|baah|, %q|moo|] )
     end
 
   end
@@ -180,7 +193,7 @@ describe "SQLHelper" do
       sql, vals = tester1.send :sql_insert, sel
 
       expect(sql).to match smatch
-      expect(vals).to eq( [%q|'bing'|, %q|'foop'|] )
+      expect(vals).to eq( ['bing', 'foop'] )
     end
 
   end
@@ -202,7 +215,7 @@ describe "SQLHelper" do
       sql, vals = tester1.send :sql_update, fv, {}
 
       expect(sql).to match smatch
-      expect(vals).to eq( [14, %q|'meow'|] )
+      expect(vals).to eq( [14, 'meow'] )
     end
 
 
@@ -218,7 +231,7 @@ describe "SQLHelper" do
       sql, vals = tester1.send :sql_update, fv, sel
 
       expect(sql).to match smatch
-      expect(vals).to eq( [14, %q|'meow'|, 5, true] )
+      expect(vals).to eq( [14, 'meow', 5, true] )
     end
 
   end
@@ -240,7 +253,7 @@ describe "SQLHelper" do
                     \s+where\s+"alice"\s*=\s*%s\s+and\s+"ted"\s*=\s*%s\s*;|ix
 
       expect(sql).to match smatch
-      expect(vals).to eq( [14, %q|'moo'|] )
+      expect(vals).to eq( [14, 'moo'] )
     end
 
   end
@@ -256,10 +269,8 @@ describe "SQLHelper" do
       expect( tester1.send :sql_subst, "foo", [] ).to eq "foo"
     end
     
-    it "raises ArgumentError if any of the values are blank" do
-      expect{ tester1.send :sql_subst, "", ['foo']     }.to raise_error ArgumentError
-      expect{ tester1.send :sql_subst, "foo", [14, ""] }.to raise_error ArgumentError
-      expect{ tester1.send :sql_subst, "foo", ""       }.to raise_error ArgumentError
+    it "raises ArgumentError if the sql is blank" do
+      expect{ tester1.send :sql_subst, "", ['foo'] }.to raise_error ArgumentError
     end
 
     it "raises ArgumentError if the # of sql markers and the # of values don't match" do
