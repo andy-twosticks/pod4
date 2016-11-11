@@ -471,9 +471,75 @@ describe TestSequelInterface do
       expect( ret ).to eq( [] )
     end
 
-
   end
   ##
+
+
+  describe "#executep" do
+    # For the time being lets assume that Sequel does its job and the three modes we are calling
+    # actually work
+
+    let(:sql) { 'delete from customer where price < ?;' }
+
+    it 'requires an SQL string and a mode' do
+      expect{ interface.executep                 }.to raise_exception ArgumentError
+      expect{ interface.executep(nil)            }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update)    }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update, 2) }.to raise_exception ArgumentError
+    end
+
+    it 'requires the mode to be valid' do
+      expect{ interface.executep(sql, :foo, 2) }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.executep('delete from not_a_table where thingy = ?', :delete, 14) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'executes the string' do
+      expect{ interface.executep(sql, :delete, 2.0) }.not_to raise_exception
+      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+    end
+
+  end
+
+
+  describe "#selectp" do
+
+    it 'requires an SQL string' do
+      expect{ interface.selectp      }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil) }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.selectp('select * from not_a_table where thingy = ?', 14) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'returns the result of the sql' do
+      sql = 'select name from customer where price < ?;'
+
+      expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
+      expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
+      expect( interface.selectp(sql, 0.0) ).to eq( [] )
+    end
+
+    it 'works if you pass a non-select' do
+      # By which I mean: still executes the SQL; returns []
+      sql = 'delete from customer where price < ?;'
+      ret = interface.selectp(sql, 2.0)
+
+      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+      expect( ret ).to eq( [] )
+    end
+
+  end
 
 
 end

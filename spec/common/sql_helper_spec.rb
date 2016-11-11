@@ -261,22 +261,22 @@ describe "SQLHelper" do
     
   describe "sql_subst" do
 
-    it "raises ArgumentError unless it receives a string and an array or string" do
+    it "raises ArgumentError unless it receives an SQL string" do
       expect{ tester1.send :sql_subst, 19, "foo" }.to raise_error ArgumentError
     end
 
     it "returns the sql untouched when there are no values" do
-      expect( tester1.send :sql_subst, "foo", [] ).to eq "foo"
+      expect( tester1.send :sql_subst, "foo" ).to eq "foo"
     end
     
     it "raises ArgumentError if the sql is blank" do
-      expect{ tester1.send :sql_subst, "", ['foo'] }.to raise_error ArgumentError
+      expect{ tester1.send :sql_subst, "", 'foo' }.to raise_error ArgumentError
     end
 
     it "raises ArgumentError if the # of sql markers and the # of values don't match" do
       # (unless we only pass one value, see below)
-      expect{ tester1.send :sql_subst, %q|foo %s %s bar %s|, [1, 2] }.to raise_error ArgumentError
-      expect{ tester1.send :sql_subst, %q|foo %s bar %s|, [1, 2, 3] }.to raise_error ArgumentError
+      expect{ tester1.send :sql_subst, %q|foo %s %s bar %s|, 1, 2 }.to raise_error ArgumentError
+      expect{ tester1.send :sql_subst, %q|foo %s bar %s|, 1, 2, 3 }.to raise_error ArgumentError
     end
 
     it "returns complete SQL for sql with markers and a single value" do
@@ -290,7 +290,7 @@ describe "SQLHelper" do
       sql = %q|select * from "foo" where "bar" = %s and "baz" = %s;|
       seq = %q|select * from "foo" where "bar" = 'boing' and "baz" = 'bop';|
 
-      expect( tester1.send :sql_subst, sql, [%q|'boing'|, %q|'bop'|] ).to eq seq
+      expect( tester1.send :sql_subst, sql, %q|'boing'|, %q|'bop'| ).to eq seq
     end
 
   end

@@ -135,7 +135,7 @@ module Pod4
         unless selection.nil? || selection.respond_to?(:keys)
 
       sql, vals = sql_select(nil, selection)
-      select( sql_subst(sql, vals.map{|v| quote v}) ) {|r| Octothorpe.new(r) }
+      select( sql_subst(sql, *vals.map{|v| quote v}) ) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -160,7 +160,7 @@ module Pod4
                  output inserted.#{quote_field id_fld}
                  values( #{ph.join ','} );|
 
-      x = select sql_subst(sql, vals.map{|v| quote v})
+      x = select sql_subst(sql, *vals.map{|v| quote v})
       x.first[id_fld]
 
     rescue => e
@@ -175,7 +175,7 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
       sql, vals = sql_select(nil, id_fld => id) 
-      rows = select sql_subst(sql, vals.map{|v| quote v}) 
+      rows = select sql_subst(sql, *vals.map{|v| quote v}) 
       Octothorpe.new(rows.first)
 
     rescue => e
@@ -201,7 +201,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_update(record, id_fld => id)
-      execute sql_subst(sql, vals.map{|v| quote v})
+      execute sql_subst(sql, *vals.map{|v| quote v})
 
       self
 
@@ -217,7 +217,7 @@ module Pod4
       read_or_die(id)
 
       sql, vals = sql_delete(id_fld => id)
-      execute sql_subst(sql, vals.map{|v| quote v})
+      execute sql_subst(sql, *vals.map{|v| quote v})
 
       self
 
@@ -364,7 +364,9 @@ module Pod4
     # Overrride the quote routine in sql_helper.
     #
     # * TinyTDS doesn't cope with datetime
-    # * We might as well use it to escape strings, since that's the best we can do
+    #
+    # * We might as well use it to escape strings, since that's the best we can do -- although I
+    #   suspect that it's just turning ' into '' and nothing else...
     #
     def quote(fld)
       case fld

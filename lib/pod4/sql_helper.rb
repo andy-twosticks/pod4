@@ -169,11 +169,11 @@ module Pod4
 
 
     ##
-    # Given a string (SQL) with %s placeholders and a a value or an array of values -- substitute
-    # the values for the placeholders.
+    # Given a string (SQL) with %s placeholders and one or more values -- substitute the values for
+    # the placeholders.
     #
-    #     sql_subst("foo %s bar %s", ["$1", "$2"]) #-> "foo $1 bar $2"
-    #     sql_subst("foo %s bar %s", "$$"]       ) #-> "foo $$ bar $$"
+    #     sql_subst("foo %s bar %s", "$1", "$2") #-> "foo $1 bar $2"
+    #     sql_subst("foo %s bar %s", "$$"]     ) #-> "foo $$ bar $$"
     #
     # You can use this to configure your SQL ready for the parameterised query routine that comes
     # with your data library. Note: this does not work if you redefine placeholder().
@@ -182,24 +182,23 @@ module Pod4
     # (quoted) values array that you got from sql_select, etc.:
     #
     #     sql, vals =  sql_select(nil, id => 4)
-    #     validSQL = sql_subst( sql, vals.map{|v| quote v} )
+    #     validSQL = sql_subst( sql, *vals.map{|v| quote v} )
     #
     # Note: Don't do this. Dreadful idea. 
     # If at all possible you should instead get the data source library to combine these two
     # things. This will protect you against SQL injection (or if not, the library has screwed up).
     #
-    def sql_subst(sql, array)
-      raise ArgumentError, "bad SQL"        unless sql.kind_of? String
-      raise ArgumentError, "missing SQL"    if sql.empty?
-      raise ArgumentError, "missing values" if array.kind_of?(Array) && array.any?(&:nil?)
+    def sql_subst(sql, *args)
+      raise ArgumentError, "bad SQL"     unless sql.kind_of? String
+      raise ArgumentError, "missing SQL" if sql.empty?
 
-      args = Array(array).flatten.map(&:to_s)
+      vals = args.map(&:to_s)
 
       case 
-        when args.empty?    then sql
-        when args.size == 1 then sql.gsub("%s", args.first) 
+        when vals.empty?    then sql
+        when vals.size == 1 then sql.gsub("%s", vals.first) 
         else 
-          raise ArgumentError, "wrong number of values" unless sql.scan("%s").count == args.count
+          raise ArgumentError, "wrong number of values" unless sql.scan("%s").count == vals.count
           sql % args
       end
     end
