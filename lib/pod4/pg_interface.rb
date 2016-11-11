@@ -5,6 +5,7 @@ require 'bigdecimal'
 
 require_relative 'interface'
 require_relative 'errors'
+require_relative 'sql_helper'
 
 
 module Pod4
@@ -23,6 +24,7 @@ module Pod4
   #     end
   #
   class PgInterface < Interface
+    include SQLHelper
 
     attr_reader :id_fld
 
@@ -91,29 +93,15 @@ module Pod4
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
 
-    def quoted_table
-      schema ? %Q|"#{schema}"."#{table}"| : %Q|"#{table}"|
-    end
-
 
     ##
-    # Selection is whatever Sequel's `where` supports.
     #
     def list(selection=nil)
       raise(ArgumentError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
-      if selection
-        sel = selection.map {|k,v| %Q|"#{k}" = #{quote v}| }.join(" and ")
-        sql = %Q|select * 
-                     from #{quoted_table}
-                     where #{sel};|
-
-      else
-        sql = %Q|select * from #{quoted_table};|
-      end
-
-      select(sql) {|r| Octothorpe.new(r) }
+      sql, vals = sql_select(nil, selection)
+      selectp(sql, *vals) {|r| Octothorpe.new(r) }
 
     rescue => e
       handle_error(e)
@@ -130,15 +118,8 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      ks = record.keys.map   {|k| %Q|"#{k}"| }.join(',')
-      vs = record.values.map {|v| quote v }.join(',')
-
-      sql = %Q|insert into #{quoted_table}
-                   ( #{ks} )
-                   values( #{vs} )
-                   returning "#{id_fld}";| 
-
-      x = select(sql)
+      sql, vals = sql_insert(record) 
+      x = selectp(sql, *vals)
       x.first[id_fld]
 
     rescue => e
@@ -152,11 +133,9 @@ module Pod4
     def read(id)
       raise(ArgumentError, "ID parameter is nil") if id.nil?
 
-      sql = %Q|select * 
-                   from #{quoted_table} 
-                   where "#{id_fld}" = #{quote id};|
-
-      Octothorpe.new( select(sql).first )
+      sql, vals = sql_select(nil, id_fld => id) 
+      rows = selectp(sql, *vals)
+      Octothorpe.new(rows.first)
 
     rescue => e
       # Select has already wrapped the error in a Pod4Error, but in this case we want to catch
@@ -177,13 +156,9 @@ module Pod4
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       read_or_die(id)
-      sets = record.map {|k,v| %Q| "#{k}" = #{quote v}| }.join(',')
 
-      sql = %Q|update #{quoted_table} set
-                   #{sets}
-                   where "#{id_fld}" = #{quote id};|
-
-      execute(sql)
+      sql, vals = sql_update(record, id_fld => id)
+      executep(sql, *vals)
 
       self
 
@@ -197,7 +172,9 @@ module Pod4
     #
     def delete(id)
       read_or_die(id)
-      execute( %Q|delete from #{quoted_table} where "#{id_fld}" = #{quote id};| )
+
+      sql, vals = sql_delete(id_fld => id)
+      executep(sql, *vals)
 
       self
 
@@ -251,6 +228,44 @@ module Pod4
 
 
     ##
+    # Run SQL code on the server as per select() but with parameter insertion.
+    #
+    # Placeholders in the SQL string should all be %s as per sql_helper methods.
+    # Values should be as returned by sql_helper methods.
+    #
+    def selectp(sql, *vals)
+      raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
+
+      ensure_connection
+
+      Pod4.logger.debug(__FILE__){ "select: #{sql} #{vals.inspect}" }
+
+      rows = []
+      @client.exec_params( *parse_for_params(sql, vals) ) do |query|
+        oids = make_oid_hash(query)
+
+        query.each do |r| 
+          row = cast_row_fudge(r, oids)
+
+          if block_given? 
+            rows << yield(row)
+          else
+            rows << row
+          end
+
+        end
+      end
+
+      @client.cancel 
+
+      rows
+
+    rescue => e
+      handle_error(e)
+    end
+
+
+    ##
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
@@ -260,6 +275,25 @@ module Pod4
 
       Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
       @client.exec(sql)
+
+    rescue => e
+      handle_error(e)
+    end
+
+
+    ##
+    # Run SQL code on the server as per execute() but with parameter insertion.
+    #
+    # Placeholders in the SQL string should all be %s as per sql_helper methods.
+    # Values should be as returned by sql_helper methods.
+    #
+    def executep(sql, *vals)
+      raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
+
+      ensure_connection
+
+      Pod4.logger.debug(__FILE__){ "parameterised execute: #{sql}" }
+      @client.exec_params( *parse_for_params(sql, vals) )
 
     rescue => e
       handle_error(e)
@@ -369,26 +403,6 @@ module Pod4
     end
 
 
-    def quote(fld)
-
-      case fld
-        when Date, Time
-          "'#{fld}'" 
-        when String
-          "'#{fld.gsub("'", "''")}'" 
-        when Symbol
-          "'#{fld.to_s.gsub("'", "''")}'" 
-        when BigDecimal
-          fld.to_f
-        when nil
-          'NULL'
-        else 
-          fld
-      end
-
-    end
-    
-
     private
 
 
@@ -402,6 +416,7 @@ module Pod4
       end
 
     end
+
 
 
     ##
@@ -448,6 +463,15 @@ module Pod4
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
+
+
+    def parse_for_params(sql, vals)
+      new_params = sql.scan("%s").map.with_index{|e,i| "$#{i + 1}" }
+      new_vals   = vals.map{|v| v ? quote(v, nil).to_s : nil }
+      
+      [ sql_subst(sql, *new_params), new_vals ]
+    end
+
 
   end
 

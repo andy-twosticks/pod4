@@ -11,6 +11,9 @@ require_relative '../fixtures/database'
 class TestPgInterface < PgInterface
   set_table  :customer
   set_id_fld :id
+
+  # We open a lot of connections, unusually
+  def stop; close; end
 end
 
 class SchemaPgInterface < PgInterface
@@ -37,7 +40,7 @@ describe TestPgInterface do
 
     client.exec(%Q|
       create table customer ( 
-        id        serial,
+        id        serial primary key,
         name      text,
         level     real      null,
         day       date      null,
@@ -87,6 +90,12 @@ describe TestPgInterface do
   before do
     # TRUNCATE TABLE also resets the identity counter
     interface.execute(%Q|truncate table customer restart identity;|)
+  end
+
+
+  after do
+    # We open a lot of connections, unusually
+    interface.stop if interface
   end
 
 
@@ -426,6 +435,34 @@ describe TestPgInterface do
   ##
 
 
+  describe '#executep' do
+
+    let(:sql) { 'delete from customer where cast(price as numeric) < %s and name = %s;' }
+
+    before { fill_data(interface) }
+
+    it 'requires an SQL string' do
+      expect{ interface.executep      }.to raise_exception ArgumentError
+      expect{ interface.executep(nil) }.to raise_exception ArgumentError
+      expect{ interface.executep(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.executep('delete from not_a_table where foo = %s', 12) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'executes the string with the given parameters' do
+      expect{ interface.executep(sql, 12.0, 'Barney') }.not_to raise_exception
+      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+    end
+
+  end
+  ##
+
+
   describe '#select' do
 
     before { fill_data(interface) }
@@ -460,6 +497,44 @@ describe TestPgInterface do
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end
+
+  end
+  ##
+
+
+  describe '#selectp' do
+
+    before { fill_data(interface) }
+
+    it 'requires an SQL string' do
+      expect{ interface.selectp            }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil)       }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)        }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.selectp('select * from not_a_table where thingy = %s', 12) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'returns the result of the sql' do
+      sql = 'select name from customer where cast(price as numeric) < %s;'
+
+      expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
+      expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
+      expect( interface.selectp(sql, 0.0) ).to eq( [] )
+    end
+
+    it 'works if you pass a non-select' do
+      sql = 'delete from customer where cast(price as numeric) < %s;'
+      ret = interface.selectp(sql, 2.0)
+
+      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+      expect( ret ).to eq( [] )
+    end
+
 
   end
   ##

@@ -504,5 +504,22 @@ describe TestTdsInterface do
   ##
 
 
+  describe "#escape" do
+    # This just wraps the TinyTDS escape method, and we don't really know what that does.
+    # But at the very least it should deal with ' inside a string.
+    # Frankly? I suspect that that's all it does.
+
+    it "returns a simple String unchanged" do
+      expect( interface.escape "foo" ).to eq %Q|foo|
+    end
+
+    it "turns a single quote into a doubled single quote" do
+      expect( interface.escape "G'Kar" ).to eq %Q|G''Kar|
+    end
+
+  end
+  ##
+
+  
 end
 
