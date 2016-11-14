@@ -1,171 +1,156 @@
-# This is a copy of spec/mri/pg_interface_spec.rb; you can use it to judge
-# whether pg_jruby is currently a good drop-in replacement for pg...  :(
+require 'pod4/sequel_interface'
 
-require 'pod4/pg_interface'
-require 'pg'
+require 'sequel'
+require 'date'
+require 'time'
+require 'bigdecimal'
 
 require_relative '../common/shared_examples_for_interface'
-require_relative '../fixtures/database'
 
 
-class TestPgInterface < PgInterface
-  set_table  :customer
+class TestSequelInterfacePr < SequelInterface
+  set_table :customer
   set_id_fld :id
-
-  # We open a lot of connections, unusually
-  def stop; close; end
 end
 
-class SchemaPgInterface < PgInterface
+class SchemaSequelInterfacePr < SequelInterface
   set_schema :public
   set_table  :customer
   set_id_fld :id
 end
 
-class BadPgInterface1 < PgInterface
+class BadSequelInterfacePr1 < SequelInterface
   set_table :customer
 end
 
-class BadPgInterface2 < PgInterface
+class BadSequelInterfacePr2 < SequelInterface
   set_id_fld :id
 end
 
 
-describe TestPgInterface do
+describe TestSequelInterfacePr do
 
-  def db_setup(connect)
-    client = PG.connect(connect)
+  let(:data) do
+    d = []
+    d << { name:      'Barney',
+           level:     1.23,
+           day:       Date.parse("2016-01-01"),
+           timestamp: Time.parse('2015-01-01 12:11'),
+           price:     BigDecimal.new("1.24") }
 
-    client.exec(%Q|drop table if exists customer;|)
+    d << { name:      'Fred',
+           level:     2.34,
+           day:       Date.parse("2016-02-02"),
+           timestamp: Time.parse('2015-01-02 12:22'),
+           price:     BigDecimal.new("2.35") }
 
-    client.exec(%Q|
-      create table customer ( 
-        id        serial primary key,
-        name      text,
-        level     real      null,
-        day       date      null,
-        timestamp timestamp null,
-        price     money     null,
-        qty       numeric   null );| )
+    d << { name:      'Betty',
+           level:     3.45,
+           day:       Date.parse("2016-03-03"),
+           timestamp: Time.parse('2015-01-03 12:33'),
+           price:     BigDecimal.new("3.46") }
 
-  ensure
-    client.finish if client
+    d
   end
-
 
   def fill_data(ifce)
-    @data.each{|r| ifce.create(r) }
+    data.each{|r| ifce.create(r) }
   end
 
+  let (:db) do
+    db = Sequel.connect('postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public')
 
-  before(:all) do
-    @connect_hash = DB[:pg]
-    db_setup(@connect_hash)
-
-    @data = []
-    @data << { name:      'Barney',
-               level:     1.23,
-               day:       Date.parse("2016-01-01"),
-               timestamp: Time.parse('2015-01-01 12:11'),
-               price:     BigDecimal.new("1.24"),
-               qty:       BigDecimal.new("1.25") }
-
-    @data << { name:      'Fred',
-               level:     2.34,
-               day:       Date.parse("2016-02-02"),
-               timestamp: Time.parse('2015-01-02 12:22'),
-               price:     BigDecimal.new("2.35"),
-               qty:       BigDecimal.new("2.36") }
-
-    @data << { name:      'Betty',
-               level:     3.45,
-               day:       Date.parse("2016-03-03"),
-               timestamp: Time.parse('2015-01-03 12:33'),
-               price:     BigDecimal.new("3.46"),
-               qty:       BigDecimal.new("3.47") }
-
+    db.create_table :customer do
+      primary_key :id
+      String      :name
+      Float       :level
+      Date        :day
+      Time        :timestamp
+      BigDecimal  :price, :size=>[10.2] # Sequel doesn't support money
+    end
+    db
   end
 
+  let(:interface) { TestSequelInterfacePr.new(db) }
 
   before do
-    # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer restart identity;|)
+    fill_data(interface)
   end
 
-
-  after do
-    # We open a lot of connections, unusually
-    interface.stop if interface
-  end
-
-
-  let(:interface) do
-    TestPgInterface.new(@connect_hash)
-  end
-
-  #####
+  ##
 
 
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestPgInterface.new(@connect_hash)
+      db2 = Sequel.connect('postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public')
+      db2.create_table :customer do
+        primary_key :id
+        String      :name
+        Float       :level
+        Date        :day
+        Time        :timestamp
+        BigDecimal  :price, :size=>[10.2] 
+      end
+
+      TestSequelInterfacePr.new(db2)
     end
 
-    let(:record) { {name: 'Barney'} }
+    let(:record)    { {name: 'Barney', price: 1.11} }
+    #let(:record_id) { 'Barney' }
 
   end
   ##
- 
 
-  describe 'PgInterface.set_schema' do
+
+  describe 'SequelInterface.set_schema' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_schema).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
 
 
-  describe 'PgInterface.schema' do
+  describe 'SequelInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaPgInterface.schema ).to eq :public
+      expect( SchemaSequelInterfacePr.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestPgInterface.schema }.not_to raise_exception
-      expect( TestPgInterface.schema ).to eq nil
+      expect{ TestSequelInterfacePr.schema }.not_to raise_exception
+      expect( TestSequelInterfacePr.schema ).to eq nil
     end
   end
   ##
 
 
-  describe 'PgInterface.set_table' do
+  describe 'SequelInterface.set_table' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_table).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
-  
 
-  describe 'PgInterface.table' do
+
+  describe 'SequelInterface.table' do
     it 'returns the table' do
-      expect( TestPgInterface.table ).to eq :customer
+      expect( TestSequelInterfacePr.table ).to eq :customer
     end
   end
   ##
 
 
-  describe 'PgInterface.set_id_fld' do
+  describe 'SequelInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
 
 
-  describe 'PgInterface.id_fld' do
+  describe 'SequelInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestPgInterface.id_fld ).to eq :id
+      expect( TestSequelInterfacePr.id_fld ).to eq :id
     end
   end
   ##
@@ -173,27 +158,33 @@ describe TestPgInterface do
 
   describe '#new' do
 
-    it 'requires a TinyTds connection string' do
-      expect{ TestPgInterface.new        }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new('foo') }.to raise_exception ArgumentError
+    it 'requires a Sequel DB object' do
+      expect{ TestSequelInterfacePr.new        }.to raise_exception ArgumentError
+      expect{ TestSequelInterfacePr.new(nil)   }.to raise_exception ArgumentError
+      expect{ TestSequelInterfacePr.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestPgInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ TestSequelInterfacePr.new(db) }.not_to raise_exception
+    end
+
+    it 'requires the table and id field to be defined in the class' do
+      expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
+      expect{ BadSequelInterfacePr1.new(db)   }.to raise_exception Pod4Error
+      expect{ BadSequelInterfacePr2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
   ##
-  
+
 
   describe '#quoted_table' do
 
     it 'returns just the table when the schema is not set' do
-      expect( interface.quoted_table ).to eq( %Q|"customer"| )
+      expect( interface.quoted_table ).to eq( %Q|`customer`| )
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaPgInterface.new(@connect_hash)
-      expect( ifce.quoted_table ).to eq( %|"public"."customer"| )
+      ifce = SchemaSequelInterfacePr.new(db)
+      expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
     end
 
   end
@@ -224,6 +215,11 @@ describe TestPgInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.create(name: :Booboo) }.not_to raise_exception
+    end
+
     it 'shouldnt have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.create(record) }.not_to raise_exception
@@ -232,7 +228,7 @@ describe TestPgInterface do
     end
 
     it 'shouldnt have a problem with strings containing special characters' do
-      record = {name: %Q|T'Challa""|, price: nil}
+      record = {name: "T'Challa[]", price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
       expect( interface.read(id).to_h ).to include(record)
@@ -243,12 +239,9 @@ describe TestPgInterface do
 
 
   describe '#read' do
-    before { fill_data(interface) }
 
     it 'returns the record for the id as an Octothorpe' do
-      rec = interface.read(2)
-      expect( rec ).to be_a_kind_of Octothorpe
-      expect( rec.>>.name ).to eq 'Fred'
+      expect( interface.read(2).to_h ).to include(name: 'Fred', price: 2.35)
     end
 
     it 'raises a Pod4::CantContinue if the ID is bad' do
@@ -265,43 +258,36 @@ describe TestPgInterface do
       level = interface.read(1).>>.level
 
       expect( level ).to be_a_kind_of Float
-      expect( level ).to be_within(0.001).of( @data.first[:level] )
+      expect( level ).to be_within(0.001).of( data.first[:level] )
     end
 
     it 'returns date fields as Date' do
       date = interface.read(1).>>.day
 
       expect( date ).to be_a_kind_of Date
-      expect( date ).to eq @data.first[:day]
+      expect( date ).to eq data.first[:day]
     end
 
     it 'returns datetime fields as Time' do
       timestamp = interface.read(1).>>.timestamp
 
       expect( timestamp ).to be_a_kind_of Time
-      expect( timestamp ).to eq @data.first[:timestamp]
+      expect( timestamp ).to eq data.first[:timestamp]
     end
 
     it 'returns numeric fields as BigDecimal' do
-      qty = interface.read(1).>>.qty
-
-      expect( qty ).to be_a_kind_of BigDecimal
-      expect( qty ).to eq @data.first[:qty]
-    end
-
-    it 'returns money fields as BigDecimal' do
-      price   = interface.read(1).>>.price
+      price = interface.read(1).>>.price
 
       expect( price ).to be_a_kind_of BigDecimal
-      expect( price ).to eq @data.first[:price]
+      expect( price ).to eq data.first[:price]
     end
 
   end
   ##
 
 
+
   describe '#list' do
-    before { fill_data(interface) }
 
     it 'has an optional selection parameter, a hash' do
       # Actually it does not have to be a hash, but FTTB we only support that.
@@ -312,14 +298,14 @@ describe TestPgInterface do
       # convert each OT to a hash and remove the ID key
       arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
 
-      expect( arr ).to match_array @data
+      expect( arr ).to match_array data
     end
 
     it 'returns a subset of records based on the selection parameter' do
       expect( interface.list(name: 'Fred').size ).to eq 1
 
       expect( interface.list(name: 'Betty').first.to_h ).
-        to include(name: 'Betty')
+        to include(name: 'Betty', price: 3.46)
 
     end
 
@@ -327,31 +313,36 @@ describe TestPgInterface do
       expect( interface.list(name: 'Yogi') ).to eq([])
     end
 
-    it 'raises ArgumentError if the selection criteria is nonsensical' do
-      expect{ interface.list('foo') }.to raise_exception ArgumentError
+    it 'raises DatabaseError if the selection criteria is nonsensical' do
+      expect{ interface.list('foo') }.to raise_exception Pod4::DatabaseError
     end
+
+    it 'returns an empty array if there is no data' do
+      interface.list.each {|x| interface.delete(x[interface.id_fld]) }
+      expect( interface.list ).to eq([])
+    end
+
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.list(name: :Barney) }.not_to raise_exception
+    end
+
 
   end
   ##
   
 
   describe '#update' do
-    before { fill_data(interface) }
 
     let(:id) { interface.list.first[:id] }
-
-    def float_price(row)
-      row[:price] = row[:price].to_f
-      row
-    end
 
     it 'updates the record at ID with record parameter' do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      # It so happens that TinyTds returns money as BigDecimal --
-      # this is a really good thing, even though it screws with our test.
-      expect( float_price( interface.read(id).to_h ) ).to include(record)
+      booboo = interface.read(id)
+      expect( booboo.>>.name       ).to eq( record[:name] )
+      expect( booboo.>>.price.to_f ).to eq( record[:price] )
     end
 
     it 'raises a CantContinue if anything weird happens with the ID' do
@@ -360,10 +351,15 @@ describe TestPgInterface do
 
     end
 
-    it 'raises a DatabaseError if anything weird happens with the record' do
+    it 'raises a DatabaseError if anything weird happensi with the record' do
       expect{ interface.update(id, smarts: 'more') }.
         to raise_exception DatabaseError
 
+    end
+
+    it 'does not freak out if the hash has symbol values' do
+      # Which, Sequel does
+      expect{ interface.update(id, name: :Booboo) }.not_to raise_exception
     end
 
     it 'shouldnt have a problem with record values of nil' do
@@ -373,7 +369,7 @@ describe TestPgInterface do
     end
 
     it 'shouldnt have a problem with strings containing special characters' do
-      record = {name: %Q|T'Challa""|, price: nil}
+      record = {name: "T'Challa[]", price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end
@@ -390,9 +386,7 @@ describe TestPgInterface do
 
     let(:id) { interface.list.first[:id] }
 
-    before { fill_data(interface) }
-
-    it 'raises CantContinue if anything hinky happens with the id' do
+    it 'raises CantContinue if anything hinky happens with the ID' do
       expect{ interface.delete(:foo) }.to raise_exception CantContinue
       expect{ interface.delete(99)   }.to raise_exception CantContinue
     end
@@ -409,9 +403,7 @@ describe TestPgInterface do
 
   describe '#execute' do
 
-    let(:sql) { 'delete from customer where cast(price as numeric) < 2.0;' }
-
-    before { fill_data(interface) }
+    let(:sql) { 'delete from customer where price < 2.0;' }
 
     it 'requires an SQL string' do
       expect{ interface.execute      }.to raise_exception ArgumentError
@@ -427,35 +419,7 @@ describe TestPgInterface do
 
     it 'executes the string' do
       expect{ interface.execute(sql) }.not_to raise_exception
-      expect( interface.list.size ).to eq(@data.size - 1)
-      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
-    end
-
-  end
-  ##
-
-
-  describe '#executep' do
-
-    let(:sql) { 'delete from customer where cast(price as numeric) < %s and name = %s;' }
-
-    before { fill_data(interface) }
-
-    it 'requires an SQL string' do
-      expect{ interface.executep      }.to raise_exception ArgumentError
-      expect{ interface.executep(nil) }.to raise_exception ArgumentError
-      expect{ interface.executep(14)  }.to raise_exception ArgumentError
-    end
-
-    it 'raises some sort of Pod4 error if it runs into problems' do
-      expect{ interface.executep('delete from not_a_table where foo = %s', 12) }.
-        to raise_exception Pod4Error
-
-    end
-
-    it 'executes the string with the given parameters' do
-      expect{ interface.executep(sql, 12.0, 'Barney') }.not_to raise_exception
-      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.size ).to eq(data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
     end
 
@@ -464,8 +428,6 @@ describe TestPgInterface do
 
 
   describe '#select' do
-
-    before { fill_data(interface) }
 
     it 'requires an SQL string' do
       expect{ interface.select      }.to raise_exception ArgumentError
@@ -480,8 +442,8 @@ describe TestPgInterface do
     end
 
     it 'returns the result of the sql' do
-      sql1 = 'select name from customer where cast(price as numeric) < 2.0;'
-      sql2 = 'select name from customer where cast(price as numeric) < 0.0;'
+      sql1 = 'select name from customer where price < 2.0;'
+      sql2 = 'select name from customer where price < 0.0;'
 
       expect{ interface.select(sql1) }.not_to raise_exception
       expect( interface.select(sql1) ).to eq( [{name: 'Barney'}] )
@@ -490,10 +452,10 @@ describe TestPgInterface do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
-      sql = 'delete from customer where cast(price as numeric) < 2.0;'
+      sql = 'delete from customer where price < 2.0;'
       ret = interface.select(sql)
 
-      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.size ).to eq(data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end
@@ -502,24 +464,54 @@ describe TestPgInterface do
   ##
 
 
-  describe '#selectp' do
+  describe "#executep" do
+    # For the time being lets assume that Sequel does its job and the three modes we are calling
+    # actually work
 
-    before { fill_data(interface) }
+    let(:sql) { 'delete from customer where price < ?;' }
 
-    it 'requires an SQL string' do
-      expect{ interface.selectp            }.to raise_exception ArgumentError
-      expect{ interface.selectp(nil)       }.to raise_exception ArgumentError
-      expect{ interface.selectp(14)        }.to raise_exception ArgumentError
+    it 'requires an SQL string and a mode' do
+      expect{ interface.executep                 }.to raise_exception ArgumentError
+      expect{ interface.executep(nil)            }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update)    }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update, 2) }.to raise_exception ArgumentError
+    end
+
+    it 'requires the mode to be valid' do
+      expect{ interface.executep(sql, :foo, 2) }.to raise_exception ArgumentError
     end
 
     it 'raises some sort of Pod4 error if it runs into problems' do
-      expect{ interface.selectp('select * from not_a_table where thingy = %s', 12) }.
+      expect{ interface.executep('delete from not_a_table where thingy = ?', :delete, 14) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'executes the string' do
+      expect{ interface.executep(sql, :delete, 2.0) }.not_to raise_exception
+      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+    end
+
+  end
+
+
+  describe "#selectp" do
+
+    it 'requires an SQL string' do
+      expect{ interface.selectp      }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil) }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.selectp('select * from not_a_table where thingy = ?', 14) }.
         to raise_exception Pod4Error
 
     end
 
     it 'returns the result of the sql' do
-      sql = 'select name from customer where cast(price as numeric) < %s;'
+      sql = 'select name from customer where price < ?;'
 
       expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
       expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
@@ -527,17 +519,16 @@ describe TestPgInterface do
     end
 
     it 'works if you pass a non-select' do
-      sql = 'delete from customer where cast(price as numeric) < %s;'
+      # By which I mean: still executes the SQL; returns []
+      sql = 'delete from customer where price < ?;'
       ret = interface.selectp(sql, 2.0)
 
-      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.size ).to eq(data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end
 
-
   end
-  ##
 
 
 end
