@@ -88,6 +88,8 @@ class FakeRequester
     end
 
     req = NebulousStomp::NebRequestNull.new('faketarget', verb, paramStr)
+    hash2[:inReplyTo] = req.replyID
+
     mess = NebulousStomp::Message.from_cache( hash1.merge(hash2).to_json )
     req.insert_fake_stomp(mess)
     req
