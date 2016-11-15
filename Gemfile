@@ -26,7 +26,7 @@ group :development, :test do
     gem "jruby-lint"
     gem "jeremyevans-postgres-pr"
     gem 'jdbc-mssqlserver'
-    #gem 'jdbc-postgres', '9.4.1200'
+    gem 'jdbc-postgres', '9.4.1200'
   end
 
 

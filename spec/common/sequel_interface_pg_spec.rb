@@ -208,14 +208,19 @@ describe TestSequelInterfacePg do
   describe '#list' do
 
     it 'returns an array of Octothorpes that match the records' do
-      # Remove the contentious price column from data
-      # (we know it sometimes turns up as a string; another test handles that)
-      dta = data.map{|x| x.delete(:price); x}
+      arr = interface.list.map {|ot| x = ot.to_h}
 
-      # convert each OT to a hash and remove the ID key and the contentious price column
-      arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x.delete(:price); x }
+      expect( arr.size ).to eq(data.size)
 
-      expect( arr ).to match_array dta
+      data.each do |d|
+        r = arr.find{|x| x[:name] == d[:name] }
+        expect( r ).not_to be_nil
+        expect( r[:level]     ).to be_within(0.001).of( d[:level] )
+        expect( r[:day]       ).to eq d[:day]
+        expect( r[:timestamp] ).to eq d[:timestamp]
+        expect( r[:qty]       ).to eq d[:qty]
+      end
+ 
     end
 
     it 'returns a subset of records based on the selection parameter' do
@@ -320,7 +325,7 @@ describe TestSequelInterfacePg do
 
   describe '#execute' do
 
-    let(:sql) { 'delete from customer where price < 2.0::money;' }
+    let(:sql) { 'delete from customer where qty < 2.0;' }
 
     it 'requires an SQL string' do
       expect{ interface.execute      }.to raise_exception ArgumentError
@@ -359,8 +364,8 @@ describe TestSequelInterfacePg do
     end
 
     it 'returns the result of the sql' do
-      sql1 = 'select name from customer where price < 2.0::money;'
-      sql2 = 'select name from customer where price < 0.0::money;'
+      sql1 = 'select name from customer where qty < 2.0;'
+      sql2 = 'select name from customer where qty < 0.0;'
 
       expect{ interface.select(sql1) }.not_to raise_exception
       expect( interface.select(sql1) ).to eq( [{name: 'Barney'}] )
@@ -369,7 +374,7 @@ describe TestSequelInterfacePg do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
-      sql = 'delete from customer where price < 2.0::money;'
+      sql = 'delete from customer where qty < 2.0;'
       ret = interface.select(sql)
 
       expect( interface.list.size ).to eq(data.size - 1)
@@ -385,7 +390,7 @@ describe TestSequelInterfacePg do
     # For the time being lets assume that Sequel does its job and the three modes we are calling
     # actually work
 
-    let(:sql) { 'delete from customer where price < ?::money;' }
+    let(:sql) { 'delete from customer where qty < ?;' }
 
     it 'requires an SQL string and a mode' do
       expect{ interface.executep                 }.to raise_exception ArgumentError
@@ -428,7 +433,7 @@ describe TestSequelInterfacePg do
     end
 
     it 'returns the result of the sql' do
-      sql = 'select name from customer where price < ?::money;'
+      sql = 'select name from customer where qty < ?;'
 
       expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
       expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
@@ -437,7 +442,7 @@ describe TestSequelInterfacePg do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
-      sql = 'delete from customer where price < ?::money;'
+      sql = 'delete from customer where qty < ?;'
       ret = interface.selectp(sql, 2.0)
 
       expect( interface.list.size ).to eq(data.size - 1)

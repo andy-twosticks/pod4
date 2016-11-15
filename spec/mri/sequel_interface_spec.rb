@@ -305,12 +305,31 @@ describe TestSequelInterface do
       expect{ interface.list(name: 'Barney') }.not_to raise_exception
     end
 
+=begin
     it 'returns an array of Octothorpes that match the records' do
       # convert each OT to a hash and remove the ID key
       arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
 
       expect( arr ).to match_array data
     end
+=end
+
+    it 'returns an array of Octothorpes that match the records' do
+      arr = interface.list.map {|ot| x = ot.to_h}
+
+      expect( arr.size ).to eq(data.size)
+
+      data.each do |d|
+        r = arr.find{|x| x[:name] == d[:name] }
+        expect( r ).not_to be_nil
+        expect( r[:level]     ).to be_within(0.001).of( d[:level] )
+        expect( r[:day]       ).to eq d[:day]
+        expect( r[:timestamp] ).to eq d[:timestamp]
+        expect( r[:qty]       ).to eq d[:qty]
+      end
+
+    end
+
 
     it 'returns a subset of records based on the selection parameter' do
       expect( interface.list(name: 'Fred').size ).to eq 1
