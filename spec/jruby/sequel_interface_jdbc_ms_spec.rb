@@ -1,5 +1,5 @@
 #
-# Supplemental test for Sequel -- tests using PG gem in MRI, jeremyevans-postgres-pg under jruby?
+# Supplemental test for Sequel -- tests jRuby / Pod4 / Sequel / JDBC / MS SQL SERVER
 #
 
 require 'pod4/sequel_interface'
@@ -9,20 +9,23 @@ require 'date'
 require 'time'
 require 'bigdecimal'
 
+# Note that Sequel insists on *THIS* JDBC driver for MSSQL access.
+require 'sqljdbc4.jar' # from jdbc-mssqlserver
 
-class TestSequelInterfacePg < SequelInterface
+
+class TestSequelInterfaceMs < SequelInterface
   set_table :customer
   set_id_fld :id
 end
 
-class SchemaSequelInterfacePg < SequelInterface
+class SchemaSequelInterfaceMs < SequelInterface
   set_schema :public
   set_table  :customer
   set_id_fld :id
 end
 
 
-describe TestSequelInterfacePg do
+describe TestSequelInterfaceMs do
 
   let(:data) do
     d = []
@@ -31,21 +34,21 @@ describe TestSequelInterfacePg do
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
            qty:       BigDecimal.new("1.24"),
-           price:     BigDecimal.new("1.24") }
+           price:     nil }
 
     d << { name:      'Fred',
            level:     2.34,
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
            qty:       BigDecimal.new("2.35"),
-           price:     BigDecimal.new("2.35") }
+           price:     nil }
 
     d << { name:      'Betty',
            level:     3.45,
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
            qty:       BigDecimal.new("3.46"),
-           price:     BigDecimal.new("3.46") }
+           price:     nil }
 
     d
   end
@@ -55,30 +58,37 @@ describe TestSequelInterfacePg do
   end
 
   let (:db) do
-    db = Sequel.connect('postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public')
+    uri  = 'sqlexpress.jhallpr.com\sqleswingshiftdv'
+    db   = 'pod4_test'
+    user = 'pod4test'
+    pass = 'pod4test'
+    db   = Sequel.connect("jdbc:sqlserver://#{uri};database=#{db};user=#{user};password=#{pass}")
+    db.extension(:connection_validator)
+
 
     db[%Q|if exists (select * from INFORMATION_SCHEMA.TABLES
                        where TABLE_NAME   = 'customer'
                          AND TABLE_SCHEMA = 'dbo' )
             drop table dbo.customer;|]
 
-    db[%Q|create table customer (
-            id        serial primary key,
-            name      text,
-            level     real      null,
-            day       date      null,
-            timestamp timestamp null,
-            price     money     null,
-            qty       numeric   null );|]
+    db[%Q|create table dbo.customer (
+            id        int identity(1,1) not null,
+            name      nvarchar(max),
+            level     real         null,
+            day       date         null,
+            timestamp datetime     null,
+            price     money        null,
+            qty       numeric(5,2) null );|]
+
 
     db
   end
 
-  let(:interface) { TestSequelInterfacePg.new(db) }
+  let(:interface) { TestSequelInterfaceMs.new(db) }
 
   before do
     # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer restart identity;|)
+    interface.execute(%Q|truncate table customer;|)
     fill_data(interface)
   end
 
@@ -88,12 +98,12 @@ describe TestSequelInterfacePg do
   describe '#quoted_table' do
 
     it 'returns just the table when the schema is not set' do
-      expect( interface.quoted_table.downcase ).to eq( %Q|"customer"| )
+      expect( interface.quoted_table.downcase ).to eq( %Q|[customer]| )
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaSequelInterfacePg.new(db)
-      expect( ifce.quoted_table.downcase ).to eq( %|"public"."customer"| )
+      ifce = SchemaSequelInterfaceMs.new(db)
+      expect( ifce.quoted_table.downcase ).to eq( %|[public].[customer]| )
     end
 
   end
@@ -192,12 +202,18 @@ describe TestSequelInterfacePg do
     end
 
     it 'returns money fields as bigdecimal' do
-      pending "Sequel/PG returns a string for Money type"
+      dibble = { name:      'Dibble',
+                 level:     4.56,
+                 day:       Date.parse("2016-03-03"),
+                 timestamp: Time.parse('2015-01-03 12:44'),
+                 qty:       BigDecimal.new("4.57"),
+                 price:     BigDecimal.new("4.58") }
 
-      price = interface.read(1).>>.price
+      interface.create(dibble)
+      price = interface.read(4).>>.price
 
       expect( price ).to be_a_kind_of BigDecimal
-      expect( price ).to eq data.first[:price]
+      expect( price ).to eq dibble[:price]
     end
 
   end
@@ -220,7 +236,7 @@ describe TestSequelInterfacePg do
         expect( r[:timestamp] ).to eq d[:timestamp]
         expect( r[:qty]       ).to eq d[:qty]
       end
- 
+
     end
 
     it 'returns a subset of records based on the selection parameter' do
@@ -325,7 +341,7 @@ describe TestSequelInterfacePg do
 
   describe '#execute' do
 
-    let(:sql) { 'delete from customer where qty < 2.0;' }
+    let(:sql) { 'delete from customer where qty < 2.0;' } 
 
     it 'requires an SQL string' do
       expect{ interface.execute      }.to raise_exception ArgumentError
@@ -374,6 +390,7 @@ describe TestSequelInterfacePg do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
+      pending "JDBC Driver freaks out at this, raises an exception"
       sql = 'delete from customer where qty < 2.0;'
       ret = interface.select(sql)
 
@@ -442,6 +459,7 @@ describe TestSequelInterfacePg do
 
     it 'works if you pass a non-select' do
       # By which I mean: still executes the SQL; returns []
+      pending "JDBC Driver freaks out at this, raises an exception"
       sql = 'delete from customer where qty < ?;'
       ret = interface.selectp(sql, 2.0)
 

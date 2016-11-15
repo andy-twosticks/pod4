@@ -13,10 +13,6 @@ require 'bigdecimal'
 # the MSSQL one. But no --- and presumably Jeremy Evans has his reasons.
 require 'jdbc/postgres'
 
-# bamf -- for the next test file...
-#require 'sqljdbc4.jar' # from jdbc-mssqlserver
-
-
 class TestSequelInterfacePg < SequelInterface
   set_table :customer
   set_id_fld :id
@@ -95,12 +91,12 @@ describe TestSequelInterfacePg do
   describe '#quoted_table' do
 
     it 'returns just the table when the schema is not set' do
-      expect( interface.quoted_table ).to eq( %Q|"customer"| )
+      expect( interface.quoted_table.downcase ).to eq( %Q|"customer"| )
     end
 
     it 'returns the schema plus table when the schema is set' do
       ifce = SchemaSequelInterfacePg.new(db)
-      expect( ifce.quoted_table ).to eq( %|"public"."customer"| )
+      expect( ifce.quoted_table.downcase ).to eq( %|"public"."customer"| )
     end
 
   end
