@@ -61,7 +61,7 @@ describe TestSequelInterfacePg do
     db = Sequel.connect('jdbc:postgresql://centos7andy/pod4_test?user=pod4test&password=pod4test')
 
     db.run %Q|drop table if exists customer;|
-    db.run %Q|create table dbo.customer (
+    db.run %Q|create table customer (
                 id        serial primary key,
                 name      text,
                 level     real      null,

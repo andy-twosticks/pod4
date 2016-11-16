@@ -108,8 +108,6 @@ describe TestSequelInterface do
     end
 
     let(:record)    { {name: 'Barney', price: 1.11} }
-    #let(:record_id) { 'Barney' }
-
   end
   ##
 
