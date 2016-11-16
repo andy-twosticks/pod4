@@ -145,20 +145,11 @@ module Pod4
     ##
     # Record is a hash of field: value
     #
-    # By a happy coincidence, insert returns the unique ID for the record, which is just what we
-    # want to do, too.
-    #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
             unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      flds, vals = parse_fldsvalues(record)
-      ph = Array(placeholder).flatten * flds.count
-
-      sql = %Q|insert into #{quoted_table}
-                 ( #{flds.join ','} )
-                 output inserted.#{quote_field id_fld}
-                 values( #{ph.join ','} );|
+      sql, vals = sql_insert(record)
 
       x = select sql_subst(sql, *vals.map{|v| quote v})
       x.first[id_fld]
@@ -223,6 +214,22 @@ module Pod4
 
     rescue => e
       handle_error(e)
+    end
+
+
+    ##
+    # Override the sql_insert method in sql_helper since our SQL is rather different
+    #
+    def sql_insert(record)
+      flds, vals = parse_fldsvalues(record)
+      ph = vals.map{|x| placeholder }
+
+      sql = %Q|insert into #{quoted_table}
+                 ( #{flds.join ','} )
+                 output inserted.#{quote_field id_fld}
+                 values( #{ph.join ','} );|
+
+      [sql, vals]
     end
 
 
