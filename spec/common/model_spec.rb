@@ -61,6 +61,7 @@ describe 'CustomerModel' do
       {id: 20, name: 'Morticia',  price: 2.34, groups: 'spanish'      },
       {id: 30, name: 'Wednesday', price: 3.45, groups: 'school'       },
       {id: 40, name: 'Pugsley',   price: 4.56, groups: 'trains,school'} ]
+
   end
 
   let(:recordsx) do
@@ -83,21 +84,26 @@ describe 'CustomerModel' do
   let(:model2) do
     m = CustomerModel.new(30)
 
-    allow( m.interface ).to receive(:read).
-      and_return( Octothorpe.new(records[2]) )
-
+    allow( m.interface ).to receive(:read).and_return( Octothorpe.new(records[2]) )
     m.read.or_die
   end
 
   let(:model3) do
     m = CustomerModel.new(40)
 
-    allow( m.interface ).to receive(:read).
-      and_return( Octothorpe.new(records[3]) )
-
+    allow( m.interface ).to receive(:read).and_return( Octothorpe.new(records[3]) )
     m.read.or_die
   end
 
+  # Model4 is for a non-integer id
+  let(:thing) { Octothorpe.new(id: 'eek', name: 'thing',  price: 9.99, groups: 'scuttering') }
+
+  let(:model4) do
+    m = CustomerModel.new('eek')
+
+    allow( m.interface ).to receive(:read).and_return(thing)
+    m.read.or_die
+  end
 
   ##
 
@@ -240,6 +246,11 @@ describe 'CustomerModel' do
 
     it 'initializes the alerts attribute' do
       expect( CustomerModel.new.alerts ).to eq([])
+    end
+
+    it 'doesn''t freak out if the ID is not an integer' do
+      expect{ CustomerModel.new("france") }.not_to raise_exception
+      expect( CustomerModel.new("france").model_id ).to eq "france"
     end
 
   end
@@ -532,6 +543,14 @@ describe 'CustomerModel' do
       new_model.create
     end
 
+    it 'doesn\'t freak out if the model is not an integer' do
+      expect( new_model.interface ).to receive(:create)
+      new_model.id   = "handy"
+      new_model.name = "Thing"
+
+      expect{ new_model.create }.not_to raise_error
+    end
+
   end
   ##
 
@@ -597,6 +616,12 @@ describe 'CustomerModel' do
       expect( model.model_status ).to eq :warning
     end
 
+    it 'doesn\'t freak out if the model is non-integer' do
+      allow( model.interface ).to receive(:read).and_return( thing )
+
+      expect{ CustomerModel.new('eek').read }.not_to raise_error
+    end
+
     context 'if the interface.read returns an empty Octothorpe' do
       let(:missing) { CustomerModel.new(99) }
 
@@ -658,7 +683,7 @@ describe 'CustomerModel' do
       model3.update
     end
 
-    it 'doesnt call update on the interface if the validation fails' do
+    it 'doesn\'t call update on the interface if the validation fails' do
       expect( model3.interface ).not_to receive(:update)
 
       model3.name = "fall over"  # triggers validation
@@ -668,6 +693,14 @@ describe 'CustomerModel' do
     it 'calls map_to_interface to get record data' do
       expect( model3 ).to receive(:map_to_interface)
       model3.update
+    end
+
+    it 'doesn\'t freak out if the model is non-integer' do
+      expect( model4.interface ).
+        to receive(:update).
+        and_return( model4.interface )
+
+      model4.update
     end
 
     context 'when the record already has error alerts' do
@@ -752,6 +785,15 @@ describe 'CustomerModel' do
       model2.delete
       expect( model2.model_status ).to eq :deleted
     end
+
+    it 'doesn\'t freak out if the model is non-integer' do
+      expect( model4.interface ).
+        to receive(:delete).
+        and_return( model4.interface )
+
+      model4.delete
+    end
+
 
   end
   ##

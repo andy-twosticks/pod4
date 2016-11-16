@@ -295,8 +295,9 @@ module Pod4
     # Wrapper for the data source library escape routine, which is all we can offer in terms of SQL
     # injection protection. (Its not much.)
     #
-    def escape(string)
-      @client.escape(string)
+    def escape(thing)
+      open unless connected?
+      thing.kind_of?(String) ? @client.escape(thing) : thing
     end
 
 

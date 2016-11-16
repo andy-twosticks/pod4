@@ -21,6 +21,13 @@ class SchemaSequelInterfacePg < SequelInterface
   set_id_fld :id
 end
 
+class ProdSequelInterfacePg < SequelInterface
+  set_table  :product
+  set_id_fld :code
+end
+
+
+
 
 describe TestSequelInterfacePg do
 
@@ -54,27 +61,43 @@ describe TestSequelInterfacePg do
     data.each{|r| ifce.create(r) }
   end
 
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
+  end
+
+
   let (:db) do
     db = Sequel.connect('postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public')
 
-    db.run %Q|drop table if exists customer;|
-    db.run %Q|create table customer (
-            id        serial primary key,
-            name      text,
-            level     real      null,
-            day       date      null,
-            timestamp timestamp null,
-            price     money     null,
-            qty       numeric   null );|
+    db.run %Q|
+      drop table if exists customer;
+      drop table if exists product;
+
+      create table customer (
+        id        serial primary key,
+        name      text,
+        level     real      null,
+        day       date      null,
+        timestamp timestamp null,
+        price     money     null,
+        qty       numeric   null );
+    
+      create table product (
+        code text,
+        name text );|
 
     db
   end
 
-  let(:interface) { TestSequelInterfacePg.new(db) }
+  let(:interface)      { TestSequelInterfacePg.new(db) }
+  let(:prod_interface) { ProdSequelInterfacePg.new(db) }
+
 
   before do
-    # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer restart identity;|)
+    interface.execute %Q|
+      truncate table customer restart identity;
+      truncate table product;|
+
     fill_data(interface)
   end
 
@@ -140,6 +163,15 @@ describe TestSequelInterfacePg do
       expect( interface.read(id).to_h ).to include(record)
     end
 
+    fit 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
+    end
+
   end
   ##
 
@@ -195,6 +227,14 @@ describe TestSequelInterfacePg do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq data.first[:price]
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
     end
 
   end
@@ -281,16 +321,22 @@ describe TestSequelInterfacePg do
       expect{ interface.update(id, name: :Booboo) }.not_to raise_exception
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', qty: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end
 
-    it 'shouldnt have a problem with strings containing special characters' do
+    it 'shouldn\'t have a problem with strings containing special characters' do
       record = {name: "T'Challa[]", qty: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
     end
 
   end
@@ -299,8 +345,8 @@ describe TestSequelInterfacePg do
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -311,9 +357,16 @@ describe TestSequelInterfacePg do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end

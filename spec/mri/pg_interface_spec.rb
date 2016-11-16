@@ -27,15 +27,21 @@ class BadPgInterface2 < PgInterface
   set_id_fld :id
 end
 
+class ProdPgInterface < PgInterface
+  set_table  :product
+  set_id_fld :code
+end
+
 
 describe TestPgInterface do
 
   def db_setup(connect)
     client = PG.connect(connect)
 
-    client.exec(%Q|drop table if exists customer;|)
-
     client.exec(%Q|
+      drop table if exists customer;
+      drop table if exists product;
+
       create table customer ( 
         id        serial primary key,
         name      text,
@@ -43,7 +49,11 @@ describe TestPgInterface do
         day       date      null,
         timestamp timestamp null,
         price     money     null,
-        qty       numeric   null );| )
+        qty       numeric   null );
+
+      create table product (
+        code text,
+        name text );| )
 
   ensure
     client.finish if client
@@ -52,6 +62,11 @@ describe TestPgInterface do
 
   def fill_data(ifce)
     @data.each{|r| ifce.create(r) }
+  end
+
+
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
   end
 
 
@@ -85,8 +100,10 @@ describe TestPgInterface do
 
 
   before do
-    # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer restart identity;|)
+    interface.execute(%Q|
+      truncate table customer restart identity;
+      truncate table product;|)
+
   end
 
 
@@ -98,6 +115,10 @@ describe TestPgInterface do
 
   let(:interface) do
     TestPgInterface.new(@connect_hash)
+  end
+
+  let(:prod_interface) do
+    ProdPgInterface.new(@connect_hash)
   end
 
   #####
@@ -221,18 +242,27 @@ describe TestPgInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
       expect( interface.read(id).to_h ).to include(record)
     end
 
-    it 'shouldnt have a problem with strings containing special characters' do
+    it 'shouldn\'t have a problem with strings containing special characters' do
       record = {name: %Q|T'Challa""|, price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
     end
 
   end
@@ -291,6 +321,14 @@ describe TestPgInterface do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq @data.first[:price]
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
     end
 
   end
@@ -361,16 +399,22 @@ describe TestPgInterface do
 
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end
 
-    it 'shouldnt have a problem with strings containing special characters' do
+    it 'shouldn\'t have a problem with strings containing special characters' do
       record = {name: %Q|T'Challa""|, price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
     end
 
   end
@@ -379,8 +423,8 @@ describe TestPgInterface do
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -393,9 +437,16 @@ describe TestPgInterface do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end

@@ -118,16 +118,25 @@ module Pod4
     ##
     # Record is a hash of field: value
     #
-    # By a happy coincidence, insert returns the unique ID for the record, which is just what we
-    # want to do, too.
-    #
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
       Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{record.inspect}" }
 
-      @table.insert( sanitise_hash(record.to_h) )
+      id = @table.insert( sanitise_hash(record.to_h) )
+
+      # Sequel doesn't return the key unless it is an autoincrement; otherwise it turns a row
+      # number regardless.  It probably doesn' t matter, but try to catch that anyway.
+      # (bamf: If your non-incrementing key happens to be an integer, this won't work...)
+
+      id_val = record[id_fld] || record[id_fld.to_s]
+
+      if (id.kind_of?(Fixnum) || id.nil?) && id_val && !id_val.kind_of?(Fixnum)
+        id_val
+      else
+        id
+      end
 
     rescue => e
       handle_error(e) 

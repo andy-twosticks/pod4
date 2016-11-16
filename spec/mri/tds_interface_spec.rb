@@ -30,6 +30,12 @@ class BadTdsInterface2 < TdsInterface
   set_id_fld :id
 end
 
+class ProdTdsInterface < TdsInterface
+  set_db     :pod4_test
+  set_table  :product
+  set_id_fld :code
+end
+
 
 describe TestTdsInterface do
 
@@ -42,10 +48,14 @@ describe TestTdsInterface do
     client.execute(%Q|
       if exists (select * from INFORMATION_SCHEMA.TABLES 
                      where TABLE_NAME   = 'customer' 
-                       AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;| ).do
+                       and TABLE_SCHEMA = 'dbo' )
+            drop table dbo.customer;
 
-    client.execute(%Q|
+      if exists (select * from INFORMATION_SCHEMA.TABLES 
+                     where TABLE_NAME   = 'product' 
+                       and TABLE_SCHEMA = 'dbo' )
+            drop table dbo.product;
+
       create table dbo.customer ( 
         id        int identity(1,1) not null,
         name      nvarchar(max),
@@ -53,7 +63,11 @@ describe TestTdsInterface do
         day       date         null,
         timestamp datetime     null,
         price     money        null,
-        qty       numeric(5,2) null );| ).do
+        qty       numeric(5,2) null );
+
+      create table dbo.product (
+        code nvarchar(20),
+        name nvarchar(max) );| ).do
 
   ensure
     client.close if client
@@ -62,6 +76,10 @@ describe TestTdsInterface do
 
   def fill_data(ifce)
     @data.each{|r| ifce.create(r) }
+  end
+
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
   end
 
 
@@ -104,6 +122,10 @@ describe TestTdsInterface do
     TestTdsInterface.new(@connect_hash)
   end
 
+  let(:prod_interface) do
+    ProdTdsInterface.new(@connect_hash)
+  end
+
   #####
 
 
@@ -112,6 +134,7 @@ describe TestTdsInterface do
     let(:interface) do
       TestTdsInterface.new(@connect_hash)
     end
+
 
     let(:record) { {name: 'Barney'} }
 
@@ -252,18 +275,27 @@ describe TestTdsInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       hash2 = {name: 'Ranger', price: nil}
       expect{ interface.create(hash2) }.not_to raise_exception
       id = interface.create(hash2)
       expect( interface.read(id).to_h ).to include(hash2)
     end
 
-    it 'shouldnt have a problem with strings containing special characters' do
+    it 'shouldn\'t have a problem with strings containing special characters' do
       hash2 = {name: "T'Challa[]", price: nil}
       expect{ interface.create(hash2) }.not_to raise_exception
       id = interface.create(hash2)
       expect( interface.read(id).to_h ).to include(hash2)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
     end
 
   end
@@ -323,6 +355,14 @@ describe TestTdsInterface do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq @data.first[:price]
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
     end
 
   end
@@ -395,16 +435,22 @@ describe TestTdsInterface do
 
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
     end
 
-    it 'shouldnt have a problem with strings containing special characters' do
+    it 'shouldn\'t have a problem with strings containing special characters' do
       record = {name: "T'Challa[]", price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
     end
 
   end
@@ -413,8 +459,8 @@ describe TestTdsInterface do
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -427,9 +473,16 @@ describe TestTdsInterface do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end
