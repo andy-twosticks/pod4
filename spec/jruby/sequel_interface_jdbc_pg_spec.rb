@@ -60,19 +60,15 @@ describe TestSequelInterfacePg do
   let (:db) do
     db = Sequel.connect('jdbc:postgresql://centos7andy/pod4_test?user=pod4test&password=pod4test')
 
-    db[%Q|if exists (select * from INFORMATION_SCHEMA.TABLES
-                       where TABLE_NAME   = 'customer'
-                         AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;|]
-
-    db[%Q|create table customer (
-            id        serial primary key,
-            name      text,
-            level     real      null,
-            day       date      null,
-            timestamp timestamp null,
-            price     money     null,
-            qty       numeric   null );|]
+    db.run %Q|drop table if exists customer;|
+    db.run %Q|create table dbo.customer (
+                id        serial primary key,
+                name      text,
+                level     real      null,
+                day       date      null,
+                timestamp timestamp null,
+                price     money     null,
+                qty       numeric   null );|
 
     db
   end

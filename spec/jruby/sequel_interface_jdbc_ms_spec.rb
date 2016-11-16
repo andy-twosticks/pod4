@@ -65,21 +65,19 @@ describe TestSequelInterfaceMs do
     db   = Sequel.connect("jdbc:sqlserver://#{uri};database=#{db};user=#{user};password=#{pass}")
     db.extension(:connection_validator)
 
+    db.run %Q|if exists (select * from INFORMATION_SCHEMA.TABLES
+                           where TABLE_NAME   = 'customer'
+                             AND TABLE_SCHEMA = 'dbo' )
+                drop table dbo.customer;|
 
-    db[%Q|if exists (select * from INFORMATION_SCHEMA.TABLES
-                       where TABLE_NAME   = 'customer'
-                         AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;|]
-
-    db[%Q|create table dbo.customer (
-            id        int identity(1,1) not null,
-            name      nvarchar(max),
-            level     real         null,
-            day       date         null,
-            timestamp datetime     null,
-            price     money        null,
-            qty       numeric(5,2) null );|]
-
+    db.run %Q|create table dbo.customer (
+                id        int identity(1,1) not null,
+                name      nvarchar(max),
+                level     real         null,
+                day       date         null,
+                timestamp datetime     null,
+                price     money        null,
+                qty       numeric(5,2) null );|
 
     db
   end

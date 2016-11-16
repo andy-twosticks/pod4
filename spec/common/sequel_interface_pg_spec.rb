@@ -57,19 +57,15 @@ describe TestSequelInterfacePg do
   let (:db) do
     db = Sequel.connect('postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public')
 
-    db[%Q|if exists (select * from INFORMATION_SCHEMA.TABLES
-                       where TABLE_NAME   = 'customer'
-                         AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;|]
-
-    db[%Q|create table customer (
+    db.run %Q|drop table if exists customer;|
+    db.run %Q|create table customer (
             id        serial primary key,
             name      text,
             level     real      null,
             day       date      null,
             timestamp timestamp null,
             price     money     null,
-            qty       numeric   null );|]
+            qty       numeric   null );|
 
     db
   end
@@ -113,6 +109,7 @@ describe TestSequelInterfacePg do
       # kinda impossible to seperate these two tests
       id = interface.create(hash)
 
+      expect( id ).not_to be_nil
       expect{ interface.read(id) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include hash
     end
