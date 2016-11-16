@@ -163,7 +163,7 @@ describe TestSequelInterfacePg do
       expect( interface.read(id).to_h ).to include(record)
     end
 
-    fit 'shouldn\'t have a problem with non-integer keys' do
+    it 'shouldn\'t have a problem with non-integer keys' do
       hash = {code: "foo", name: "bar"}
       id = prod_interface.create( Octothorpe.new(hash) )
 
