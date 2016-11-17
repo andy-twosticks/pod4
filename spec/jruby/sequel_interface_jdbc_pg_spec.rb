@@ -103,6 +103,10 @@ describe TestSequelInterfacePg do
     fill_data(interface)
   end
 
+  after do
+    db.disconnect
+  end
+
   ##
 
 
@@ -222,8 +226,6 @@ describe TestSequelInterfacePg do
     end
 
     it 'returns money fields as bigdecimal' do
-      pending "Sequel/JDBC/PG returns falls over trying to parse £9.99 as a double"
-
       dibble = { name:      'Dibble',
                  level:     4.56,
                  day:       Date.parse("2016-03-03"),

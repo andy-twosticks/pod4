@@ -101,6 +101,10 @@ describe TestSequelInterfacePg do
     fill_data(interface)
   end
 
+  after do
+    db.disconnect
+  end
+
   ##
 
 
