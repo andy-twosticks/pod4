@@ -78,6 +78,11 @@ describe 'WeirdModel' do
       expect( WeirdModel.new.alerts ).to eq([])
     end
 
+    it 'doesn''t freak out if the ID is not an integer' do
+      expect{ CustomerModel.new("france") }.not_to raise_exception
+      expect( CustomerModel.new("france").model_id ).to eq "france"
+    end
+
   end
   ##
 
