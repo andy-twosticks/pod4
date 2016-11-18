@@ -24,7 +24,9 @@ group :development, :test do
 
   platforms :jruby do
     gem "jruby-lint"
-    gem "pg_jruby"
+    gem "jeremyevans-postgres-pr"
+    gem 'jdbc-mssqlserver'
+    gem 'jdbc-postgres', '9.4.1200'
   end
 
 
