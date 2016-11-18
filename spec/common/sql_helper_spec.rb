@@ -3,25 +3,29 @@ require 'time'
 require 'bigdecimal'
 require 'pod4/sql_helper'
 
-class SQLHelperTester1
-  include SQLHelper
-
-  def schema; "marco"; end
-  def table;  "polo";  end
-  def id_fld; "foo";   end
-end
-
-class SQLHelperTester2
-  include SQLHelper
-
-  def table; "polo"; end
-end
-
 
 describe "SQLHelper" do
 
-  let(:tester1) {SQLHelperTester1.new}
-  let(:tester2) {SQLHelperTester2.new}
+  let(:tester1_class) do
+    Class.new do
+      include SQLHelper
+
+      def schema; "marco"; end
+      def table;  "polo";  end
+      def id_fld; "foo";   end
+    end
+  end
+
+  let(:tester2_class) do
+    Class.new do
+      include SQLHelper
+
+      def table; "polo"; end
+    end
+  end
+
+  let(:tester1) {tester1_class.new}
+  let(:tester2) {tester2_class.new}
 
     
   describe "quoted_table" do

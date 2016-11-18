@@ -7,26 +7,6 @@ require_relative 'shared_examples_for_interface'
 
 
 ##
-# In order to conform with 'acts_like an interface', our CRUDL routines must
-# pass a single value as the record, which we are making an array. When you
-# subclass NebulousInterface for your model, you don't have to follow that; you
-# can have a parameter per nebulous parameter, if you want, buy overriding the
-# CRUDL methods.
-#
-class TestNebulousInterface < NebulousInterface
-  set_target 'faketarget'
-  set_id_fld :id
-
-  set_verb :create, 'custcreate', :name, :price
-  set_verb :read,   'custread',   :id
-  set_verb :update, 'custupdate', :id, :name, :price
-  set_verb :delete, 'custdelete', :id
-  set_verb :list,   'custlist',   :name
-end
-##
-
-
-##
 # This is the class we will pass an instance of to NebulousInterface to use as
 # a cut-out for creating Nebulous::NebRequest objects.  
 #
@@ -113,7 +93,28 @@ end
 
 
 
-describe TestNebulousInterface do
+describe "NebulousInterface" do
+
+  ##
+  # In order to conform with 'acts_like an interface', our CRUDL routines must
+  # pass a single value as the record, which we are making an array. When you
+  # subclass NebulousInterface for your model, you don't have to follow that; you
+  # can have a parameter per nebulous parameter, if you want, buy overriding the
+  # CRUDL methods.
+  #
+  let(:nebulous_interface_class) do
+    Class.new NebulousInterface do
+      set_target 'faketarget'
+      set_id_fld :id
+
+      set_verb :create, 'custcreate', :name, :price
+      set_verb :read,   'custread',   :id
+      set_verb :update, 'custupdate', :id, :name, :price
+      set_verb :delete, 'custdelete', :id
+      set_verb :list,   'custlist',   :name
+    end
+  end
+
 
   def init_nebulous
     stomp_hash = { hosts: [{ login:    'guest',
@@ -142,7 +143,7 @@ describe TestNebulousInterface do
 
     let(:interface) do 
       init_nebulous
-      TestNebulousInterface.new( FakeRequester.new )
+      nebulous_interface_class.new( FakeRequester.new )
     end
 
   end
@@ -157,14 +158,14 @@ describe TestNebulousInterface do
 
   let(:interface) do
     init_nebulous
-    TestNebulousInterface.new( FakeRequester.new(data) )
+    nebulous_interface_class.new( FakeRequester.new(data) )
   end
 
 
   describe '#new' do
 
     it 'requires no parameters' do
-      expect{ TestNebulousInterface.new }.not_to raise_exception
+      expect{ nebulous_interface_class.new }.not_to raise_exception
     end
 
   end

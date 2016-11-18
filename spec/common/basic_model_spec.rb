@@ -4,45 +4,37 @@ require 'pod4/basic_model'
 require 'pod4/null_interface'
 
 
-##
-# We define a model class to test, since in normal operation we would never use
-# Model directly, and since it needs an inner Interface.
-#
-# We can't use a mock for the interface -- class definitions fall outside the
-# RSpec DSL as far as I can tell, so I can neither create a mock here or inject
-# it. Which means we can't mock the interface in the rest of the test either;
-# any mock we created would not get called.
-#
-# But: we want to test that Model calls Interface correctly.
-#
-# We do have what appears to be a perfectly sane way of testing. We can define
-# an inner class based on the genuinely existing, non-mock NullInterface class;
-# and then define expectations on it. When we do this, Rspec fails to pass the
-# call on to the object, unless we specifically say `.and_call_original`
-# instead of `.and_return`. 
-#
-# This is actually quite nice, but more than a little confusing when you see it
-# for the first time. Its use isn't spelled out in the RSpec docs AFAICS. 
-#
-class WeirdModel < Pod4::BasicModel
-  set_interface NullInterface.new(:id, :name, :price, :groups, [])
+describe 'WeirdModel' do
 
-  def fake_an_alert(*args)
-    add_alert(*args) #protected method
+  ##
+  # We define a model class to test, since in normal operation we would never use Model directly,
+  # and since it needs an inner Interface.
+  #
+  # We define an inner class based on the genuinely existing, non-mock NullInterface class; and
+  # then define expectations on it. When we do this, Rspec fails to pass the call on to the object,
+  # unless we specifically say `.and_call_original` instead of `.and_return`. 
+  #
+  # This is actually quite nice, but more than a little confusing when you see it for the first
+  # time. Its use isn't spelled out in the RSpec docs AFAICS. 
+  #
+  let(:weird_model_class) do
+    Class.new Pod4::BasicModel do
+      set_interface NullInterface.new(:id, :name, :price, :groups, [])
+
+      def fake_an_alert(*args)
+        add_alert(*args) #protected method
+      end
+
+      def reset_alerts; @alerts = []; end
+    end
   end
 
-  def reset_alerts; @alerts = []; end
-end
-
-
-
-describe 'WeirdModel' do
-  let(:model) { WeirdModel.new(20) }
+  let(:model) { weird_model_class.new(20) }
 
 
   describe 'Model.set_interface' do
     it 'requires an Interface object' do
-      expect( WeirdModel ).to respond_to(:set_interface).with(1).argument
+      expect( weird_model_class ).to respond_to(:set_interface).with(1).argument
     end
 
     # it 'sets interface' - covered by the interface test
@@ -52,8 +44,8 @@ describe 'WeirdModel' do
   
   describe 'Model.interface' do
     it 'is the interface object' do
-      expect( WeirdModel.interface ).to be_a_kind_of NullInterface
-      expect( WeirdModel.interface.id_fld ).to eq :id
+      expect( weird_model_class.interface ).to be_a_kind_of NullInterface
+      expect( weird_model_class.interface.id_fld ).to eq :id
     end
   end
   ##
@@ -62,25 +54,25 @@ describe 'WeirdModel' do
   describe '#new' do
 
     it 'takes an optional ID' do
-      expect{ WeirdModel.new    }.not_to raise_exception
-      expect{ WeirdModel.new(1) }.not_to raise_exception
+      expect{ weird_model_class.new    }.not_to raise_exception
+      expect{ weird_model_class.new(1) }.not_to raise_exception
     end
 
     it 'sets the ID attribute' do
-      expect( WeirdModel.new(23).model_id ).to eq 23
+      expect( weird_model_class.new(23).model_id ).to eq 23
     end
 
     it 'sets the status to empty' do
-      expect( WeirdModel.new.model_status ).to eq :empty
+      expect( weird_model_class.new.model_status ).to eq :empty
     end
 
     it 'initializes the alerts attribute' do
-      expect( WeirdModel.new.alerts ).to eq([])
+      expect( weird_model_class.new.alerts ).to eq([])
     end
 
     it 'doesn''t freak out if the ID is not an integer' do
-      expect{ CustomerModel.new("france") }.not_to raise_exception
-      expect( CustomerModel.new("france").model_id ).to eq "france"
+      expect{ weird_model_class.new("france") }.not_to raise_exception
+      expect( weird_model_class.new("france").model_id ).to eq "france"
     end
 
   end
@@ -89,8 +81,8 @@ describe 'WeirdModel' do
 
   describe '#interface' do
     it 'returns the interface set in the class definition, again' do
-      expect( WeirdModel.new.interface ).to be_a_kind_of NullInterface
-      expect( WeirdModel.new.interface.id_fld ).to eq :id
+      expect( weird_model_class.new.interface ).to be_a_kind_of NullInterface
+      expect( weird_model_class.new.interface.id_fld ).to eq :id
     end
   end
   ##
@@ -98,7 +90,7 @@ describe 'WeirdModel' do
 
   describe '#alerts' do
     it 'returns the list of alerts against the model' do
-      cm = WeirdModel.new
+      cm = weird_model_class.new
       cm.fake_an_alert(:warning, :foo, 'one')
       cm.fake_an_alert(:error,   :bar, 'two')
 
@@ -195,7 +187,7 @@ describe 'WeirdModel' do
   describe '#raise_exceptions' do
 
     it 'is also known as .or_die' do
-      cm = WeirdModel.new
+      cm = weird_model_class.new
       expect( cm.method(:raise_exceptions) ).to eq( cm.method(:or_die) )
     end
 

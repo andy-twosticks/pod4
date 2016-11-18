@@ -5,35 +5,44 @@ require_relative '../common/shared_examples_for_interface'
 require_relative '../fixtures/database'
 
 
-class TestPgInterface < PgInterface
-  set_table  :customer
-  set_id_fld :id
+describe "PgInterface" do
 
-  # We open a lot of connections, unusually
-  def stop; close; end
-end
+  let(:pg_interface_class) do
+    Class.new PgInterface do
+      set_table :customer
+      set_id_fld :id
 
-class SchemaPgInterface < PgInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+      def stop; close; end # We open a lot of connections, unusually
+    end
+  end
 
-class BadPgInterface1 < PgInterface
-  set_table :customer
-end
+  let(:schema_interface_class) do
+    Class.new PgInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class BadPgInterface2 < PgInterface
-  set_id_fld :id
-end
+  let(:prod_interface_class) do
+    Class.new PgInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
 
-class ProdPgInterface < PgInterface
-  set_table  :product
-  set_id_fld :code
-end
+  let(:bad_interface_class1) do
+    Class.new PgInterface do
+      set_table :customer
+    end
+  end
 
+  let(:bad_interface_class2) do
+    Class.new PgInterface do
+      set_id_fld :id
+    end
+  end
 
-describe TestPgInterface do
 
   def db_setup(connect)
     client = PG.connect(connect)
@@ -114,11 +123,11 @@ describe TestPgInterface do
 
 
   let(:interface) do
-    TestPgInterface.new(@connect_hash)
+    pg_interface_class.new(@connect_hash)
   end
 
   let(:prod_interface) do
-    ProdPgInterface.new(@connect_hash)
+    prod_interface_class.new(@connect_hash)
   end
 
   #####
@@ -127,7 +136,7 @@ describe TestPgInterface do
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestPgInterface.new(@connect_hash)
+      pg_interface_class.new(@connect_hash)
     end
 
     let(:record) { {name: 'Barney'} }
@@ -138,7 +147,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_schema' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_schema).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
@@ -146,12 +155,12 @@ describe TestPgInterface do
 
   describe 'PgInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaPgInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestPgInterface.schema }.not_to raise_exception
-      expect( TestPgInterface.schema ).to eq nil
+      expect{ pg_interface_class.schema }.not_to raise_exception
+      expect( pg_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -159,7 +168,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_table' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_table).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
@@ -167,7 +176,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.table' do
     it 'returns the table' do
-      expect( TestPgInterface.table ).to eq :customer
+      expect( pg_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -175,7 +184,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
@@ -183,7 +192,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestPgInterface.id_fld ).to eq :id
+      expect( pg_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -192,11 +201,11 @@ describe TestPgInterface do
   describe '#new' do
 
     it 'requires a TinyTds connection string' do
-      expect{ TestPgInterface.new        }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new('foo') }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new        }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestPgInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ pg_interface_class.new(@connect_hash) }.not_to raise_exception
     end
 
   end
@@ -210,7 +219,7 @@ describe TestPgInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaPgInterface.new(@connect_hash)
+      ifce = schema_interface_class.new(@connect_hash)
       expect( ifce.quoted_table ).to eq( %|"public"."customer"| )
     end
 
@@ -553,9 +562,9 @@ describe TestPgInterface do
     before { fill_data(interface) }
 
     it 'requires an SQL string' do
-      expect{ interface.selectp            }.to raise_exception ArgumentError
-      expect{ interface.selectp(nil)       }.to raise_exception ArgumentError
-      expect{ interface.selectp(14)        }.to raise_exception ArgumentError
+      expect{ interface.selectp      }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil) }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)  }.to raise_exception ArgumentError
     end
 
     it 'raises some sort of Pod4 error if it runs into problems' do

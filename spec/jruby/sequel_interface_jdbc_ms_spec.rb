@@ -13,24 +13,31 @@ require 'bigdecimal'
 require 'sqljdbc4.jar' # from jdbc-mssqlserver
 
 
-class TestSequelInterfaceMs < SequelInterface
-  set_table :customer
-  set_id_fld :id
-end
+describe "SequelInterface (JDBC/MSSQL)" do
 
-class SchemaSequelInterfaceMs < SequelInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+  let(:sequel_interface_class) do
+    Class.new SequelInterface do
+      set_table :customer
+      set_id_fld :id
+    end
+  end
 
-class ProdSequelInterfaceMs < SequelInterface
-  set_table  :product
-  set_id_fld :code
-end
+  let(:schema_interface_class) do
+    Class.new SequelInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
+
+  let(:prod_interface_class) do
+    Class.new SequelInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
 
 
-describe TestSequelInterfaceMs do
 
   let(:data) do
     d = []
@@ -101,8 +108,8 @@ describe TestSequelInterfaceMs do
     db
   end
 
-  let(:interface)      { TestSequelInterfaceMs.new(db) }
-  let(:prod_interface) { ProdSequelInterfaceMs.new(db) }
+  let(:interface)      { sequel_interface_class.new(db) }
+  let(:prod_interface) { prod_interface_class.new(db) }
 
   before do
     # TRUNCATE TABLE also resets the identity counter
@@ -123,7 +130,7 @@ describe TestSequelInterfaceMs do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaSequelInterfaceMs.new(db)
+      ifce = schema_interface_class.new(db)
       expect( ifce.quoted_table.downcase ).to eq( %|[public].[customer]| )
     end
 
