@@ -93,7 +93,13 @@ describe "SQLHelper" do
 
     it "returns time wrapped in a single quote" do
       tm = Time.parse(datetime)
-      expect( tester1.send :quote, tm ).to match dtmatch
+
+      # Ruby Time.parse swallows the given timezone and converts prior to Ruby 2.2
+      if RUBY_VERSION =~ /^2.[01]/
+        expect( tester1.send :quote, tm ).to match /'2055.12.31[T ]07.23.36 ?\+00:?00'/ 
+      else
+        expect( tester1.send :quote, tm ).to match dtmatch
+      end
     end
 
     it "returns a BigDecimal as a float" do

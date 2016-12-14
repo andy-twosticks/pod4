@@ -139,9 +139,9 @@ module Pod4
 
     rescue => e
       # Select has already wrapped the error in a Pod4Error, but in this case we want to catch
-      # something
+      # something. Ruby 2.0 doesn't define Exception.cause, but in that case, we do on Pod4Error.
       raise CantContinue, "That doesn't look like an ID" \
-        if e.cause.class == PG::InvalidTextRepresentation
+        if e.respond_to?(:cause) && e.cause.class == PG::InvalidTextRepresentation
 
       handle_error(e)
     end

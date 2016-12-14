@@ -22,6 +22,11 @@ module Pod4
 
     def initialize(msg=nil)
       super(msg || $! && $!.message)
+      @cos = $!
+    end
+
+    unless defined?(cause)
+      define_method(:cause) { @cos }
     end
 
   end
