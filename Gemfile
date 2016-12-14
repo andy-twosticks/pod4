@@ -14,7 +14,7 @@ group :development, :test do
 
   # For testing
   gem "sequel",         "~> 4.35"
-  gem "nebulous_stomp", "~> 2"
+  gem "nebulous_stomp", "~> 3"
 
   platforms :ruby do
     gem "sqlite3",  "~> 1.3"

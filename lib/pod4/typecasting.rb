@@ -33,7 +33,7 @@ module Pod4
     #
     def self.included(base)
       base.extend  ClassMethods
-      base.prepend InstanceMethods
+      base.send(:prepend, InstanceMethods)
     end
 
 

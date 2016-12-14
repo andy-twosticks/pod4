@@ -1,22 +1,21 @@
 require 'pod4/nebulous_interface'
 
 require 'nebulous_stomp'
-require 'nebulous_stomp/nebrequest_null'
+require 'nebulous_stomp/stomp_handler_null'
 
 require_relative 'shared_examples_for_interface'
 
 
 ##
-# This is the class we will pass an instance of to NebulousInterface to use as
-# a cut-out for creating Nebulous::NebRequest objects.  
+# This is the class we will pass an instance of to NebulousInterface to use as a cut-out for
+# creating Nebulous::NebRequest objects.  
 #
-# If we pass an instance of this class to NebulousInterface it will call our
-# send method instead of creating a NebRequest instance by itself. (It expects
-# send to return a Nebrequest instance, or something that behaves like one.)
+# If we pass an instance of this class to NebulousInterface it will call our send method instead of
+# creating a Request instance by itself. (It expects send to return a Request instance, or
+# something that behaves like one.)
 #
-# This means we can cut Nebulous out of the loop and don't need a real
-# responder. We can also check the behaviour of NebulousInterface by using
-# RSpec 'inspect' syntax on our cutout object.
+# This means we can cut Nebulous out of the loop and don't need a real responder. We can also check
+# the behaviour of NebulousInterface by using RSpec 'inspect' syntax on our cutout object.
 #
 # We're basically emulating both a responder and a data source here (!)
 #
@@ -24,57 +23,26 @@ class FakeRequester
 
   def initialize(data={}); @data = data; end
 
+  ##
+  # NebulousInterface will call this to return a NebulousStomp::Request object, or something that
+  # behaves like one.
+  #
+  def send(target, requestmsg)
+    hash = response_message_hash(requestmsg)
 
-  def send(verb, paramStr, withCache)
-    array = (paramStr || '').split(',')
+    stomphandler = NebulousStomp::StompHandlerNull.new
 
-    hash1 = { stompHeaders: nil,
-              stompBody:    '',
-              verb:         '',
-              params:       '',
-              desc:         '',
-              replyTo:      nil,
-              replyId:      nil,
-              inReplyTo:    nil,
-              contentType:  'application/json' }
+    request = NebulousStomp::Request.new(target, requestmsg)
+    request.stomp_handler = stomphandler
 
-    case verb
-      when 'custcreate'
-        id = create(*array)
-        hash2 = {verb: 'success', params: id.to_s}
+    hash[:inReplyTo] = request.message.reply_id
+    responsemsg  = NebulousStomp::Message.new hash
+    stomphandler.insert_fake(responsemsg)
 
-      when 'custread'
-        record = @data[paramStr.to_i]
-        hash2  = { stompBody: (record ? record.to_json : ''.to_json) }
-
-      when 'custupdate'
-        hash2 = update(*array) ? {verb: 'success'} : {verb: 'error' }
-
-      when 'custdelete'
-        hash2 = 
-          if @data.delete(paramStr.to_i)
-            {verb: 'success'} 
-          else
-            {verb: 'error'}
-          end
-
-      when 'custlist'
-        subset = @data.values
-        if paramStr && !array[0].empty?
-          subset.select!{|x| x[:name] == array[0] }
-        end
-        hash2 = { stompBody: subset.to_json }
-
-    end
-
-    req = NebulousStomp::NebRequestNull.new('faketarget', verb, paramStr)
-    hash2[:inReplyTo] = req.replyID
-
-    mess = NebulousStomp::Message.from_cache( hash1.merge(hash2).to_json )
-    req.insert_fake_stomp(mess)
-    req
+    request
   end
 
+  private
 
   def create(name, price)
     id = @data.keys.sort.last.to_i + 1
@@ -82,10 +50,45 @@ class FakeRequester
     id
   end
 
-
   def update(id, name, price)
     return nil unless @data[id.to_i]
     @data[id.to_i] = {id: id.to_i, name: name, price: price.to_f}
+  end
+
+  def response_message_hash(requestmsg)
+    hash1 = { contentType: 'application/json' }
+
+    if requestmsg.params.is_a?(Array)
+      array    = requestmsg.params
+      paramstr = array.join(',')
+    else
+      paramstr = requestmsg.params.to_s
+      array    = paramstr.split(',')
+    end
+
+    case requestmsg.verb
+      when 'custcreate'
+        id = create(*array)
+        hash2 = {verb: 'success', params: id.to_s}
+
+      when 'custread'
+        record = @data[paramstr.to_i]
+        hash2  = { stompBody: (record ? record.to_json : ''.to_json) }
+
+      when 'custupdate'
+        hash2 = update(*array) ? {verb: 'success'} : {verb: 'error' }
+
+      when 'custdelete'
+        hash2 = @data.delete(paramstr.to_i) ? {verb: 'success'} : {verb: 'error'}
+
+      when 'custlist'
+        subset = @data.values
+        subset.select!{|x| x[:name] == array[0] } if (!paramstr.empty? && !array[0].empty?)
+        hash2 = { stompBody: subset.to_json }
+
+    end
+
+    hash1.merge(hash2)
   end
 
 end

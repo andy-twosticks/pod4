@@ -57,7 +57,7 @@ module Pod4
 
     attr_reader :id_fld
 
-    # The NebResponse object from the last message sent, or nil otherwise
+    # The NebulousStomp Message object holding the response from the last message sent, or, nil.
     attr_reader :response 
     
     # The status of the response from the last message: 
@@ -153,10 +153,10 @@ module Pod4
     ##
     # In normal operation, takes no parameters.
     #
-    # For testing purposes you may pass an instance of a class here. It must respond to a #send
-    # method with parameters (verb, parameter string, cache yes/no) by returning some kind of
-    # NebRequest (presumably either a double or an instance of NebRequestNull). This method will be
-    # called instead of creating a NebRequest directly.
+    # For testing purposes you may pass something here. Whatever it is you pass, it must respond to
+    # a `send` method, take the same parameters as NebulousStomp::Request.new (that is, a target
+    # and a message) and return something that behaves like a NebulousStomp::Request. This method
+    # will be called instead of creating a NebulousStomp::Request directly.
     #
     def initialize(requestObj=nil)
       @request_object  = requestObj # might as well be a reference 
@@ -184,9 +184,7 @@ module Pod4
         end
 
       send_message( verb_for(:list), sel )
-
-      @response.body_to_h # should be an array irrespective of the method name
-        .map{|e| Octothorpe.new(e) }
+      @response.body.is_a?(Array) ? @response.body.map{|e| Octothorpe.new e} : []
 
     rescue => e
       handle_error(e)
@@ -219,7 +217,7 @@ module Pod4
 
       send_message( verb_for(:read), param_string(:read, nil, id) )
 
-      Octothorpe.new( @response.body_to_h )
+      Octothorpe.new( @response.body.is_a?(Hash) ? @response.body : {} )
     end
 
 
@@ -365,11 +363,12 @@ module Pod4
     # returns the response to the request.
     #
     def send_message_helper(verb, paramStr, with_cache)
+      message = NebulousStomp::Message.new(verb: verb, params: paramStr)
       request = 
         if @request_object
-          @request_object.send(verb, paramStr, with_cache)
+          @request_object.send(self.class.target, message)
         else
-          NebulousStomp::NebRequest.new(self.class.target, verb, paramStr)
+          NebulousStomp::Request.new(self.class.target, message)
         end
 
       if @clear_cache
