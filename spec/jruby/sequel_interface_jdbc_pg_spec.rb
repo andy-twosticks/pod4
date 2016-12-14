@@ -13,6 +13,8 @@ require 'bigdecimal'
 # the MSSQL one. But no --- and presumably Jeremy Evans has his reasons.
 require 'jdbc/postgres'
 
+
+=begin
 class TestSequelInterfacePg < SequelInterface
   set_table :customer
   set_id_fld :id
@@ -28,10 +30,34 @@ class ProdSequelInterfacePg < SequelInterface
   set_table  :product
   set_id_fld :code
 end
+=end
 
 
 
-describe TestSequelInterfacePg do
+describe "SequelInterface (JDBC/Pg)" do
+
+  let(:sequel_interface_class) do
+    Class.new SequelInterface do
+      set_table :customer
+      set_id_fld :id
+    end
+  end
+
+  let(:schema_interface_class) do
+    Class.new SequelInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
+
+  let(:prod_interface_class) do
+    Class.new SequelInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
+
 
   let(:data) do
     d = []
@@ -91,8 +117,8 @@ describe TestSequelInterfacePg do
     db
   end
 
-  let(:interface)      { TestSequelInterfacePg.new(db) }
-  let(:prod_interface) { ProdSequelInterfacePg.new(db) }
+  let(:interface)      { sequel_interface_class.new(db) }
+  let(:prod_interface) { prod_interface_class.new(db) }
 
   before do
     # TRUNCATE TABLE also resets the identity counter
@@ -117,7 +143,7 @@ describe TestSequelInterfacePg do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaSequelInterfacePg.new(db)
+      ifce = schema_interface_class.new(db)
       expect( ifce.quoted_table.downcase ).to eq( %|"public"."customer"| )
     end
 

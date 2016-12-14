@@ -8,40 +8,44 @@ require 'bigdecimal'
 require_relative '../common/shared_examples_for_interface'
 
 
-class TestSequelInterface < SequelInterface
-  set_table :customer
-  set_id_fld :id
-end
 
-class SchemaSequelInterface < SequelInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+describe "SequelInterface" do
 
-class BadSequelInterface1 < SequelInterface
-  set_table :customer
-end
+  let(:sequel_interface_class) do
+    Class.new SequelInterface do
+      set_table :customer
+      set_id_fld :id
+    end
+  end
 
-class BadSequelInterface2 < SequelInterface
-  set_id_fld :id
-end
+  let(:schema_interface_class) do
+    Class.new SequelInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class ProdSequelInterface < SequelInterface
-  set_table  :product
-  set_id_fld :code
-end
+  let(:prod_interface_class) do
+    Class.new SequelInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
+
+  let(:bad_interface_class1) do
+    Class.new SequelInterface do
+      set_table :customer
+    end
+  end
+
+  let(:bad_interface_class2) do
+    Class.new SequelInterface do
+      set_id_fld :id
+    end
+  end
 
 
-
-
-describe TestSequelInterface do
-
-  # We actually connect to a special test database for this. I don't generally
-  # like unit tests to involve other classes at all, but otherwise we are
-  # hardly testing anything, and in any case we do need to test that this class
-  # successfully interfaces with Sequel. We can't really do that without
-  # talking to a database.
 
   let(:data) do
     d = []
@@ -99,8 +103,8 @@ describe TestSequelInterface do
     db
   end
 
-  let(:interface)      { TestSequelInterface.new(db) }
-  let(:prod_interface) { ProdSequelInterface.new(db) }
+  let(:interface)      { sequel_interface_class.new(db) }
+  let(:prod_interface) { prod_interface_class.new(db) }
 
   before do
     fill_data(interface)
@@ -122,7 +126,7 @@ describe TestSequelInterface do
         BigDecimal  :price, :size=>[10.2] 
       end
 
-      TestSequelInterface.new(db2)
+      sequel_interface_class.new(db2)
     end
 
     let(:record)    { {name: 'Barney', price: 1.11} }
@@ -132,7 +136,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.set_schema' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
@@ -140,12 +144,12 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaSequelInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestSequelInterface.schema }.not_to raise_exception
-      expect( TestSequelInterface.schema ).to eq nil
+      expect{ sequel_interface_class.schema }.not_to raise_exception
+      expect( sequel_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -153,7 +157,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.set_table' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
@@ -161,7 +165,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.table' do
     it 'returns the table' do
-      expect( TestSequelInterface.table ).to eq :customer
+      expect( sequel_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -169,7 +173,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
@@ -177,7 +181,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestSequelInterface.id_fld ).to eq :id
+      expect( sequel_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -186,17 +190,17 @@ describe TestSequelInterface do
   describe '#new' do
 
     it 'requires a Sequel DB object' do
-      expect{ TestSequelInterface.new        }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new('foo') }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new        }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestSequelInterface.new(db) }.not_to raise_exception
+      expect{ sequel_interface_class.new(db) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
-      expect{ BadSequelInterface1.new(db)   }.to raise_exception Pod4Error
-      expect{ BadSequelInterface2.new(db)   }.to raise_exception Pod4Error
+      expect{ bad_interface_class1.new(db)   }.to raise_exception Pod4Error
+      expect{ bad_interface_class2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
@@ -210,7 +214,7 @@ describe TestSequelInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaSequelInterface.new(db)
+      ifce = schema_interface_class.new(db)
       expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
     end
 
@@ -339,15 +343,6 @@ describe TestSequelInterface do
       # Actually it does not have to be a hash, but FTTB we only support that.
       expect{ interface.list(name: 'Barney') }.not_to raise_exception
     end
-
-=begin
-    it 'returns an array of Octothorpes that match the records' do
-      # convert each OT to a hash and remove the ID key
-      arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
-
-      expect( arr ).to match_array data
-    end
-=end
 
     it 'returns an array of Octothorpes that match the records' do
       arr = interface.list.map {|ot| x = ot.to_h}

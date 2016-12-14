@@ -171,9 +171,11 @@ module Pod4
 
     rescue => e
       # select already wrapped any error in a Pod4::DatabaseError, but in this case we want to try
-      # to catch something. (Side note: TinyTds' error class structure is a bit poor...)
+      # to catch something. Ruby 2.0 doesn't define Exception.cause, but if it doesn't, we do in
+      # Pod4Error, so. (Side note: TinyTds' error class structure is a bit poor...)
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?" \
-        if e.cause.class   == TinyTds::Error \
+        if e.respond_to?(:cause) \
+        && e.cause.class   == TinyTds::Error \
         && e.cause.message =~ /conversion failed/i
 
 

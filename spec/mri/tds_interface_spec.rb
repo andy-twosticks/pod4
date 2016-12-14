@@ -7,37 +7,46 @@ require_relative '../common/shared_examples_for_interface'
 require_relative '../fixtures/database'
 
 
-class TestTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_table  :customer
-  set_id_fld :id
-end
+describe "TdsInterface" do
 
-class SchemaTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+  let(:tds_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class BadTdsInterface1 < TdsInterface
-  set_db :pod4_test
-  set_table :customer
-end
+  let(:schema_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class BadTdsInterface2 < TdsInterface
-  set_db :pod4_test
-  set_id_fld :id
-end
+  let(:bad_interface_class1) do
+    Class.new TdsInterface do
+      set_db :pod4_test
+      set_table :customer
+    end
+  end
 
-class ProdTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_table  :product
-  set_id_fld :code
-end
+  let(:bad_interface_class2) do
+    Class.new TdsInterface do
+      set_db :pod4_test
+      set_id_fld :id
+    end
+  end
 
-
-describe TestTdsInterface do
+  let(:prod_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_table  :product
+      set_id_fld :code
+    end
+  end
 
   def db_setup(connect)
     client = TinyTds::Client.new(connect)
@@ -119,11 +128,11 @@ describe TestTdsInterface do
 
 
   let(:interface) do
-    TestTdsInterface.new(@connect_hash)
+    tds_interface_class.new(@connect_hash)
   end
 
   let(:prod_interface) do
-    ProdTdsInterface.new(@connect_hash)
+    prod_interface_class.new(@connect_hash)
   end
 
   #####
@@ -132,7 +141,7 @@ describe TestTdsInterface do
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestTdsInterface.new(@connect_hash)
+      tds_interface_class.new(@connect_hash)
     end
 
 
@@ -152,7 +161,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.db' do
     it 'returns the table' do
-      expect( TestTdsInterface.db ).to eq :pod4_test
+      expect( tds_interface_class.db ).to eq :pod4_test
     end
   end
   ##
@@ -168,12 +177,12 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaTdsInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestTdsInterface.schema }.not_to raise_exception
-      expect( TestTdsInterface.schema ).to eq nil
+      expect{ tds_interface_class.schema }.not_to raise_exception
+      expect( tds_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -189,7 +198,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.table' do
     it 'returns the table' do
-      expect( TestTdsInterface.table ).to eq :customer
+      expect( tds_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -205,7 +214,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestTdsInterface.id_fld ).to eq :id
+      expect( tds_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -214,20 +223,20 @@ describe TestTdsInterface do
   describe '#new' do
 
     it 'requires a TinyTds connection string' do
-      expect{ TestTdsInterface.new        }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new('foo') }.to raise_exception ArgumentError
+      expect{ tds_interface_class.new        }.to raise_exception ArgumentError
+      expect{ tds_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ tds_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestTdsInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ tds_interface_class.new(@connect_hash) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
       expect{ TdsInterface.new(@connect_hash) }.to raise_exception Pod4Error
 
-      expect{ BadTdsInterface1.new(@connect_hash) }.
+      expect{ bad_interface_class1.new(@connect_hash) }.
         to raise_exception Pod4Error
 
-      expect{ BadTdsInterface2.new(@connect_hash) }.
+      expect{ bad_interface_class2.new(@connect_hash) }.
         to raise_exception Pod4Error
 
     end
@@ -243,7 +252,7 @@ describe TestTdsInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaTdsInterface.new(@connect_hash)
+      ifce = schema_interface_class.new(@connect_hash)
       expect( ifce.quoted_table ).to eq( %|[public].[customer]| )
     end
 
