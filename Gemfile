@@ -18,7 +18,7 @@ group :development, :test do
 
   platforms :ruby do
     gem "sqlite3",  "~> 1.3"
-    gem "tiny_tds", "~> 1.0"
+    gem "tiny_tds", "~> 1.0" # currently pinned to 1.0 because of FreeBDS 0.95 (Centos)
     gem "pg"
   end
 
