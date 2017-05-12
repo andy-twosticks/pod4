@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Andy Jones"]
   spec.email         = ["andy.jones@twosticksconsulting.co.uk"]
   spec.summary       = %q|Totally not an ORM|
-  spec.description   = <<~DESC
+  spec.description   = <<-DESC.gsub(/^\s+/, "")
     Provides a simple, common framework to talk to a bunch of data sources,
     using model classes which consist of a bare minimum of DSL plus vanilla Ruby
     inheritance.
@@ -25,26 +25,6 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = spec.files.grep(%r{^md/})
 
   spec.add_runtime_dependency "devnull",    '~>0.1'
-  spec.add_runtime_dependency "octothorpe", '~>0.2'
-
-=begin
-  # for bundler, management, etc etc
-  spec.add_development_dependency "bundler", "~> 1.11"
-  spec.add_development_dependency "rake",    "~> 10.5"
-  spec.add_development_dependency "rspec",   "~> 3.4"
-  spec.add_development_dependency "rdoc"
-  
-  # For testing
-  spec.add_development_dependency "sequel",          "~> 4.35"
-  spec.add_development_dependency "sqlite3",         "~> 1.3"
-  spec.add_development_dependency "tiny_tds",        "~> 0"
-  spec.add_development_dependency "pg",              "~> 0"
-  spec.add_development_dependency "nebulous_stomp" , "~> 2"
-
-  # Development tools
-  spec.add_development_dependency "pry"
-  spec.add_development_dependency "pry-doc"
-  spec.add_development_dependency "ripper-tags"
-=end
+  spec.add_runtime_dependency "octothorpe", '~>0.3'
 
 end

@@ -1,1 +1,0 @@
-../spec_common/sequel_interface_spec.rb

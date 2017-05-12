@@ -11,22 +11,21 @@ require_relative 'pod4/alert'
 ##
 # Pod4, which:
 #
-# * will gather data from absolutely anything. Nebulous, Sequel, Pg,
-#   TinyTds, whatever. Add your own on the fly.
+# * will gather data from absolutely anything. Nebulous, Sequel, Pg, TinyTds, whatever. Add your
+#   own on the fly.
 #
-# * will allow you to define models which are genuinely represent the data
-#   your way, not the way the data source sees it.
+# * will allow you to define models which are genuinely represent the data your way, not the way
+#   the data source sees it.
 #
-# * is hopefully simple and clean; just a very light helper layer with the
-#   absolute minimum of magic or surprises for the developer. 
+# * is hopefully simple and clean; just a very light helper layer with the absolute minimum of
+#   magic or surprises for the developer. 
 #
 # For more information:
 # 
 # * There is a short tutorial in the readme.
 #
-# * you should look at the contract Pod4 makes with its
-#   callers -- you should find all that you need in the classes Pod4::Interface
-#   and Pod4::Model. 
+# * you should look at the contract Pod4 makes with its callers -- you should find all that you
+#   need in the classes Pod4::Interface and Pod4::Model. 
 #
 # * Or, read the tests, of course.
 #

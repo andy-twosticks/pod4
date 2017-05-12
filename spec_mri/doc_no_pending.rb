@@ -1,1 +1,0 @@
-../spec_common/doc_no_pending.rb

@@ -1,45 +1,68 @@
 require 'pod4/pg_interface'
+require 'pg'
 
-require_relative 'shared_examples_for_interface'
-require_relative 'fixtures/database'
-
-
-class TestPgInterface < PgInterface
-  set_table  :customer
-  set_id_fld :id
-end
-
-class SchemaPgInterface < PgInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
-
-class BadPgInterface1 < PgInterface
-  set_table :customer
-end
-
-class BadPgInterface2 < PgInterface
-  set_id_fld :id
-end
+require_relative '../common/shared_examples_for_interface'
+require_relative '../fixtures/database'
 
 
-describe TestPgInterface do
+describe "PgInterface" do
+
+  let(:pg_interface_class) do
+    Class.new PgInterface do
+      set_table :customer
+      set_id_fld :id
+
+      def stop; close; end # We open a lot of connections, unusually
+    end
+  end
+
+  let(:schema_interface_class) do
+    Class.new PgInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
+
+  let(:prod_interface_class) do
+    Class.new PgInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
+
+  let(:bad_interface_class1) do
+    Class.new PgInterface do
+      set_table :customer
+    end
+  end
+
+  let(:bad_interface_class2) do
+    Class.new PgInterface do
+      set_id_fld :id
+    end
+  end
+
 
   def db_setup(connect)
     client = PG.connect(connect)
 
-    client.exec(%Q|drop table if exists customer;|)
-
     client.exec(%Q|
+      drop table if exists customer;
+      drop table if exists product;
+
       create table customer ( 
-        id        serial,
+        id        serial primary key,
         name      text,
         level     real      null,
         day       date      null,
         timestamp timestamp null,
         price     money     null,
-        qty       numeric   null );| )
+        qty       numeric   null );
+
+      create table product (
+        code text,
+        name text );| )
 
   ensure
     client.finish if client
@@ -48,6 +71,11 @@ describe TestPgInterface do
 
   def fill_data(ifce)
     @data.each{|r| ifce.create(r) }
+  end
+
+
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
   end
 
 
@@ -81,13 +109,25 @@ describe TestPgInterface do
 
 
   before do
-    # TRUNCATE TABLE also resets the identity counter
-    interface.execute(%Q|truncate table customer restart identity;|)
+    interface.execute(%Q|
+      truncate table customer restart identity;
+      truncate table product;|)
+
+  end
+
+
+  after do
+    # We open a lot of connections, unusually
+    interface.stop if interface
   end
 
 
   let(:interface) do
-    TestPgInterface.new(@connect_hash)
+    pg_interface_class.new(@connect_hash)
+  end
+
+  let(:prod_interface) do
+    prod_interface_class.new(@connect_hash)
   end
 
   #####
@@ -96,7 +136,7 @@ describe TestPgInterface do
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestPgInterface.new(@connect_hash)
+      pg_interface_class.new(@connect_hash)
     end
 
     let(:record) { {name: 'Barney'} }
@@ -107,7 +147,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_schema' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_schema).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
@@ -115,12 +155,12 @@ describe TestPgInterface do
 
   describe 'PgInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaPgInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestPgInterface.schema }.not_to raise_exception
-      expect( TestPgInterface.schema ).to eq nil
+      expect{ pg_interface_class.schema }.not_to raise_exception
+      expect( pg_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -128,7 +168,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_table' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_table).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
@@ -136,7 +176,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.table' do
     it 'returns the table' do
-      expect( TestPgInterface.table ).to eq :customer
+      expect( pg_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -144,7 +184,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( PgInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( pg_interface_class ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
@@ -152,7 +192,7 @@ describe TestPgInterface do
 
   describe 'PgInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestPgInterface.id_fld ).to eq :id
+      expect( pg_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -161,11 +201,11 @@ describe TestPgInterface do
   describe '#new' do
 
     it 'requires a TinyTds connection string' do
-      expect{ TestPgInterface.new        }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestPgInterface.new('foo') }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new        }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ pg_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestPgInterface.new(@connect_hash) }.not_to raise_exception
+      expect{ pg_interface_class.new(@connect_hash) }.not_to raise_exception
     end
 
   end
@@ -179,7 +219,7 @@ describe TestPgInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaPgInterface.new(@connect_hash)
+      ifce = schema_interface_class.new(@connect_hash)
       expect( ifce.quoted_table ).to eq( %|"public"."customer"| )
     end
 
@@ -211,11 +251,27 @@ describe TestPgInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with strings containing special characters' do
+      record = {name: %Q|T'Challa""|, price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
     end
 
   end
@@ -276,6 +332,14 @@ describe TestPgInterface do
       expect( price ).to eq @data.first[:price]
     end
 
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
+    end
+
   end
   ##
 
@@ -329,8 +393,6 @@ describe TestPgInterface do
       record = {name: 'Booboo', price: 99.99}
       interface.update(id, record)
 
-      # It so happens that TinyTds returns money as BigDecimal --
-      # this is a really good thing, even though it screws with our test.
       expect( float_price( interface.read(id).to_h ) ).to include(record)
     end
 
@@ -346,10 +408,22 @@ describe TestPgInterface do
 
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with strings containing special characters' do
+      record = {name: %Q|T'Challa""|, price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
     end
 
   end
@@ -358,8 +432,8 @@ describe TestPgInterface do
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -372,9 +446,16 @@ describe TestPgInterface do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end
@@ -401,6 +482,34 @@ describe TestPgInterface do
 
     it 'executes the string' do
       expect{ interface.execute(sql) }.not_to raise_exception
+      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+    end
+
+  end
+  ##
+
+
+  describe '#executep' do
+
+    let(:sql) { 'delete from customer where cast(price as numeric) < %s and name = %s;' }
+
+    before { fill_data(interface) }
+
+    it 'requires an SQL string' do
+      expect{ interface.executep      }.to raise_exception ArgumentError
+      expect{ interface.executep(nil) }.to raise_exception ArgumentError
+      expect{ interface.executep(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.executep('delete from not_a_table where foo = %s', 12) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'executes the string with the given parameters' do
+      expect{ interface.executep(sql, 12.0, 'Barney') }.not_to raise_exception
       expect( interface.list.size ).to eq(@data.size - 1)
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
     end
@@ -443,6 +552,44 @@ describe TestPgInterface do
       expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
       expect( ret ).to eq( [] )
     end
+
+  end
+  ##
+
+
+  describe '#selectp' do
+
+    before { fill_data(interface) }
+
+    it 'requires an SQL string' do
+      expect{ interface.selectp      }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil) }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.selectp('select * from not_a_table where thingy = %s', 12) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'returns the result of the sql' do
+      sql = 'select name from customer where cast(price as numeric) < %s;'
+
+      expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
+      expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
+      expect( interface.selectp(sql, 0.0) ).to eq( [] )
+    end
+
+    it 'works if you pass a non-select' do
+      sql = 'delete from customer where cast(price as numeric) < %s;'
+      ret = interface.selectp(sql, 2.0)
+
+      expect( interface.list.size ).to eq(@data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+      expect( ret ).to eq( [] )
+    end
+
 
   end
   ##

@@ -4,63 +4,57 @@ require 'pod4/model'
 require 'pod4/null_interface'
 
 
-##
-# We define a model class to test, since in normal operation we would never use
-# Model directly, and since it needs an inner Interface.
-#
-# We can't use a mock for the interface -- class definitions fall outside the
-# RSpec DSL as far as I can tell, so I can neither create a mock here or inject
-# it. Which means we can't mock the interface in the rest of the test either;
-# any mock we created would not get called.
-#
-# But: we want to test that Model calls Interface correctly.
-#
-# We do have what appears to be a perfectly sane way of testing. We can define
-# an inner class based on the genuinely existing, non-mock NullInterface class;
-# and then define expectations on it. When we do this, Rspec fails to pass the
-# call on to the object, unless we specifically say `.and_call_original`
-# instead of `.and_return`. 
-#
-# This is actually quite nice, but more than a little confusing when you see it
-# for the first time. Its use isn't spelled out in the RSpec docs AFAICS. 
-#
-class CustomerModel < Pod4::Model
-  attr_columns :id, :name, :groups
-  attr_columns :price  # specifically testing multiple calls to attr_columns
-  set_interface NullInterface.new(:id, :name, :price, :groups, [])
-
-  def map_to_model(ot)
-    super
-    @groups = @groups ? @groups.split(',') : []
-    self
-  end
-
-  def map_to_interface
-    x = super
-    g = (x.>>.groups || []).join(',')
-    x.merge(groups: g)
-  end
-
-  def fake_an_alert(*args)
-    add_alert(*args) #private method
-  end
-
-  def validate 
-    add_alert(:error, "falling over now") if name == "fall over"
-  end
-
-  def reset_alerts; @alerts = []; end
-end
-
-
-
 describe 'CustomerModel' do
+
+  ##
+  # We define a model class to test, since in normal operation we would never use Model directly,
+  # and since it needs an inner Interface.
+  #
+  # We define an inner class based on the genuinely existing, non-mock NullInterface class; and
+  # then define expectations on it. When we do this, Rspec fails to pass the call on to the object,
+  # unless we specifically say `.and_call_original` instead of `.and_return`. 
+  #
+  # This is actually quite nice, but more than a little confusing when you see it for the first
+  # time. Its use isn't spelled out in the RSpec docs AFAICS. 
+  #
+  # (Also, we define the class inside an Rspec 'let' so that its scope is limited to this test.)
+  #
+  let(:customer_model_class) do
+    Class.new Pod4::Model do
+      attr_columns :id, :name, :groups
+      attr_columns :price  # specifically testing multiple calls to attr_columns
+      set_interface NullInterface.new(:id, :name, :price, :groups, [])
+
+      def map_to_model(ot)
+        super
+        @groups = @groups ? @groups.split(',') : []
+        self
+      end
+
+      def map_to_interface
+        x = super
+        g = (x.>>.groups || []).join(',')
+        x.merge(groups: g)
+      end
+
+      def fake_an_alert(*args)
+        add_alert(*args) #private method
+      end
+
+      def validate 
+        add_alert(:error, "falling over now") if name == "fall over"
+      end
+
+      def reset_alerts; @alerts = []; end
+    end
+  end
 
   let(:records) do
     [ {id: 10, name: 'Gomez',     price: 1.23, groups: 'trains'       },
       {id: 20, name: 'Morticia',  price: 2.34, groups: 'spanish'      },
       {id: 30, name: 'Wednesday', price: 3.45, groups: 'school'       },
       {id: 40, name: 'Pugsley',   price: 4.56, groups: 'trains,school'} ]
+
   end
 
   let(:recordsx) do
@@ -78,26 +72,31 @@ describe 'CustomerModel' do
   # model2 and model3 are in an identical state - they have been filled with a
   # read(). We have two so that we can RSpec 'allow' on one and not the other.
 
-  let(:model) { CustomerModel.new(20) }
+  let(:model) { customer_model_class.new(20) }
 
   let(:model2) do
-    m = CustomerModel.new(30)
+    m = customer_model_class.new(30)
 
-    allow( m.interface ).to receive(:read).
-      and_return( Octothorpe.new(records[2]) )
-
+    allow( m.interface ).to receive(:read).and_return( Octothorpe.new(records[2]) )
     m.read.or_die
   end
 
   let(:model3) do
-    m = CustomerModel.new(40)
+    m = customer_model_class.new(40)
 
-    allow( m.interface ).to receive(:read).
-      and_return( Octothorpe.new(records[3]) )
-
+    allow( m.interface ).to receive(:read).and_return( Octothorpe.new(records[3]) )
     m.read.or_die
   end
 
+  # Model4 is for a non-integer id
+  let(:thing) { Octothorpe.new(id: 'eek', name: 'thing',  price: 9.99, groups: 'scuttering') }
+
+  let(:model4) do
+    m = customer_model_class.new('eek')
+
+    allow( m.interface ).to receive(:read).and_return(thing)
+    m.read.or_die
+  end
 
   ##
 
@@ -105,18 +104,18 @@ describe 'CustomerModel' do
   describe 'Model.attr_columns' do
 
     it 'requires a list of columns' do
-      expect( CustomerModel ).to respond_to(:attr_columns).with(1).argument
+      expect( customer_model_class ).to respond_to(:attr_columns).with(1).argument
     end
 
     it 'exposes the columns just like attr_accessor' do
-      expect( CustomerModel.new ).to respond_to(:id)
-      expect( CustomerModel.new ).to respond_to(:name)
-      expect( CustomerModel.new ).to respond_to(:price)
-      expect( CustomerModel.new ).to respond_to(:groups)
-      expect( CustomerModel.new ).to respond_to(:id=)
-      expect( CustomerModel.new ).to respond_to(:name=)
-      expect( CustomerModel.new ).to respond_to(:price=)
-      expect( CustomerModel.new ).to respond_to(:groups=)
+      expect( customer_model_class.new ).to respond_to(:id)
+      expect( customer_model_class.new ).to respond_to(:name)
+      expect( customer_model_class.new ).to respond_to(:price)
+      expect( customer_model_class.new ).to respond_to(:groups)
+      expect( customer_model_class.new ).to respond_to(:id=)
+      expect( customer_model_class.new ).to respond_to(:name=)
+      expect( customer_model_class.new ).to respond_to(:price=)
+      expect( customer_model_class.new ).to respond_to(:groups=)
     end
 
     # it adds the columns to Model.columns -- covered by the columns test
@@ -126,7 +125,7 @@ describe 'CustomerModel' do
 
   describe 'Model.columns' do
     it 'lists the columns' do
-      expect( CustomerModel.columns ).to match_array( [:id,:name,:price,:groups] )
+      expect( customer_model_class.columns ).to match_array( [:id,:name,:price,:groups] )
     end
   end
   ##
@@ -134,7 +133,7 @@ describe 'CustomerModel' do
 
   describe 'Model.set_interface' do
     it 'requires an Interface object' do
-      expect( CustomerModel ).to respond_to(:set_interface).with(1).argument
+      expect( customer_model_class ).to respond_to(:set_interface).with(1).argument
     end
 
     # it 'sets interface' - covered by the interface test
@@ -144,8 +143,8 @@ describe 'CustomerModel' do
   
   describe 'Model.interface' do
     it 'is the interface object' do
-      expect( CustomerModel.interface ).to be_a_kind_of NullInterface
-      expect( CustomerModel.interface.id_fld ).to eq :id
+      expect( customer_model_class.interface ).to be_a_kind_of NullInterface
+      expect( customer_model_class.interface.id_fld ).to eq :id
     end
   end
   ##
@@ -153,7 +152,7 @@ describe 'CustomerModel' do
 
   describe 'Model.list' do
 
-    let(:list1) { CustomerModel.list }
+    let(:list1) { customer_model_class.list }
 
     def arr_without_groups(arr)
       arr
@@ -163,21 +162,21 @@ describe 'CustomerModel' do
     end
 
     it 'allows an optional selection parameter' do
-      expect{ CustomerModel.list                }.not_to raise_exception
-      expect{ CustomerModel.list(name: 'Betty') }.not_to raise_exception
+      expect{ customer_model_class.list                }.not_to raise_exception
+      expect{ customer_model_class.list(name: 'Betty') }.not_to raise_exception
     end
 
-    it 'returns an array of CustomerModel records' do
-      expect( CustomerModel.interface ).
+    it 'returns an array of customer_model_class records' do
+      expect( customer_model_class.interface ).
         to receive(:list).with(nil).
         and_return( records_as_ot )
 
       expect( list1 ).to be_a_kind_of Array
-      expect( list1 ).to all(be_a_kind_of CustomerModel)
+      expect( list1 ).to all(be_a_kind_of customer_model_class)
     end
 
     it 'returns the data from the interface' do
-      expect( CustomerModel.interface ).
+      expect( customer_model_class.interface ).
         to receive(:list).with(nil).
         and_return(records_as_ot)
 
@@ -188,11 +187,11 @@ describe 'CustomerModel' do
     it 'honours passed selection criteria' do
       hash = {price: 2.22}
 
-      expect( CustomerModel.interface ).
+      expect( customer_model_class.interface ).
         to receive(:list).with(hash).
         and_return( [Octothorpe.new(records[1])] )
 
-      list2 = CustomerModel.list(hash)
+      list2 = customer_model_class.list(hash)
       expect( list2.size ).to eq 1
       expect( arr_without_groups(list2).first ).to eq( recordsx[1] )
     end
@@ -200,23 +199,23 @@ describe 'CustomerModel' do
     it 'returns an empty array if nothing matches' do
       hash = {price: 1.23}
 
-      expect( CustomerModel.interface ).
+      expect( customer_model_class.interface ).
         to receive(:list).with(hash).
         and_return([])
 
-      expect( CustomerModel.list(hash) ).to eq []
+      expect( customer_model_class.list(hash) ).to eq []
     end
 
     it 'returns an empty array if there are no records' do
-      expect( CustomerModel.list ).to eq []
+      expect( customer_model_class.list ).to eq []
     end
 
     it 'calls map_to_model to set the record data' do
-      allow( CustomerModel.interface ).
+      allow( customer_model_class.interface ).
         to receive(:list).
         and_return(records_as_ot)
 
-      expect( CustomerModel.list.last.groups ).to eq(['trains', 'school'])
+      expect( customer_model_class.list.last.groups ).to eq(['trains', 'school'])
     end
 
   end
@@ -226,20 +225,25 @@ describe 'CustomerModel' do
   describe '#new' do
 
     it 'takes an optional ID' do
-      expect{ CustomerModel.new    }.not_to raise_exception
-      expect{ CustomerModel.new(1) }.not_to raise_exception
+      expect{ customer_model_class.new    }.not_to raise_exception
+      expect{ customer_model_class.new(1) }.not_to raise_exception
     end
 
     it 'sets the ID attribute' do
-      expect( CustomerModel.new(23).model_id ).to eq 23
+      expect( customer_model_class.new(23).model_id ).to eq 23
     end
 
     it 'sets the status to empty' do
-      expect( CustomerModel.new.model_status ).to eq :empty
+      expect( customer_model_class.new.model_status ).to eq :empty
     end
 
     it 'initializes the alerts attribute' do
-      expect( CustomerModel.new.alerts ).to eq([])
+      expect( customer_model_class.new.alerts ).to eq([])
+    end
+
+    it 'doesn''t freak out if the ID is not an integer' do
+      expect{ customer_model_class.new("france") }.not_to raise_exception
+      expect( customer_model_class.new("france").model_id ).to eq "france"
     end
 
   end
@@ -248,8 +252,8 @@ describe 'CustomerModel' do
 
   describe '#interface' do
     it 'returns the interface set in the class definition, again' do
-      expect( CustomerModel.new.interface ).to be_a_kind_of NullInterface
-      expect( CustomerModel.new.interface.id_fld ).to eq :id
+      expect( customer_model_class.new.interface ).to be_a_kind_of NullInterface
+      expect( customer_model_class.new.interface.id_fld ).to eq :id
     end
   end
   ##
@@ -258,7 +262,7 @@ describe 'CustomerModel' do
   describe '#columns' do
     it 'returns the attr_columns list from the class definition' do
 
-      expect( CustomerModel.new.columns ).
+      expect( customer_model_class.new.columns ).
         to match_array( [:id,:name,:price,:groups] )
 
     end
@@ -268,7 +272,7 @@ describe 'CustomerModel' do
 
   describe '#alerts' do
     it 'returns the list of alerts against the model' do
-      cm = CustomerModel.new
+      cm = customer_model_class.new
       cm.fake_an_alert(:warning, :foo, 'one')
       cm.fake_an_alert(:error,   :bar, 'two')
 
@@ -345,8 +349,8 @@ describe 'CustomerModel' do
 
   describe '#validate' do
     it 'takes no parameters' do
-      expect{ CustomerModel.new.validate(12) }.to raise_exception ArgumentError
-      expect{ CustomerModel.new.validate     }.not_to raise_exception
+      expect{ customer_model_class.new.validate(12) }.to raise_exception ArgumentError
+      expect{ customer_model_class.new.validate     }.not_to raise_exception
     end
   end
   ##
@@ -412,7 +416,7 @@ describe 'CustomerModel' do
   describe '#map_to_model' do
 
     it 'sets the columns, with groups as an array' do
-      cm = CustomerModel.new
+      cm = customer_model_class.new
       cm.map_to_model(records.last)
 
       expect( cm.groups ).to eq( ['trains','school'] )
@@ -425,7 +429,7 @@ describe 'CustomerModel' do
   describe '#map_to_interface' do
 
     it 'returns the columns, with groups as a list' do
-      cm = CustomerModel.new
+      cm = customer_model_class.new
       cm.map_to_model(records.last)
 
       expect( cm.map_to_interface.>>.groups ).to eq( 'trains,school' )
@@ -438,7 +442,7 @@ describe 'CustomerModel' do
   describe '#raise_exceptions' do
 
     it 'is also known as .or_die' do
-      cm = CustomerModel.new
+      cm = customer_model_class.new
       expect( cm.method(:raise_exceptions) ).to eq( cm.method(:or_die) )
     end
 
@@ -466,11 +470,11 @@ describe 'CustomerModel' do
 
   describe '#create' do
 
-    let (:new_model) { CustomerModel.new }
+    let (:new_model) { customer_model_class.new }
 
     it 'takes no parameters' do
-      expect{ CustomerModel.new.create(12) }.to raise_exception ArgumentError
-      expect{ CustomerModel.new.create     }.not_to raise_exception
+      expect{ customer_model_class.new.create(12) }.to raise_exception ArgumentError
+      expect{ customer_model_class.new.create     }.not_to raise_exception
     end
 
     it 'returns self' do
@@ -483,8 +487,8 @@ describe 'CustomerModel' do
     end
 
     it 'calls create on the interface if the record is good' do
-      expect( CustomerModel.interface ).to receive(:create)
-      CustomerModel.new.create
+      expect( customer_model_class.interface ).to receive(:create)
+      customer_model_class.new.create
 
       new_model.fake_an_alert(:warning, :name, 'foo')
       expect( new_model.interface ).to receive(:create)
@@ -532,6 +536,14 @@ describe 'CustomerModel' do
       new_model.create
     end
 
+    it 'doesn\'t freak out if the model is not an integer' do
+      expect( new_model.interface ).to receive(:create)
+      new_model.id   = "handy"
+      new_model.name = "Thing"
+
+      expect{ new_model.create }.not_to raise_error
+    end
+
   end
   ##
 
@@ -539,8 +551,8 @@ describe 'CustomerModel' do
   describe '#read' do
 
     it 'takes no parameters' do
-      expect{ CustomerModel.new.create(12) }.to raise_exception ArgumentError
-      expect{ CustomerModel.new.create     }.not_to raise_exception
+      expect{ customer_model_class.new.create(12) }.to raise_exception ArgumentError
+      expect{ customer_model_class.new.create     }.not_to raise_exception
     end
 
     it 'returns self ' do
@@ -572,7 +584,7 @@ describe 'CustomerModel' do
       ot = records_as_ot.last
       allow( model.interface ).to receive(:read).and_return( ot )
 
-      cm = CustomerModel.new(10).read
+      cm = customer_model_class.new(10).read
       expect( cm.id    ).to eq ot.>>.id
       expect( cm.name  ).to eq ot.>>.name
       expect( cm.price ).to eq ot.>>.price
@@ -597,8 +609,14 @@ describe 'CustomerModel' do
       expect( model.model_status ).to eq :warning
     end
 
+    it 'doesn\'t freak out if the model is non-integer' do
+      allow( model.interface ).to receive(:read).and_return( thing )
+
+      expect{ customer_model_class.new('eek').read }.not_to raise_error
+    end
+
     context 'if the interface.read returns an empty Octothorpe' do
-      let(:missing) { CustomerModel.new(99) }
+      let(:missing) { customer_model_class.new(99) }
 
       it 'doesn\'t throw an exception' do
         expect{ missing.read }.not_to raise_exception
@@ -658,7 +676,7 @@ describe 'CustomerModel' do
       model3.update
     end
 
-    it 'doesnt call update on the interface if the validation fails' do
+    it 'doesn\'t call update on the interface if the validation fails' do
       expect( model3.interface ).not_to receive(:update)
 
       model3.name = "fall over"  # triggers validation
@@ -668,6 +686,14 @@ describe 'CustomerModel' do
     it 'calls map_to_interface to get record data' do
       expect( model3 ).to receive(:map_to_interface)
       model3.update
+    end
+
+    it 'doesn\'t freak out if the model is non-integer' do
+      expect( model4.interface ).
+        to receive(:update).
+        and_return( model4.interface )
+
+      model4.update
     end
 
     context 'when the record already has error alerts' do
@@ -752,6 +778,15 @@ describe 'CustomerModel' do
       model2.delete
       expect( model2.model_status ).to eq :deleted
     end
+
+    it 'doesn\'t freak out if the model is non-integer' do
+      expect( model4.interface ).
+        to receive(:delete).
+        and_return( model4.interface )
+
+      model4.delete
+    end
+
 
   end
   ##

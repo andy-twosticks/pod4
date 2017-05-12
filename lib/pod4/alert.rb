@@ -2,10 +2,10 @@ module Pod4
   
 
   ##
-  # An Alert is an error, warning or note which might be raised in validation
-  # in the model. They are, however, designed to follow all the way through the
-  # controller to the view; you should use them whenever you want to display a
-  # message on the page.
+  # An Alert is an error, warning or note which might be raised in validation in the model. 
+  #
+  # They are, however, designed to follow all the way through the controller to the view; you
+  # should use them whenever you want to display a message on the page.
   #
   class Alert
 
@@ -26,18 +26,17 @@ module Pod4
 
 
     ##
-    # A new alert must have a type (error warning info or success); there
-    # should be a message to display, obviously. Note that you can pass an
-    # exception in place of a message, in which case @exception will be set.
+    # A new alert must have a type (error warning info or success); there should be a message to
+    # display, obviously. Note that you can pass an exception in place of a message, in which case
+    # @exception will be set.
     #
-    # You may optionally specify the name of the field to be highlighted.
-    # Models will give validation alerts a field that corresponds to the model
-    # attribute; but this is not enforced here, and your controller will have
-    # to sort things out if the model is expecting different field names.
+    # You may optionally specify the name of the field to be highlighted. Models will give
+    # validation alerts a field that corresponds to the model attribute; but this is not enforced
+    # here, and your controller will have to sort things out if the model is expecting different
+    # field names.
     #
     def initialize(type, field=nil, message)
-      raise ArgumentError, "unknown alert type" \
-        unless ALERTTYPES.include? type.to_s.to_sym
+      raise ArgumentError, "unknown alert type" unless ALERTTYPES.include? type.to_s.to_sym
 
       @type      = type.to_s.to_sym
       @field     = field ? field.to_sym : nil
@@ -58,8 +57,7 @@ module Pod4
 
 
     ##
-    # An array of Alert is automatically sorted into descending order of
-    # seriousness
+    # An array of Alert is automatically sorted into descending order of seriousness
     #
     def <=>(other)
       ALERTTYPES.index(self.type) <=> ALERTTYPES.index(other.type)
@@ -78,7 +76,6 @@ module Pod4
 
       self
     end
-
 
   end
   ##

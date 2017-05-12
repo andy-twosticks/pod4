@@ -5,16 +5,16 @@ require 'pod4/typecasting'
 require 'pod4/null_interface'
 
 
-class ProductModel < Pod4::Model
-  include Pod4::TypeCasting
-  force_encoding Encoding::ISO_8859_1   # I assume we are running as UTF8 here
-  attr_columns :id, :code, :product, :price
-  set_interface NullInterface.new(:id, :code, :product, :price, [])
-end
-
-
-
 describe 'ProductModel' do
+
+  let(:product_model_class) do
+    Class.new Pod4::Model do
+      include Pod4::TypeCasting
+      force_encoding Encoding::ISO_8859_1   # I assume we are running as UTF8 here
+      attr_columns :id, :code, :product, :price
+      set_interface NullInterface.new(:id, :code, :product, :price, [])
+    end
+  end
 
   let(:records) do
     [ {id: 10, code: 'aa1', product: 'beans',   price: 1.23},
@@ -23,10 +23,10 @@ describe 'ProductModel' do
       {id: 40, code: 'cc2', product: 'matches', price: 4.56} ]
   end
 
-  let(:model) { ProductModel.new(20) }
+  let(:model) { product_model_class.new(20) }
 
   let(:model2) do
-    m = ProductModel.new(30)
+    m = product_model_class.new(30)
 
     allow( m.interface ).to receive(:read).
       and_return( Octothorpe.new(records[2]) )
@@ -43,20 +43,20 @@ describe 'ProductModel' do
   describe 'Model.force_encoding' do
 
     it 'requires an encoding' do
-      expect( ProductModel ).to respond_to(:force_encoding).with(1).argument
+      expect( product_model_class ).to respond_to(:force_encoding).with(1).argument
 
-      expect{ ProductModel.force_encoding('foo') }.to raise_exception Pod4Error
+      expect{ product_model_class.force_encoding('foo') }.to raise_exception Pod4Error
 
       # Cheating here: this has to be the same as above or other tests will
       # fail...
-      expect{ ProductModel.force_encoding(Encoding::ISO_8859_1) }.
+      expect{ product_model_class.force_encoding(Encoding::ISO_8859_1) }.
         not_to raise_exception
 
     end
 
     it 'sets the encoding to be returned by Model.encoding' do
-      expect{ ProductModel.encoding }.not_to raise_exception
-      expect( ProductModel.encoding ).to eq(Encoding::ISO_8859_1)
+      expect{ product_model_class.encoding }.not_to raise_exception
+      expect( product_model_class.encoding ).to eq(Encoding::ISO_8859_1)
     end
 
   end
