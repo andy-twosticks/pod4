@@ -1,3 +1,5 @@
+require 'BigDecimal'
+require 'Time'
 require 'pod4/errors'
 require 'pod4/metaxing'
 
@@ -46,6 +48,21 @@ module Pod4
       end
 
       def encoding; nil; end
+
+      def typecast(*flds, options={})
+        raise Pod4Error, "Bad Typecasting" unless options.keys.any?{|o| %i|as use|.include? o}
+
+        c = typecasts.dup
+        flds.each do |f| 
+          c[f] = options
+          attr_reader f unless columns.include? f
+        end
+
+        define_class_method(:typecasts) {c}
+      end
+
+      def typecasts; {}; end
+
     end
     ##
 
@@ -55,11 +72,103 @@ module Pod4
       def map_to_model(ot)
         enc = self.class.encoding
         
-        ot.each do |_,v| 
+        ot.each_value do |v|
           v.force_encoding(enc) if v.kind_of?(String) && enc
         end
 
         super(ot)
+      end
+
+      def set(ot)
+        hash = _typecast(ot)
+        super(ot.merge hash)
+      end
+
+      def to_interface
+        ot   = super
+        hash = _typecast(ot, :strict)
+        ot.merge hash
+      end
+
+      def to_ot
+        ot = super
+        ot.each_key do |k|
+          next unless (tc = self.class.typecasts[k])
+          _guard(k, tc)
+        end
+
+        ot
+      end
+
+      # This is ugly
+      #
+      def typecast(type, thing, opt=nil)
+        return thing if type.is_a?(Class) && thing.is_a?(type)
+        return nil   if thing.to_s.blank?
+
+        if type == BigDecimal
+          Float(thing) # BigDecimal sucks at catching bad decimals
+          return BigDecimal.new(thing.to_s)
+
+        elsif type == Float
+          return Float(thing)
+
+        elsif type == Integer 
+          return Integer(thing.to_s, 10)
+
+        elsif type == Date
+          return thing.to_date if thing.respond_to?(:to_date)
+          return Date.parse(thing.to_s)
+
+        elsif type == Time
+          return thing.to_time if thing.respond_to?(:to_time)
+          return Time.parse(thing.to_s)
+
+        elsif type == :boolean
+          return thing if thing == true || thing == false
+          return true  if %w|true yes Y|.include?(thing.to_s)
+          return false if %w|false no N|.include?(thing.to_s)
+          raise ArgumentError, "Cannot typecast string to Boolean"
+
+        else 
+          fail Pod4Error, "Bad type passed to typecast()"
+        end
+      rescue ArgumentError
+        return (opt == :strict ? nil : thing)
+      end
+
+      def typecast?(attr)
+        fail Pod4Error, "Unknown column passed to typecast?()" \
+          unless (tc = self.class.typecasts[attr])
+
+        !!typecast_one(attr, tc)
+      end
+
+      private
+
+      def _typecast(ot, strict=nil)
+        hash = {}
+        ot.each_key do |k|
+          next unless (tc = self.class.typecasts[k])
+          hash[k] = _typecast_one(k, tc)
+        end
+
+        hash
+      end
+
+      def _typecast_one(fld, tc)
+        val = instance_variable_get("@#{fld}".to_sym)
+        tc[:as] ? typecast(tc[:as], val, strict) : tc[:use](val, strict)
+      end
+
+      def _guard(fld, tc)
+        return unless tc[:as]
+
+        if tc[:as] == :boolean
+          ot.guard(fld) {false}
+        else
+          ot.guard tc[:as], fld
+        end
       end
 
     end
