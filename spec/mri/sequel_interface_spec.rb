@@ -53,18 +53,21 @@ describe "SequelInterface" do
            level:     1.23,
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
+           flag:      true,
            price:     BigDecimal.new("1.24") }
 
     d << { name:      'Fred',
            level:     2.34,
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
+           flag:      false,
            price:     BigDecimal.new("2.35") }
 
     d << { name:      'Betty',
            level:     3.45,
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
+           flag:      nil,
            price:     BigDecimal.new("3.46") }
 
     d
@@ -92,6 +95,7 @@ describe "SequelInterface" do
       Float       :level
       Date        :day
       Time        :timestamp
+      TrueClass   :flag
       BigDecimal  :price, :size=>[10.2] # Sequel doesn't support money
     end
 
@@ -123,6 +127,7 @@ describe "SequelInterface" do
         Float       :level
         Date        :day
         Time        :timestamp
+        TrueClass   :flag
         BigDecimal  :price, :size=>[10.2] 
       end
 
@@ -322,6 +327,15 @@ describe "SequelInterface" do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq data.first[:price]
+    end
+
+    # Not sure how this passes since SQLite doesn't have a boolean class, but, Sequel handles it.
+    it 'returns boolean fields as boolean' do
+      [1,2,3].each do |i|
+        flag = interface.read(i).>>.flag
+        expect( [true, false, nil].include? flag ).to be true
+        expect( flag ).to be data[i - 1][:flag]
+      end
     end
 
     it 'shouldn\'t have a problem with non-integer keys' do

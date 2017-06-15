@@ -66,6 +66,7 @@ describe "SequelInterface (JDBC/Pg)" do
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
            qty:       BigDecimal.new("1.24"),
+           flag:      true,
            price:     nil }
 
     d << { name:      'Fred',
@@ -73,6 +74,7 @@ describe "SequelInterface (JDBC/Pg)" do
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
            qty:       BigDecimal.new("2.35"),
+           flag:      false,
            price:     nil }
 
     d << { name:      'Betty',
@@ -80,6 +82,7 @@ describe "SequelInterface (JDBC/Pg)" do
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
            qty:       BigDecimal.new("3.46"),
+           flag:      nil,
            price:     nil }
 
     d
@@ -108,6 +111,7 @@ describe "SequelInterface (JDBC/Pg)" do
         day       date      null,
         timestamp timestamp null,
         price     money     null,
+        flag      boolean   null,
         qty       numeric   null );
     
       create table product (
@@ -264,6 +268,14 @@ describe "SequelInterface (JDBC/Pg)" do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq dibble[:price]
+    end
+
+    it 'returns boolean fields as boolean' do
+      [1,2,3].each do |i|
+        flag = interface.read(i).>>.flag
+        expect( [true, false, nil].include? flag ).to be true
+        expect( flag ).to be data[i - 1][:flag]
+      end
     end
 
     it 'shouldn\'t have a problem with non-integer keys' do
