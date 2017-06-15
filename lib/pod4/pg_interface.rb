@@ -257,7 +257,6 @@ module Pod4
       end
 
       @client.cancel 
-
       rows
 
     rescue => e
@@ -418,7 +417,6 @@ module Pod4
     end
 
 
-
     ##
     # Cast a query row
     #
@@ -428,7 +426,6 @@ module Pod4
     # Also, for the pg_jruby gem, type mapping doesn't work at all?
     #
     def cast_row_fudge(row, oids)
-      lBool   =->(s) { s.to_i = 1 || s.upcase == 'TRUE' }
       lFloat  =->(s) { Float(s) rescue s }
       lInt    =->(s) { Integer(s,10) rescue s }
       lTime   =->(s) { Time.parse(s) rescue s }
@@ -447,7 +444,7 @@ module Pod4
             when oid == 790  then lBigDec.(v[1..-1]) # "£1.23"
             when oid == 1082 then lDate.(v)
 
-            when [16, 1560].include?(oid)   then lBool.(v)
+            when [16, 1560].include?(oid)   then cast_bool(v)
             when [700, 701].include?(oid)   then lFloat.(v)
             when [20, 21, 23].include?(oid) then lInt.(v)
             when [1114, 1184].include?(oid) then lTime.(v)
@@ -459,6 +456,23 @@ module Pod4
 
     end
 
+    
+    ##
+    # Given a value from the database which supposedly represents a boolean ... return one.
+    # It might of course be NULL/nil; that's allowed, too.
+    #
+    def cast_bool(val)
+      if val.nil?
+        nil
+      elsif val.is_a? String
+        %w|T TRUE|.include?(val.to_s.upcase)
+      elsif val.respond_to?(:to_i) # String responds to to_i, remember
+        val.to_i == 1
+      else
+        nil
+      end
+    end
+
 
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
@@ -467,8 +481,8 @@ module Pod4
 
     def parse_for_params(sql, vals)
       new_params = sql.scan("%s").map.with_index{|e,i| "$#{i + 1}" }
-      new_vals   = vals.map{|v| v ? quote(v, nil).to_s : nil }
-      
+      new_vals   = vals.map{|v| v.nil? ? nil : quote(v, nil).to_s }
+
       [ sql_subst(sql, *new_params), new_vals ]
     end
 
