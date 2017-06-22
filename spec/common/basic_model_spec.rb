@@ -158,7 +158,7 @@ describe 'WeirdModel' do
       lurch = 'Dnhhhhhh'
       2.times { model.fake_an_alert(:error, :price, lurch) }
 
-      expect( model.alerts.size ).to eq 2
+      expect( model.alerts.size ).to eq 1
     end
 
   end
