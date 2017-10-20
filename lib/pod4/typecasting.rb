@@ -126,8 +126,8 @@ module Pod4
 
         elsif type == :boolean
           return thing if thing == true || thing == false
-          return true  if %w|true yes Y|.include?(thing.to_s)
-          return false if %w|false no N|.include?(thing.to_s)
+          return true  if %w|true yes y on|.include?(thing.to_s.downcase)
+          return false if %w|false no n off|.include?(thing.to_s.downcase)
           raise ArgumentError, "Cannot typecast string to Boolean"
 
         else 
