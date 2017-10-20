@@ -347,15 +347,6 @@ describe 'CustomerModel' do
   ##
 
 
-  describe '#validate' do
-    it 'takes no parameters' do
-      expect{ customer_model_class.new.validate(12) }.to raise_exception ArgumentError
-      expect{ customer_model_class.new.validate     }.not_to raise_exception
-    end
-  end
-  ##
-
-
   describe '#set' do
 
     let (:ot) { records_as_ot[3] }
@@ -482,8 +473,13 @@ describe 'CustomerModel' do
     end
 
     it 'calls validate' do
-      expect( new_model ).to receive(:validate)
-      new_model.create
+      # validation tests arity of the validate method; rspec freaks out. So we can't 
+      # `expect( new_model ).to receive(:validate)`
+
+      m = customer_model_class.new
+      m.name = "fall over"
+      m.create
+      expect( m.model_status ).to eq :error
     end
 
     it 'calls create on the interface if the record is good' do
@@ -572,12 +568,14 @@ describe 'CustomerModel' do
     end
 
     it 'calls validate' do
+      # again, because rspec is a bit stupid, we can't just `expect(model).to receive(:validate)`
+
       allow( model.interface ).
         to receive(:read).
-        and_return( records_as_ot.first )
+        and_return( records_as_ot.first.merge(name: "fall over") )
 
-      expect( model ).to receive(:validate)
       model.read
+      expect( model.model_status ).to eq :error
     end
 
     it 'sets the attribute columns using map_to_model' do
@@ -664,8 +662,10 @@ describe 'CustomerModel' do
     end
 
     it 'calls validate' do
-      expect( model2 ).to receive(:validate)
+      # again, we can't `expect(model2).to receive(:validate)` because we're testing arity there
+      model2.name = "fall over"
       model2.update
+      expect( model2.model_status ).to eq :error
     end
 
     it 'calls update on the interface if the validation passes' do
@@ -745,8 +745,15 @@ describe 'CustomerModel' do
     end
 
     it 'calls validate' do
-      expect( model2 ).to receive(:validate)
+      # again, because rspec can't cope with us testing arity in Pod4::Model, we can't say
+      # `expect(model2).to receive(:validate)`. But for delete we are only running validation as a
+      # courtesy -- a validation fail does not stop the delete, it just sets alerts. So the model
+      # status should be :deleted and not :error
+      model2.name = "fall over"
       model2.delete
+
+      # one of the elements of the alerts array should include the word "falling"
+      expect( model2.alerts.map(&:message) ).to include(include "falling")
     end
 
     it 'calls delete on the interface if the model status is good' do
