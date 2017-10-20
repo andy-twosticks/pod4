@@ -291,7 +291,8 @@ module Pod4
           else                :response
         end
 
-      raise Pod4::CantContinue, "Nebulous returned an error verb" if @response_status == :verberror
+      raise Pod4::WeakError, "Nebulous returned an error verb: #{@response.description}" \
+        if @response_status == :verberror
 
       self
 

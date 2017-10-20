@@ -19,11 +19,14 @@ module Pod4
   # The methods below are the required ones. Interfaces will likely implement other,
   # interface-specific, ways of accessing data.
   #
-  # In Normal use, the interface classes will in turn be subclassed as inner classes within each
+  # In Normal use, the interface classes may in turn be subclassed as inner classes within each
   # model, in order to customise them for the specific entity that they are drawing data from. 
   #
   # Note that your Interface subclass probably returns an Octothorpe rather than a Hash, q.v..
   # (But you should be able to treat the former as if it were the latter in most cases.)
+  #
+  # Note that if an Interface raises a Pod4::WeakError, then Pod4::Model will catch that and turn
+  # it into a Pod4::Alert. 
   #
   class Interface
     extend Metaxing

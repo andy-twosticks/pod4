@@ -58,6 +58,7 @@ describe "PgInterface" do
         day       date      null,
         timestamp timestamp null,
         price     money     null,
+        flag      boolean   null,
         qty       numeric   null );
 
       create table product (
@@ -89,6 +90,7 @@ describe "PgInterface" do
                day:       Date.parse("2016-01-01"),
                timestamp: Time.parse('2015-01-01 12:11'),
                price:     BigDecimal.new("1.24"),
+               flag:      true,
                qty:       BigDecimal.new("1.25") }
 
     @data << { name:      'Fred',
@@ -96,6 +98,7 @@ describe "PgInterface" do
                day:       Date.parse("2016-02-02"),
                timestamp: Time.parse('2015-01-02 12:22'),
                price:     BigDecimal.new("2.35"),
+               flag:      false,
                qty:       BigDecimal.new("2.36") }
 
     @data << { name:      'Betty',
@@ -103,6 +106,7 @@ describe "PgInterface" do
                day:       Date.parse("2016-03-03"),
                timestamp: Time.parse('2015-01-03 12:33'),
                price:     BigDecimal.new("3.46"),
+               flag:      nil,
                qty:       BigDecimal.new("3.47") }
 
   end
@@ -330,6 +334,14 @@ describe "PgInterface" do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq @data.first[:price]
+    end
+
+    it 'returns boolean fields as boolean' do
+      [1,2,3].each do |i|
+        flag = interface.read(i).>>.flag
+        expect( [true, false, nil].include? flag ).to be true
+        expect( flag ).to be @data[i - 1][:flag]
+      end
     end
 
     it 'shouldn\'t have a problem with non-integer keys' do

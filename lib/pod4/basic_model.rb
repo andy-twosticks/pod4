@@ -87,7 +87,7 @@ module Pod4
 
 
     ##
-    # Raise a SwingShift exception for the model if any alerts are status :error; otherwise do
+    # Raise a Pod4 exception for the model if any alerts are status :error; otherwise do
     # nothing.
     #
     # Note the alias of or_die for this method, which means that if you have kept to the idiom of
@@ -114,7 +114,7 @@ module Pod4
     #
     def add_alert(type, field=nil, message)
       return if @alerts.any? do |a| 
-        a.type == type && a.field == field && a.message = message
+        a.type == type && a.field == field && a.message == message
       end
 
       lert = Alert.new(type, field, message).log(caller.first.split(':').first)

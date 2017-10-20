@@ -63,6 +63,20 @@ module Pod4
 
 
   ##
+  # Raised by an interface if it would like Model to stop and create an Alert, but not actually
+  # fall over in any way.
+  #
+  class WeakError < Pod4Error
+
+    def initialize(msg=nil)
+      super(msg || $! && $!.message)
+    end
+
+  end
+  ##
+
+
+  ##
   # Raised if validation fails (and you wanted an exception...)
   #
   class ValidationError < Pod4Error
@@ -78,6 +92,7 @@ module Pod4
     end
 
   end
+
 
 
 end
