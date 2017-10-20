@@ -143,7 +143,7 @@ module Pod4
 
 
       def fail_no_id_fld
-        raise POd4Error, "No ID field defined in interface", caller
+        raise Pod4Error, "No ID field defined in interface", caller
       end
 
 

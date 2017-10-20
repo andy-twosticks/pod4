@@ -114,7 +114,7 @@ module Pod4
     #
     def add_alert(type, field=nil, message)
       return if @alerts.any? do |a| 
-        a.type == type && a.field == field && a.message = message
+        a.type == type && a.field == field && a.message == message
       end
 
       lert = Alert.new(type, field, message).log(caller.first.split(':').first)
