@@ -540,6 +540,16 @@ describe 'CustomerModel' do
       expect{ new_model.create }.not_to raise_error
     end
 
+    it "creates an alert instead when the interface raises WeakError" do
+      allow( new_model.interface ).to receive(:create).and_raise Pod4::WeakError, "foo"
+
+      new_model.id   = 50
+      new_model.name = "Lurch"
+      expect{ new_model.create }.not_to raise_exception
+      expect( new_model.model_status ).to eq :error
+      expect( new_model.alerts.map(&:message) ).to include( include "foo" )
+    end
+
   end
   ##
 
@@ -627,6 +637,14 @@ describe 'CustomerModel' do
 
     end
 
+    it "creates an alert instead when the interface raises WeakError" do
+      allow( model.interface ).to receive(:read).and_raise Pod4::WeakError, "foo"
+
+      expect{ model.read }.not_to raise_exception
+      expect( model.model_status ).to eq :error
+      expect( model.alerts.map(&:message) ).to include( include "foo" )
+    end
+
   end
   ##
 
@@ -709,6 +727,13 @@ describe 'CustomerModel' do
 
     end
 
+    it "creates an alert instead when the interface raises WeakError" do
+      allow( model3.interface ).to receive(:update).and_raise Pod4::WeakError, "foo"
+
+      expect{ model3.update }.not_to raise_exception
+      expect( model3.model_status ).to eq :error
+      expect( model3.alerts.map(&:message) ).to include( include "foo" )
+    end
 
   end
   ##
@@ -794,6 +819,12 @@ describe 'CustomerModel' do
       model4.delete
     end
 
+    it "creates an alert instead when the interface raises WeakError" do
+      allow( model3.interface ).to receive(:delete).and_raise Pod4::WeakError, "foo"
+
+      expect{ model3.delete }.not_to raise_exception
+      expect( model3.alerts.map(&:message) ).to include( include "foo" )
+    end
 
   end
   ##

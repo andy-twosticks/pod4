@@ -167,6 +167,8 @@ module Pod4
 
       @model_status = :okay if @model_status == :empty
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
 
     ##
@@ -184,6 +186,8 @@ module Pod4
       end
 
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
 
     ##
@@ -196,6 +200,8 @@ module Pod4
       interface.update(@model_id, map_to_interface) unless @model_status == :error
 
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
 
     ##
@@ -209,6 +215,8 @@ module Pod4
       interface.delete(@model_id) 
       @model_status = :deleted
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
 
     ##

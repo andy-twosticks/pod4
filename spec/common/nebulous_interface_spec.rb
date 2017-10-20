@@ -86,6 +86,9 @@ class FakeRequester
         subset.select!{|x| x[:name] == array[0] } if (!paramstr.empty? && !array[0].empty?)
         hash2 = { stompBody: subset.to_json }
 
+      when 'custbad'
+        hash2 = { verb: 'error', description: 'error verb description' }
+
     end
 
     hash1.merge(hash2)
@@ -102,7 +105,7 @@ describe "NebulousInterface" do
   # In order to conform with 'acts_like an interface', our CRUDL routines must
   # pass a single value as the record, which we are making an array. When you
   # subclass NebulousInterface for your model, you don't have to follow that; you
-  # can have a parameter per nebulous parameter, if you want, buy overriding the
+  # can have a parameter per nebulous parameter, if you want, by overriding the
   # CRUDL methods.
   #
   let(:nebulous_interface_class) do
@@ -274,9 +277,9 @@ describe "NebulousInterface" do
       interface.list.find {|x| x[interface.id_fld] == id }
     end
 
-    it 'raises CantContinue if anything hinky happens with the ID' do
-      expect{ interface.delete(:foo) }.to raise_exception CantContinue
-      expect{ interface.delete(99)   }.to raise_exception CantContinue
+    it 'raises WeakError if anything hinky happens with the ID' do
+      expect{ interface.delete(:foo) }.to raise_exception WeakError
+      expect{ interface.delete(99)   }.to raise_exception WeakError
     end
 
     it 'makes the record at ID go away' do
@@ -288,5 +291,17 @@ describe "NebulousInterface" do
   end
   ##
 
+
+  describe "#send_message" do
+
+    context "when nebulous returns an error verb" do
+
+      it "raises a Pod4::WeakError" do
+        expect{ interface.send_message("custbad", nil) }.to raise_exception Pod4::WeakError
+      end
+
+    end
+
+  end
 
 end
