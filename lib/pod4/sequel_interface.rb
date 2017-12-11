@@ -79,10 +79,21 @@ module Pod4
       raise(Pod4Error, 'no call to set_table in the interface definition') if self.class.table.nil?
       raise(Pod4Error, 'no call to set_id_fld in the interface definition') if self.class.id_fld.nil?
 
-      @db     = db # referemce to the db object
-      @table  = db[schema ? "#{schema}__#{table}".to_sym : table]
-      @id_fld = self.class.id_fld
+      @sequel_version = Sequel.respond_to?(:qualify) ? 5 : 4
+      @db             = db # reference to the db object
+      @id_fld         = self.class.id_fld
 
+      @table  = 
+        if schema
+          if @sequel_version == 5
+            db[ Sequel[schema][table] ]
+          else
+            db[ "#{schema}__#{table}".to_sym ]
+          end
+        else
+          db[table]
+        end
+          
       # Work around a problem with jdbc-postgresql where it throws an exception whenever it sees
       # the money type. This workaround actually allows us to return a BigDecimal, so it's better
       # than using postgres_pr when under jRuby!
@@ -323,8 +334,11 @@ module Pod4
             m[k] = v.kind_of?(Symbol) ? v.to_s : v 
           end
 
+        when nil
+          nil
+
         else 
-          sel
+          fail Pod4::DatabaseError, "Expected a selection hash, got: #{sel.inspect}"
 
       end
 
