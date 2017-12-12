@@ -25,7 +25,7 @@ class Foo < Pod4::Model
   typecast :created, :due, as: Date
   typecast :last_update,   as: Time
   typecast :completed,     as: BigDecimal, ot_as: Float
-  typecase :thing,         use: mymethod
+  typecast :thing,         use: mymethod
 end
 ```
 
@@ -68,8 +68,8 @@ What You Get
 * Time
 * :boolean
 
-Also: custom typecasting (`use: mymethod`, above). This must follow the pattern of our `typecast()`
-method.
+Also: custom typecasting (`use: mymethod`, above). This must accept two parameters: the value, and
+an option hash.
 
 
 What You Don't Get
