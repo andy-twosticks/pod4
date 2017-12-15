@@ -5,6 +5,7 @@ require_relative 'pod4/param'
 require_relative 'pod4/basic_model'
 require_relative 'pod4/model'
 require_relative 'pod4/alert'
+require_relative 'pod4/version'
 
 
 
