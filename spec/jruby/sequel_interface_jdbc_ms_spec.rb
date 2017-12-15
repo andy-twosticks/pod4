@@ -10,6 +10,7 @@ require 'time'
 require 'bigdecimal'
 
 # Note that Sequel insists on *THIS* JDBC driver for MSSQL access.
+require 'jdbc-mssqlserver'
 require 'sqljdbc4.jar' # from jdbc-mssqlserver
 
 

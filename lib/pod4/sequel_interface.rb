@@ -99,7 +99,17 @@ module Pod4
       # than using postgres_pr when under jRuby!
       if @db.uri =~ /jdbc:postgresql/
         @db.conversion_procs[790] = ->(s){BigDecimal.new s[1..-1] rescue nil}
-        Sequel::JDBC::Postgres::Dataset::PG_SPECIFIC_TYPES << Java::JavaSQL::Types::DOUBLE
+        c = Sequel::JDBC::Postgres::Dataset
+
+        if @sequel_version >= 5
+          # In Sequel 5 everything is frozen, so some hacking is required.
+          # See https://github.com/jeremyevans/sequel/issues/1458
+          vals = c::PG_SPECIFIC_TYPES + [Java::JavaSQL::Types::DOUBLE]
+          c.send(:remove_const, :PG_SPECIFIC_TYPES) # We can probably get away with just const_set, but.
+          c.send(:const_set,    :PG_SPECIFIC_TYPES, vals.freeze)
+        else
+          c::PG_SPECIFIC_TYPES << Java::JavaSQL::Types::DOUBLE
+        end
       end
 
     rescue => e
