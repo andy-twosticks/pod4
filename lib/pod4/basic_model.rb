@@ -87,7 +87,7 @@ module Pod4
 
 
     ##
-    # Raise a SwingShift exception for the model if any alerts are status :error; otherwise do
+    # Raise a Pod4 exception for the model if any alerts are status :error; otherwise do
     # nothing.
     #
     # Note the alias of or_die for this method, which means that if you have kept to the idiom of

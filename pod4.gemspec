@@ -25,6 +25,6 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = spec.files.grep(%r{^md/})
 
   spec.add_runtime_dependency "devnull",    '~>0.1'
-  spec.add_runtime_dependency "octothorpe", '~>0.3'
+  spec.add_runtime_dependency "octothorpe", '~>0.4'
 
 end

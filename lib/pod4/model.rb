@@ -9,7 +9,7 @@ module Pod4
 
 
   ##
-  # The parent of all models.
+  # The parent of all CRUDL models.
   #
   # Models & Interfaces
   # -------------------
@@ -21,7 +21,7 @@ module Pod4
   # not. The model doesn't care about where the data comes from. Models are all subclasses of
   # Pod4::Model.
   #
-  # An interface encapsulates the connection to whatever is providing the data.# it might be a
+  # An interface encapsulates the connection to whatever is providing the data. It might be a
   # wrapper for calls to the Sequel ORM, for example. Or it could be a making a series of calls to
   # a set of Nebulous verbs. It only cares about dealing with the data source, and it is only
   # called by the model.
@@ -91,14 +91,12 @@ module Pod4
         attr_accessor *cols
       end
 
-
       ##
       # Returns the list of columns from attr_columns
       #
       def columns 
         []
       end
-
 
       ##
       # Call this to return an array of record information.
@@ -107,11 +105,16 @@ module Pod4
       # ID in each array element.  
       #
       # For the purposes of Model we assume that we can make an instance out of each array element,
-      # and we return an array of instances of the model.# Override this method if that is not true
+      # and we return an array of instances of the model. Override this method if that is not true
       # for your Interface.
       #
       # Note that list should ALWAYS return an array, and array elements should always respond to
       # :id -- otherwise we raise a Pod4Error.
+      #
+      # Note also that while list returns an array of model objects, `read` has _not_ been run
+      # against each object. The data is there, but @model_status == :empty, and validation has not
+      # been run.  This is partly for the sake of efficiency, partly to help avoid recursive loops
+      # in validation.
       #
       def list(params=nil)
         fail_no_id_fld unless interface.id_fld
@@ -123,9 +126,7 @@ module Pod4
           rec.map_to_model(ot) # seperately, in case model forgot to return self
           rec 
         end
-
       end
-
 
       def test_for_octo(param)
         raise( ArgumentError, 'Parameter must be a Hash or Octothorpe', caller ) \
@@ -133,27 +134,21 @@ module Pod4
 
       end
 
-
       def test_for_invalid_status(action, status)
         raise( Pod4Error, "Invalid model status for an action of #{action}", caller ) \
           if [:empty, :deleted].include? status
 
       end
 
-
-
       def fail_no_id_fld
         raise Pod4Error, "No ID field defined in interface", caller
       end
-
 
       def fail_no_id
         raise Pod4Error, "ID field missing from record", caller
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
     # Syntactic sugar; pretty much the same as self.class.columns, which returns the `attr_columns`
@@ -161,20 +156,20 @@ module Pod4
     #
     def columns; self.class.columns.dup; end
 
-
     ##
     # Call this to write a new record to the data source.
     #
     # Note: create needs to set @id. But interface.create should return it, so that's okay.
     #
     def create
-      validate
+      run_validation(:create)
       @model_id = interface.create(map_to_interface) unless @model_status == :error
 
       @model_status = :okay if @model_status == :empty
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
-
 
     ##
     # Call this to fetch the data for this instance from the data source
@@ -186,12 +181,14 @@ module Pod4
         add_alert(:error, "Record ID '#@model_id' not found on the data source")
       else
         map_to_model(r)
+        run_validation(:read)
         @model_status = :okay if @model_status == :empty
       end
 
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
-
 
     ##
     # Call this to update the data source with the current attribute values
@@ -199,12 +196,13 @@ module Pod4
     def update
       Model.test_for_invalid_status(:update, @model_status)
 
-      clear_alerts; validate 
+      clear_alerts; run_validation(:update)
       interface.update(@model_id, map_to_interface) unless @model_status == :error
 
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
-
 
     ##
     # Call this to delete the record on the data source.
@@ -213,12 +211,13 @@ module Pod4
     #
     def delete
       Model.test_for_invalid_status(:delete, @model_status)
-      clear_alerts; validate 
+      clear_alerts; run_validation(:delete)
       interface.delete(@model_id) 
       @model_status = :deleted
       self
+    rescue Pod4::WeakError
+      add_alert(:error, $!)
     end
-
 
     ##
     # Call this to validate the model.
@@ -228,13 +227,13 @@ module Pod4
     # Note that you can only validate what is actually stored on the model. If you want to check
     # the data being passed to the model in `set`, you need to override that routine.
     #
-    # Also, you don't have any way of telling whether you are currently creating a new record or
-    # updating an old one: override `create` and `update` respectively.
+    # You may optionally catch the vmode parameter, which is one of :create,
+    # :read, :update, :delete, to have different validation under these circumstances; or you may
+    # safely ignore it and override `create`, `read`, `update` or `delete` as you wish.
     #
-    def validate
+    def validate(vmode=nil)
       # Holding pattern. All models should use super, in principal
     end
-
 
     ##
     # Set instance values on the model from a Hash or Octothorpe.
@@ -252,7 +251,6 @@ module Pod4
       self
     end
 
-
     ##
     # Return an Octothorpe of all the attr_columns attributes.
     #
@@ -263,7 +261,6 @@ module Pod4
     def to_ot
       Octothorpe.new(to_h)
     end
-
 
     ##
     # Used by the interface to set the column values on the model.
@@ -278,10 +275,8 @@ module Pod4
     #
     def map_to_model(ot)
       merge(ot)
-      validate
       self
     end
-
 
     ##
     # used by the model to get an OT of column values for the interface. 
@@ -302,9 +297,7 @@ module Pod4
       Octothorpe.new(to_h)
     end
 
-
     private
-
 
     ##
     # Output a hash of the columns
@@ -314,7 +307,6 @@ module Pod4
         hash[col] = instance_variable_get("@#{col}".to_sym)
       end
     end
-
 
     ##
     # Merge an OT with our columns
@@ -327,8 +319,15 @@ module Pod4
       end
     end
 
-  end
-  ##
+    ##
+    # Call the validate method on the model.  Allow the user to override the method with or without
+    # the vmode paramter, as they choose.
+    #
+    def run_validation(vmode)
+      method(:validate).arity == 0 ? validate : validate(vmode)
+    end
+
+  end # of Model
 
 
 end
