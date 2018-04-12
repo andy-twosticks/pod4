@@ -305,15 +305,16 @@ describe "NebulousInterface" do
     let(:id) { interface.list.first[:id] }
 
     it 'updates the record at ID with record parameter' do
-      rec = {price: 99.99}
+      rec = Octothorpe.new(price: 98.23)
       interface.update(id, rec)
 
-      expect( interface.read(id).to_h ).to include(rec)
+      x = interface.read(id)
+      expect( x.>>.price ).to eq 98.23
     end
 
     it 'creates a non-caching request' do 
       i   = id # creates a request, so get it done now
-      rec = {price: 99.99}
+      rec = Octothorpe.new(price: 99.99)
 
       FakeRequester.clear_method
       interface.update(i, rec)

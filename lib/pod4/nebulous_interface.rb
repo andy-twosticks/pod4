@@ -351,7 +351,7 @@ module Pod4
     # if given
     #
     def param_string(action, hashParam, id=nil)
-      hash = hashParam ? hashParam.dup : {}
+      hash = hashParam.nil? ? {} : hashParam.to_h
 
       hash[@id_fld] = id.to_s if id
 
