@@ -50,13 +50,10 @@ module Pod4
   # success verb. If that's not true, then you will have to override #create and sort this out
   # yourself.
   #
-  # Note that all values are returned as strings; there is no typecasting. This is a given
-  # limitation for Nebulous as a whole.
-  #
   # Calls to create, update and delete avoid (for obvious reasons) Nebulous' Redis cache if
-  # present. read and list use it. The interface methods take an extra options hash to control
-  # this, which, of course, Pod4::Model does not know about. If you want to enable a non-cached
-  # read in your model, it will need a method something like this:
+  # present. Read and list use it, but can take an extra options hash to control it, which, of
+  # course, Pod4::Model does not know about. If you want to enable a non-cached read in your model,
+  # it will need a method something like this:
   #
   #     def read_no_cache
   #       r = interface.read(@model_id, caching: false)
@@ -67,6 +64,12 @@ module Pod4
   #         map_to_model(r)
   #         run_validation(:read)
   #         @model_status = :okay if @model_status == :empty
+  #       end
+  #
+  #       self
+  #     rescue Pod4::WeakError
+  #       add_alert(:error, $!)
+  #       self
   #     end
   #
   class NebulousInterface < Interface

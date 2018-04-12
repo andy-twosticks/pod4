@@ -169,6 +169,7 @@ module Pod4
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
+      self
     end
 
     ##
@@ -188,6 +189,7 @@ module Pod4
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
+      self
     end
 
     ##
@@ -202,6 +204,7 @@ module Pod4
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
+      self
     end
 
     ##
@@ -217,6 +220,7 @@ module Pod4
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
+      self
     end
 
     ##
