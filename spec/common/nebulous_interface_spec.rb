@@ -21,6 +21,13 @@ require_relative 'shared_examples_for_interface'
 #
 class FakeRequester
 
+  # Helper to record the first message sent to us.
+  class << self
+    def clear_method;   @@method = nil;  end
+    def set_method(x);  @@method ||= x;  end 
+    def method;         @@method;        end
+  end
+
   def initialize(data={}); @data = data; end
 
   ##
@@ -34,6 +41,13 @@ class FakeRequester
 
     request = NebulousStomp::Request.new(target, requestmsg)
     request.stomp_handler = stomphandler
+
+    # We need to know which send method was called. Note that #send calls #send_no_cache, so we
+    # record the first method called.
+    class << request
+      def send(*args);          FakeRequester.set_method :send;          super; end
+      def send_no_cache(*args); FakeRequester.set_method :send_no_cache; super; end
+    end
 
     hash[:inReplyTo] = request.message.reply_id
     responsemsg  = NebulousStomp::Message.new hash
@@ -162,9 +176,11 @@ describe "NebulousInterface" do
       3 => {id: 3, name: 'Betty',  price: 3.33} }
   end
 
+  let(:fake) { FakeRequester.new(data) }
+
   let(:interface) do
     init_nebulous
-    nebulous_interface_class.new( FakeRequester.new(data) )
+    nebulous_interface_class.new(fake)
   end
 
 
@@ -197,6 +213,12 @@ describe "NebulousInterface" do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
+    it 'creates a non-caching request' do 
+      FakeRequester.clear_method
+      id = interface.create(ot)
+      expect( FakeRequester.method ).to eq :send_no_cache
+    end
+
   end
   ##
 
@@ -216,9 +238,20 @@ describe "NebulousInterface" do
       expect( interface.read(99) ).to be_empty
     end
 
+    it 'creates a caching request' do 
+      FakeRequester.clear_method
+      id = interface.read(1)
+      expect( FakeRequester.method ).to eq :send
+    end
+
+    it "creates a non-caching request when passed an option" do
+      FakeRequester.clear_method
+      id = interface.read(1, caching: false)
+      expect( FakeRequester.method ).to eq :send_no_cache
+    end
+
   end
   ##
-
 
 
   describe '#list' do
@@ -250,6 +283,19 @@ describe "NebulousInterface" do
       expect( interface.list ).to eq([])
     end
 
+    it 'creates a caching request' do 
+      FakeRequester.clear_method
+      interface.list(name: 'Fred')
+      expect( FakeRequester.method ).to eq :send
+    end
+
+    it "creates a non-caching request when passed an option" do
+      FakeRequester.clear_method
+      interface.list({name: 'Fred'}, caching: false)
+      expect( FakeRequester.method ).to eq :send_no_cache
+    end
+
+
   end
   ##
   
@@ -263,6 +309,15 @@ describe "NebulousInterface" do
       interface.update(id, rec)
 
       expect( interface.read(id).to_h ).to include(rec)
+    end
+
+    it 'creates a non-caching request' do 
+      i   = id # creates a request, so get it done now
+      rec = {price: 99.99}
+
+      FakeRequester.clear_method
+      interface.update(i, rec)
+      expect( FakeRequester.method ).to eq :send_no_cache
     end
 
   end
@@ -286,6 +341,14 @@ describe "NebulousInterface" do
       expect( list_contains(id) ).to be_truthy
       interface.delete(id)
       expect( list_contains(id) ).to be_falsy
+    end
+
+    it 'creates a non-caching request' do 
+      i   = id # creates a request, so get it done now
+
+      FakeRequester.clear_method
+      interface.delete(i)
+      expect( FakeRequester.method ).to eq :send_no_cache
     end
 
   end

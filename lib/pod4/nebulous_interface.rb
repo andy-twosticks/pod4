@@ -50,8 +50,24 @@ module Pod4
   # success verb. If that's not true, then you will have to override #create and sort this out
   # yourself.
   #
-  # Finally, note that all values are returned as strings; there is no typecasting. This is a given
+  # Note that all values are returned as strings; there is no typecasting. This is a given
   # limitation for Nebulous as a whole.
+  #
+  # Calls to create, update and delete avoid (for obvious reasons) Nebulous' Redis cache if
+  # present. read and list use it. The interface methods take an extra options hash to control
+  # this, which, of course, Pod4::Model does not know about. If you want to enable a non-cached
+  # read in your model, it will need a method something like this:
+  #
+  #     def read_no_cache
+  #       r = interface.read(@model_id, caching: false)
+  #
+  #       if r.empty?
+  #         add_alert(:error, "Record ID '#@model_id' not found on the data source")
+  #       else
+  #         map_to_model(r)
+  #         run_validation(:read)
+  #         @model_status = :okay if @model_status == :empty
+  #     end
   #
   class NebulousInterface < Interface
 
@@ -176,14 +192,20 @@ module Pod4
     # Returns an array of Octothorpes, or an empty array if the responder could not make any
     # records out of our message.
     #
-    def list(selection=nil)
+    # Note that the `opts` hash is not part of the protocol supported by Pod4::Model. If you want
+    # to make use of it, you will have to write your own method for that. Supported keys:
+    #
+    # * caching: true if you want to use redis caching (defaults to true)
+    #
+    def list(selection=nil, opts={})
       sel = 
         case selection
           when Array, Hash, Octothorpe then param_string(:list, selection)
           else selection
         end
 
-      send_message( verb_for(:list), sel )
+      caching = opts[:caching].nil? ? true : !!opts[:caching]
+      send_message( verb_for(:list), sel, caching )
       @response.body.is_a?(Array) ? @response.body.map{|e| Octothorpe.new e} : []
 
     rescue => e
@@ -192,14 +214,14 @@ module Pod4
 
 
     ##
-    # Pass a parameter string or an array as the record. returns the ID.# We assume that the
+    # Pass a parameter string or an array as the record. returns the ID. We assume that the
     # response to the create message returns the ID as the parameter part of the success verb. If
     # that's not true, then you will have to override #create and sort this out yourself.
     #
     def create(record)
       raise ArgumentError, 'create takes a Hash or an Octothorpe' unless hashy?(record)
 
-      send_message( verb_for(:create), param_string(:create, record) )
+      send_message( verb_for(:create), param_string(:create, record), false )
       @response.params
 
     rescue => e
@@ -212,10 +234,18 @@ module Pod4
     #
     # The actual parameters passed to nebulous depend on how you #set_verb
     #
-    def read(id)
+    # Note that the `opts` hash is not part of the protocol supported by Pod4::Model. If you want
+    # to make use of it, you will have to write your own method for that. Supported keys:
+    #
+    # * caching: true if you want to use redis caching (defaults to true)
+    #
+    def read(id, opts={})
       raise ArgumentError, 'You must pass an ID to read' unless id
 
-      send_message( verb_for(:read), param_string(:read, nil, id) )
+      caching = opts[:caching].nil? ? true : !!opts[:caching]
+      send_message( verb_for(:read), 
+                    param_string(:read, nil, id), 
+                    caching )
 
       Octothorpe.new( @response.body.is_a?(Hash) ? @response.body : {} )
     end
@@ -258,12 +288,16 @@ module Pod4
     #
     #     @interface.clearing_cache.read(14)
     #
+    # Note that there is no guarantee that the request that clears the cache is actually the one
+    # you chain after (if multiple model instances are running against the same interface instance)
+    # but for the instance that calls `clearing_cache`, this is not important.
+    #
     def clearing_cache
       @clear_cache = true
       self
     end
 
-
+    
     ##
     # Bonus method: send an arbitrary Nebulous message to the target and return the response object.
     #
