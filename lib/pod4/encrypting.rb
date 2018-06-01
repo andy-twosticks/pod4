@@ -108,7 +108,7 @@ module Pod4
         end
 
         self.class.encryption_columns.each do |col|
-          hash[col] = crypt(cipher, encryption_iv, hash[col])
+          hash[col] = crypt(cipher, encryption_iv, hash[col].to_s)
         end
 
         Octothorpe.new(hash)
@@ -164,6 +164,9 @@ module Pod4
           when :decrypt then cipher.decrypt
         end
         cipher
+
+      rescue OpenSSL::Cipher::CipherError
+        raise Pod4::Pod4Error, $!
       end
 
       ##
@@ -174,6 +177,9 @@ module Pod4
         cipher.key = self.class.encryption_key
         cipher.iv = iv if use_iv?
         cipher.update(string) + cipher.final
+
+      rescue OpenSSL::Cipher::CipherError
+        raise Pod4::Pod4Error, $!
       end
 
     end # of InstanceMethods
