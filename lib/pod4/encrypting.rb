@@ -47,8 +47,8 @@ module Pod4
   # Ruby docs for this; they are really helpful.
   #
   module Encrypting
-    CIPHER_CBC = "AES-128-CBC"
-    CIPHER_ECB = "AES-128-ECB"
+    CIPHER_IV    = "AES-128-CBC"
+    CIPHER_NO_IV = "AES-128-ECB"
 
     ##
     # A little bit of magic, for which I apologise. 
@@ -75,13 +75,13 @@ module Pod4
 
       def set_iv_column(column)
         define_class_method(:encryption_iv_column) {column}
-        attr_columns column
+        attr_columns column unless columns.include? column
       end
 
       def encrypted_columns(*ecolumns)
         ec = encryption_columns.dup + ecolumns
         define_class_method(:encryption_columns) {ec}
-        attr_columns *(ec - columns)
+        attr_columns( *(ec - columns) )
       end
 
       def encryption_key;         nil;  end
@@ -93,34 +93,88 @@ module Pod4
 
     module InstanceMethods
 
-      def map_to_model(ot)
-        hash = ot.to_h
+      ##
+      # When mapping to the interface, encrypt the encryptable columns from the model
+      #
+      def map_to_interface
+        hash   = super.to_h
+        cipher = get_cipher(:encrypt)
 
-=begin
+        # If the IV is not set we need to set it both in the model object AND the hash, since we've
+        # already obtained the hash from the model object.
+        if use_iv? && encryption_iv.nil?
+          set_encryption_iv( cipher.random_iv )
+          hash[self.class.encryption_iv_column] = encryption_iv
+        end
+
         self.class.encryption_columns.each do |col|
-          crypt(:encode, 
-=end
+          hash[col] = crypt(cipher, encryption_iv, hash[col])
+        end
+
+        Octothorpe.new(hash)
+      end
+
+      ##
+      # When mapping to the model, decrypt the encrypted columns from the interface
+      #
+      def map_to_model(ot)
+        hash   = ot.to_h
+        cipher = get_cipher(:decrypt)
+        iv     = hash[self.class.encryption_iv_column] # not yet set on the model
+
+        self.class.encryption_columns.each do |col|
+          hash[col] = crypt(cipher, iv, hash[col])
+        end
 
         super Octothorpe.new(hash)
       end
 
-      def map_to_interface
-        ot = super
+      ## 
+      # The value of the IV field (whatever it is) _as currently stored on the model_
+      #
+      def encryption_iv
+        return nil unless use_iv?
+        instance_variable_get( "@#{self.class.encryption_iv_column}".to_sym )
       end
 
       private
 
-      def crypt(direction, iv, string)
-        cipher = OpenSSL::Cipher.new(eiv ? CIPHER_CBC : CIPHER_ECB)
-        case direction
-          when :encode then cipher.encode
-          when :decode then cipher.decode
-        end
-        cipher.key = self.class.encryption_key
-        cipher.iv = iv if iv
-        cipher.update(string) + cipher.final
+      ##
+      # Set the iv column on the model, whatever it is
+      #
+      def set_encryption_iv(iv)
+        return unless use_iv?
+        instance_variable_set( "@#{self.class.encryption_iv_column}".to_sym, iv )
       end
 
+      ##
+      # If we have declared an IV column, we can use IV in encryption
+      #
+      def use_iv?
+        !self.class.encryption_iv_column.nil?
+      end
+
+      ##
+      # Return the correct OpenSSL Cipher object
+      #
+      def get_cipher(direction)
+        cipher = OpenSSL::Cipher.new(use_iv? ? CIPHER_IV : CIPHER_NO_IV)
+        case direction
+          when :encrypt then cipher.encrypt
+          when :decrypt then cipher.decrypt
+        end
+        cipher
+      end
+
+      ##
+      # Encrypt / decrypt
+      #
+      def crypt(cipher, iv, string)
+        return string if use_iv? and iv.nil?
+        cipher.key = self.class.encryption_key
+        cipher.iv = iv if use_iv?
+        cipher.update(string) + cipher.final
+      end
 
     end # of InstanceMethods
 

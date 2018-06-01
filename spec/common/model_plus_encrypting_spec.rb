@@ -13,7 +13,7 @@ describe "(Model with Encryption)" do
   # Encrypt / decrypt
   #
   def encrypt(key, iv=nil, plaintext)
-    cipher = OpenSSL::Cipher.new(iv ? Pod4::Encrypting::CIPHER_CBC : Pod4::Encrypting::CIPHER_ECB)
+    cipher = OpenSSL::Cipher.new(iv ? Pod4::Encrypting::CIPHER_IV : Pod4::Encrypting::CIPHER_NO_IV)
     cipher.encrypt
     cipher.key = key
     cipher.iv = iv if iv
@@ -44,22 +44,22 @@ describe "(Model with Encryption)" do
   end
 
 
-  describe "Model::CIPHER_CBC" do
+  describe "Model::CIPHER_IV" do
 
     it "should be a valid string to initialize OpenSSL::Cipher" do
-      expect{ OpenSSL::Cipher.new(medical_model_class::CIPHER_CBC) }.not_to raise_exception
+      expect{ OpenSSL::Cipher.new(medical_model_class::CIPHER_IV) }.not_to raise_exception
     end
 
-  end # of Model::CIPHER_CBC
+  end # of Model::CIPHER_IV
 
 
-  describe "Model::CIPHER_ECB" do
+  describe "Model::CIPHER_NO_IV" do
 
     it "should be a valid string to initialize OpenSSL::Cipher" do
-      expect{ OpenSSL::Cipher.new(medical_model_class::CIPHER_ECB) }.not_to raise_exception
+      expect{ OpenSSL::Cipher.new(medical_model_class::CIPHER_NO_IV) }.not_to raise_exception
     end
 
-  end # of Model::CIPHER_ECB
+  end # of Model::CIPHER_NO_IV
 
 
   describe "Model.set_key" do
@@ -113,7 +113,9 @@ describe "(Model with Encryption)" do
     end
 
     it "adds the columns to the model's column list, just like attr_columns" do
-      expect( medical_model_class.columns ).to match_array( %i|id nhs_no name ailment prescription| )
+      expect( medical_model_class.columns ).
+        to match_array( %i|id nonce nhs_no name ailment prescription| )
+
       expect( diary_model_class.columns ).to match_array( %i|id date heading text| )
     end
 
@@ -142,6 +144,111 @@ describe "(Model with Encryption)" do
   end # of Model.encryption_columns
   
 
+  describe "(Creating a record)" do
+
+    context "when we have an IV column" do
+      let(:m40) do
+        m = medical_model_class.new
+        m.id           = 40
+        m.nhs_no       = "123456"
+        m.name         = "fred"
+        m.ailment      = "sore toe"
+        m.prescription = "suck thumb"
+        m
+      end
+
+      let(:m40_record) do
+        m40.interface.read(40)
+      end
+       
+      it "writes an IV to the nonce field" do
+        m40.create
+        expect( m40_record.>>.nonce ).not_to be_nil
+        expect( m40_record.>>.nonce ).to eq m40.nonce
+        expect( m40_record.>>.nonce ).to eq m40.encryption_iv
+      end
+
+      it "scrambles the encrypted columns and leaves the others alone" do
+        m40.create
+        expect( m40_record.>>.nhs_no       ).to eq m40.nhs_no
+        expect( m40_record.>>.name         ).not_to eq m40.name
+        expect( m40_record.>>.ailment      ).not_to eq m40.ailment
+        expect( m40_record.>>.prescription ).not_to eq m40.prescription
+      end
+    end
+
+    context "when we don't have an IV column" do
+      it "scrambles the encrypted columns and leaves the others alone" do
+        d = diary_model_class.new
+        d.id      = 44
+        d.date    = Date.new(2018,4,14)
+        d.heading = "fred"
+        d.text    = "sore toe"
+        d.create
+
+        record = d.interface.read(44)
+        expect( record.>>.date    ).to eq d.date
+        expect( record.>>.heading ).not_to eq d.heading
+        expect( record.>>.text    ).not_to eq d.text
+      end
+    end
+    
+  end # of (Creating a record)
+
+
+  describe "(reading a record)" do
+     
+    context "when we have an IV column" do
+
+      before(:each) do
+        m = medical_model_class.new
+        m.id           = 40
+        m.nhs_no       = "123456"
+        m.name         = "fred"
+        m.ailment      = "sore toe"
+        m.prescription = "suck thumb"
+        m.create
+      end
+
+      it "returns the IV field as encryption_iv" do
+        m40 = medical_model_class.new(40).read
+        expect( m40.encryption_iv ).not_to be_nil
+        expect( m40.encryption_iv ).to eq m40.nonce
+      end
+
+      it "decrypts the columns" do
+        m40 = medical_model_class.new(40).read
+        expect( m40.nhs_no       ).to eq "123456"
+        expect( m40.name         ).to eq "fred"
+        expect( m40.ailment      ).to eq "sore toe"
+        expect( m40.prescription ).to eq "suck thumb"
+      end
+
+    end
+
+    context "when we have no IV column" do
+       
+      before(:each) do
+        d = diary_model_class.new
+        d.id      = 44
+        d.date    = Date.new(2018,4,14)
+        d.heading = "fred"
+        d.text    = "sore toe"
+        d.create
+      end
+
+      it "decrypts the columns" do
+        d44 = diary_model_class.new(44).read
+        expect( d44.date    ).to eq Date.new(2018,4,14)
+        expect( d44.heading ).to eq "fred"
+        expect( d44.text    ).to eq "sore toe"
+      end
+    
+    end
+    
+  end # of (reading a record)
+  
+
   context "when we have an IV column" do
     let(:m40) do
       m = medical_model_class.new
@@ -158,7 +265,7 @@ describe "(Model with Encryption)" do
       record.>>.nonce
     end
 
-    describe "Model#(encryption_iv)" do
+    describe "Model#(encryption_iv field)" do
 
       it "returns nil for a new model object" do
         m = medical_model_class.new
@@ -171,18 +278,23 @@ describe "(Model with Encryption)" do
         expect( m40.nonce ).to eq iv
       end
 
+    end # of Model#(encryption_iv field)
+
+    describe "Model#encryption_iv" do
+
+      it "returns nil for a new model object" do
+        m = medical_model_class.new
+        m.id = 50
+
+        expect( m.encryption_iv ).to be_nil
+      end
+
+      it "returns the nonce for an existing record" do
+        expect( m40.encryption_iv ).to eq iv
+      end
+
     end # of Model#encryption_iv
 
-    describe "Model#encryption_iv=" do
-
-      it "sets the nonce for the record" do
-        m40.nonce = "foo"
-        m40.update
-        expect( iv ).to eq "foo"
-      end
-      
-    end # of Model#encryption_iv=
-    
     describe "Model#map_to_interface" do
 
       it "sets the IV column on create" do
@@ -204,6 +316,7 @@ describe "(Model with Encryption)" do
     describe "Model#map_to_model" do
 
       it "decrypts only the encryptable columns for the model" do
+        m40
         m = medical_model_class.new(40)
         record = m.interface.read(40)
         expect( record.>>.name         ).not_to eq "fred"
@@ -211,10 +324,10 @@ describe "(Model with Encryption)" do
         expect( record.>>.prescription ).not_to eq "suck thumb"
 
         m.read
-        expect( record.>>.nhs_no       ).to eq "123456"
-        expect( record.>>.name         ).to eq "fred"
-        expect( record.>>.ailment      ).to eq "sore toe"
-        expect( record.>>.prescription ).to eq "suck thumb"
+        expect( m.nhs_no       ).to eq "123456"
+        expect( m.name         ).to eq "fred"
+        expect( m.ailment      ).to eq "sore toe"
+        expect( m.prescription ).to eq "suck thumb"
       end
 
     end # of Model#map_to_model
@@ -222,7 +335,7 @@ describe "(Model with Encryption)" do
   end # of when we have an IV column
 
 
-  context "when we don''t have an IV column" do
+  context "when we don't have an IV column" do
 
     describe "Model#map_to_interface" do
 
