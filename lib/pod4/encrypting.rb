@@ -9,6 +9,9 @@ module Pod4
   ##
   # A mixin to give you basic encryption, transparently.
   #
+  # Example
+  # -------
+  #
   #     class Foo < Pod4::Model
   #       include Pod4::Encrypting
   #
@@ -19,18 +22,41 @@ module Pod4
   #       ...
   #     end
   #
-  # The given columns will be encrypted in map_to_interface and decrypted in map_to_model.
+  # So, this adds `set_key`, `set_iv_column`, and `encrypted_columns` to the model DSL. Only
+  # `set_iv_column` is optional, and it is **highly** recommended.
   #
-  # New DSL methods:
+  # set_key
+  # -------
   #
-  # * set_key: can be any string you like, but it should ideally be long and random.
+  # Can be any string you like, but should ideally be long and random. If it's not long enough you
+  # will get an exception.  The key is used for all encryption on the model.
   #
-  # * set_iv_column:  should be the name of a text column in the table. (Actually optional, but
-  #   leaving it out is a dreadful idea, because without it we fall back to insecure ECB mode.
-  #   Don't make us do that.)
+  # You probably have a single key for the entire database and pass it to your application via an
+  # environment variable. But we don't care about that.
   #
-  # * encrypted_columns: the list of columns to encrypt. Acts the same as attr_columns, so you
-  #   can name the column there too, or not.  Up to you.
+  # set_iv_column
+  # -------------
+  #
+  # The name of a text column on the table which holds the initialisation vector, or nonce, for the
+  # record.  IVs don't have to be secret, but they should be different for each record; we take
+  # care of creating them for you.
+  #
+  # If you don't provide an IV column, then we fall back to insecure ECB mode for the encryption.
+  # Don't make us do that.
+  #
+  # encrypted_columns
+  # -----------------
+  #
+  # The list of columns to encrypt.  In addition, it acts just the same as attr_columns, so you can
+  # name the column there too, or not.  Up to you.
+  #
+  # Changes to Behaviour of Model
+  # -----------------------------
+  #
+  # `map_to_interface`: data going from the model to the interface has the relevant columns
+  # encrypted.  If the IV column is nil, we set it to a good IV.
+  #
+  # `map_to_model`: data going from the interface to the model has the relevant columns decrypted.
   #
   # Assumptions / limitations:
   #
@@ -41,7 +67,15 @@ module Pod4
   # * we only store encrypted data in text columns, and we can't guarantee that the encrypted data
   #   will be the same length as when unencrypted.
   #
-  # Notes:
+  # Additional Methods
+  # ------------------
+  #
+  # You will almost certainly never need to use these.
+  #
+  # * `encryption_iv` returns the value of the IV column of the record, whatever it is.
+  #
+  # Notes
+  # -----
   #
   # Encryption is provided by OpenSSL::Cipher. For more information, you should read the official
   # Ruby docs for this; they are really helpful.
