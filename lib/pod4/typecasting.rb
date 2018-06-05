@@ -48,12 +48,12 @@ module Pod4
   #
   # Options are `as:`, `ot_as:`, `strict:` and `use:`. You must specify either `as:` or `use:`.
   #
-  # Valid types are Bigdecimal, Float, Integer, Date, Time, and :boolean. 
+  # Valid types are BigDecimal, Float, Integer, Date, Time, and :boolean. 
   #
   # Changes to Behaviour of Model
   # -----------------------------
   #
-  # General: Any attributes named using `typecast` are set `attr_accessor` if they are not already
+  # General: Any attributes named using `typecast` are set `attr_reader` if they are not already
   # so. 
   #
   # `map_to_model`: incoming data from the data source is coerced to the given encoding if
@@ -63,7 +63,7 @@ module Pod4
   # alone. (Unless you have specified `strict: true`, in which case they are set to nil.)
   #
   # `to_ot()`: any typecast attributes with `ot_as` are cast that way in the outgoing OT, and set
-  # guard that way too (see Octothorpe#guard).
+  # guard that way too (see Octothorpe#guard) to give a reasonable default value instead of nil.
   #
   # `map_to_interface()`: typecast attributes are cast as per their settings, or if they cannot be
   # cast, are set to nil.
@@ -76,22 +76,42 @@ module Pod4
   # * `typecast?(:columnname, value)` returns true if the value can be cast; value defaults to the
   #   column value if not given.
   # 
-  # * `typecast(type, value, options)` returns a typecast value, or either the original value, or nil if
-  #   options[:strict] is true.
+  # * `typecast(type, value, options)` returns a typecast value, or either the original value, or
+  # nil if options[:strict] is true.
   # 
   # * `guard(octothorpe)` sets guard conditions on the given octothorpe, based on the attributes
-  #   typecast knows about.
+  #   typecast knows about. If the value was nil, it will be a reasonable default for the type
+  #   instead.
+  #
+  # Custom Typecasting Methods
+  # --------------------------
+  #
+  # By specifying `use: my_method` you are telling Pod4 that you have a method that will return the
+  # typecast value for the type.  This method will be called as `my_method(value, options)`,
+  # where value is the value to be typecast, and options is the hash of options you specified for
+  # that column.  Pod4 will set the column to whatever your method returns.
   #
   # What you don't get
   # ------------------
   #
-  # Naming a field in the typecast syntax does not automatically make it a "column" in the way that
-  # `attr_columns` does. You probably want to use both.
+  # None of this has any direct effect on validation, although of course we do provide methods such
+  # as `typecast?()` to specifically help you with validation.
   #
-  # None of this has any direct effect on validation, although of course you can call `typecast?()` in
-  # your validation code.
+  # Naming an attribute using `typecast` does not automatically make is a Pod4 column; you need to
+  # use `attr_column`, just as in plain Pod4. Furthermore, *only* Pod4 columns can be named in the
+  # typecast command, although you can use the `typecast` instance method, etc., to help you roll
+  # your own typecasting for non-column attributes.
+  #
+  # Loss of information.  If your column is typecast to Integer, then setting it to 12.34 will not
+  # round it to 12. Likewise, I know that Time.to_date is a thing, but we don't support it.
+  #
+  # Protection from nil, except when using `ot_as:`. A column is always allowed to be nil,
+  # regardless of how it is typecast. (On the contrary: by forcing strict columns to nil if they
+  # fail typecasting, we help you validate.)
   #
   module TypeCasting
+
+    TYPES = [ Date, Time, Integer, Float, BigDecimal, :boolean ]
 
     ##
     # A little bit of magic, for which I apologise. 
@@ -120,14 +140,18 @@ module Pod4
 
       def typecast(*args)
         options = args.pop
+        raise Pod4Error, "Bad Type" \
+          unless options.keys.include?(:use) || TYPES.include?(options[:as])
+
         raise Pod4Error, "Bad Typecasting" unless options.is_a?(Hash) \
                                                && options.keys.any?{|o| %i|as use|.include? o} \
                                                && args.size >= 1
 
+        # Modify self.typecasts to look like: {foo: {as: Date}, bar: {as: Time, strict: true}, ...}
         c = typecasts.dup
         args.each do |f| 
+          raise Pod4Error, "Unknown column '#{f}'" unless columns.include?(f)
           c[f] = options
-          attr_reader f unless columns.include? f
         end
 
         define_class_method(:typecasts) {c}
@@ -155,18 +179,18 @@ module Pod4
         super(ot.merge hash)
       end
 
-      def to_interface
+      def map_to_interface
         ot   = super
         hash = typecast_ot(ot, strict: true)
         ot.merge hash
       end
 
       def to_ot
-        hash = typecast_ot_to_ot(super)
-        ot2  = ot.merge(hash)
+        ot  = super
+        ot2 = ot.merge typecast_ot_to_ot(ot)
 
         self.class.typecasts.each do |fld, tc|
-          set_guard(ot2, k, tc[:ot_as]) if tc[:ot_as]
+          set_guard(ot2, fld, tc[:ot_as]) if tc[:ot_as]
         end
 
         ot2
@@ -177,9 +201,11 @@ module Pod4
       # cast to type; otherwise return thing unchanged.
       #
       def typecast(type, thing, opt={})
-
         # Nothing to do
         return thing if type.is_a?(Class) && thing.is_a?(type)
+
+        # Nothing wrong with nil for our purposes; it's always allowed
+        return thing if thing.nil?
 
         # For all current cases, attempting to typecast a blank string should return nil
         return nil if thing =~ /\A\s*\Z/ 
@@ -207,8 +233,8 @@ module Pod4
         fail Pod4Error, "Unknown column passed to typecast?()" \
           unless (tc = self.class.typecasts[attr])
 
-        val ||= instance_variable_get("@#{attr}".to_sym) 
-        !!typecast_one(val, tc)
+        val = instance_variable_get("@#{attr}".to_sym) if val.nil?
+        !typecast_one(val, tc.merge(strict: true)).nil?
       end
 
       ## 
@@ -242,7 +268,7 @@ module Pod4
         hash = {}
         ot.each do |k,v|
           tc = self.class.typecasts[k]
-          hash[k] = tc[:ot_as] ? typecast(tc[:ot_as], v) : v
+          hash[k] = (tc && tc[:ot_as]) ? typecast(tc[:ot_as], v) : v
         end
         hash
       end
@@ -260,14 +286,17 @@ module Pod4
 
       ##
       # Set the guard clause for one attribute
+      # Note that Time.new returns now, and Date.new returns some date in antiquity. We don't
+      # consider those helpful, so we give you 1900-1-1 in both cases
       #
       def set_guard(ot, fld, tc)
-        return unless tc[:as]
-
-        if tc[:as] == :boolean
-          ot.guard(fld) {false}
-        else
-          ot.guard tc[:as], fld
+        case tc.to_s
+          when "BigDecimal" then ot.guard(fld) { BigDecimal.new("0")  }
+          when "Float"      then ot.guard(fld) { Float(0)             }
+          when "Integer"    then ot.guard(fld) { Integer(0)           }
+          when "Date"       then ot.guard(fld) { Date.new(1900, 1, 1) }
+          when "Time"       then ot.guard(fld) { Time.new(1900, 1, 1) }
+          when "boolean"    then ot.guard(fld) { false                }
         end
       end
 
@@ -285,6 +314,7 @@ module Pod4
       end
 
       def tc_date(thing)
+        fail ArgumentError, "Can't cast Time to Date" if thing.is_a?(Time)
         thing.respond_to?(:to_date) ? thing.to_date : Date.parse(thing.to_s)
       end
 
@@ -294,8 +324,8 @@ module Pod4
 
       def tc_boolean(thing)
         return thing if thing == true || thing == false
-        return true  if %w|true yes y on|.include?(thing.to_s.downcase)
-        return false if %w|false no n off|.include?(thing.to_s.downcase)
+        return true  if %w|true yes y on t 1|.include?(thing.to_s.downcase)
+        return false if %w|false no n off f 0|.include?(thing.to_s.downcase)
         fail ArgumentError, "Cannot typecast string to Boolean"
       end
 
