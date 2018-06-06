@@ -559,3 +559,11 @@ get the idea:
 
     end
 
+Extensions
+----------
+
+There are now some mixins that you can use to extend the functionality of Pod4 models.  Have a look
+at the comments at the top of the mixin in question if you want details.
+
+* typecasting -- force columns to be a specific ruby type, validation helpers, some encoding stuff
+* encrypting  -- encrypt text columns
