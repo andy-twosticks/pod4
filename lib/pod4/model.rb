@@ -215,8 +215,11 @@ module Pod4
     def delete
       Model.test_for_invalid_status(:delete, @model_status)
       clear_alerts; run_validation(:delete)
-      interface.delete(@model_id) 
-      @model_status = :deleted
+
+      unless @model_status == :error
+        interface.delete(@model_id) 
+        @model_status = :deleted
+      end
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
