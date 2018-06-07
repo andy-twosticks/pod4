@@ -31,7 +31,7 @@ describe "ProductModel" do
       set_interface NullInterface.new( :id, :code, :band, :sales, :created, :yrstart, 
                                        :flag, :foo, :bar, [] )
 
-      def mycast(value, opts); end
+      def mycast(value, opts); "blarg" end
     end
   end
 
@@ -316,7 +316,18 @@ describe "ProductModel" do
       c.foo  = "12345"
       c.create
     end
-     
+
+    it "writes the return value from the use method to the interface" do
+      c = customer_model_class.new
+      c.id   = 33
+      c.code = "baz"
+      c.foo  = "12345"
+      c.create
+
+      record = customer_model_class.interface.read(33)
+      expect( record.>>.foo ).to eq "blarg"
+    end
+
   end # of #map_to_interface"
 
 

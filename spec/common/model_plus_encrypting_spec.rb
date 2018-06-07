@@ -18,7 +18,8 @@ describe "(Model with Encryption)" do
     cipher.encrypt
     cipher.key = key
     cipher.iv = iv if iv
-    cipher.update(plaintext) + cipher.final
+
+    (plaintext.empty? ? "" : cipher.update(plaintext) ) + cipher.final
   end
 
   let(:encryption_key) { "dflkasdgklajndgnalkghlgasdgasdghaalsdg" }
@@ -302,6 +303,16 @@ describe "(Model with Encryption)" do
       expect{ bad.map_to_interface }.to raise_exception Pod4::Pod4Error
     end
 
+    it "doesn't freak out when asked to encrypt an empty column" do
+      bad = medical_model_class.new
+      bad.id      = 998
+      bad.nhs_no  = "12345"
+      bad.name    = ""
+      bad.ailment = nil
+
+      expect{ bad.map_to_interface }.not_to raise_exception
+    end
+
     context "when we don't have an IV column" do
 
       it "encrypts only the encryptable columns for the interface" do
@@ -351,6 +362,15 @@ describe "(Model with Encryption)" do
         expect( d.text    ).to eq "sore toe"
       end
 
+      it "successfully decrypts an empty column" do
+        d44.text = ""
+        d44.create
+
+        d = diary_model_class.new(44)
+        d.read
+        expect( d.text ).to eq ""
+      end
+
     end 
 
     context "when we have an IV column" do
@@ -370,6 +390,18 @@ describe "(Model with Encryption)" do
         expect( m.prescription ).to eq "suck thumb"
       end
        
+      it "successfully decrypts an empty column" do
+        m40.ailment      = ""
+        m40.prescription = nil
+        m40.create
+
+        m = medical_model_class.new(40)
+        m.read
+        expect( m.ailment      ).to eq ""
+        expect( m.prescription ).to be_nil
+      end
+
+
     end
     
   end # of Model#map_to_model
