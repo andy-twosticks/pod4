@@ -1,5 +1,6 @@
 require "date"
 require "openssl"
+require "base64"
 require "octothorpe"
 
 require "pod4"
@@ -19,7 +20,8 @@ describe "(Model with Encryption)" do
     cipher.key = key
     cipher.iv = iv if iv
 
-    (plaintext.empty? ? "" : cipher.update(plaintext) ) + cipher.final
+    answer = (plaintext.empty? ? "" : cipher.update(plaintext) ) + cipher.final
+    Base64.strict_encode64(answer)
   end
 
   let(:encryption_key) { "dflkasdgklajndgnalkghlgasdgasdghaalsdg" }
@@ -197,8 +199,10 @@ describe "(Model with Encryption)" do
       it "writes an IV to the nonce field" do
         m40.create
         expect( m40_record.>>.nonce ).not_to be_nil
-        expect( m40_record.>>.nonce ).to eq m40.nonce
-        expect( m40_record.>>.nonce ).to eq m40.encryption_iv
+
+        recordiv = Base64.strict_decode64(m40_record.>>.nonce)
+        expect( recordiv ).to eq m40.nonce
+        expect( recordiv ).to eq m40.encryption_iv
       end
 
       it "scrambles the encrypted columns and leaves the others alone" do

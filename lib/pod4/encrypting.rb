@@ -1,4 +1,5 @@
 require "openssl"
+require "base64"
 require "pod4/errors"
 require "pod4/metaxing"
 
@@ -137,8 +138,9 @@ module Pod4
         # If the IV is not set we need to set it both in the model object AND the hash, since we've
         # already obtained the hash from the model object.
         if use_iv? && encryption_iv.nil?
-          set_encryption_iv( cipher.random_iv )
-          hash[self.class.encryption_iv_column] = encryption_iv
+          iv = cipher.random_iv
+          set_encryption_iv(iv)
+          hash[self.class.encryption_iv_column] = Base64.strict_encode64(iv)
         end
 
         self.class.encryption_columns.each do |col|
@@ -154,10 +156,15 @@ module Pod4
       def map_to_model(ot)
         hash   = ot.to_h
         cipher = get_cipher(:decrypt)
-        iv     = hash[self.class.encryption_iv_column] # not yet set on the model
+
+        # The IV is not in columns, we need to de-base-64 it and set it on the model ourselves
+        if use_iv?
+          iv = Base64.strict_decode64 hash[self.class.encryption_iv_column]
+          set_encryption_iv(iv)
+        end
 
         self.class.encryption_columns.each do |col|
-          hash[col] = crypt(cipher, :decrypt, iv, hash[col])
+          hash[col] = crypt(cipher, :decrypt, encryption_iv, hash[col])
         end
 
         super Octothorpe.new(hash)
@@ -212,9 +219,13 @@ module Pod4
         cipher.key = self.class.encryption_key
         cipher.iv = iv if use_iv?
 
+        string = Base64.strict_decode64(string) if direction == :decrypt
+
         answer = ""
         answer << cipher.update(string.to_s) unless direction == :encrypt && string.empty?
         answer << cipher.final
+
+        answer = Base64.strict_encode64(answer) if direction == :encrypt
         answer
 
       rescue OpenSSL::Cipher::CipherError
