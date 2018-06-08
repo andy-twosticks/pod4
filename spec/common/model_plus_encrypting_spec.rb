@@ -229,7 +229,7 @@ describe "(Model with Encryption)" do
         expect( d.heading ).to eq "fred"
         expect( d.text    ).to eq "sore toe"
       end
-    
+
     end
     
     context "when we have an IV column" do
@@ -247,6 +247,24 @@ describe "(Model with Encryption)" do
         expect( m.name         ).to eq "fred"
         expect( m.ailment      ).to eq "sore toe"
         expect( m.prescription ).to eq "suck thumb"
+      end
+
+      it "handles the case of a record with no IV (not encrypted)" do
+        ot = Octothorpe.new( id:           80,
+                             nhs_no:       "abc",
+                             name:         "sally",
+                             ailment:      "short-sighted",
+                             prescription: "glasses",
+                             nonce:        nil )
+
+        m80 = medical_model_class.new(80)
+        allow( m80.interface ).to receive(:read).with(80).and_return(ot)
+
+        m80.read
+        expect( m80.nhs_no       ).to eq "abc"
+        expect( m80.name         ).to eq "sally"
+        expect( m80.ailment      ).to eq "short-sighted"
+        expect( m80.prescription ).to eq "glasses"
       end
 
     end
@@ -292,6 +310,21 @@ describe "(Model with Encryption)" do
     end
 
   end # of Model#encryption_iv
+
+
+  describe "Model#encrypt & Model#decrypt" do
+
+    it "encrypts and decrypts when the model has no IV" do
+      d = diary_model_class.new
+      expect( d.decrypt(d.encrypt "foobar123") ).to eq "foobar123"
+    end
+
+    it "encrypts and decrypts when the model has IV" do
+      m = medical_model_class.new
+      expect( m.decrypt(m.encrypt "plonkplink987") ).to eq "plonkplink987"
+    end
+
+  end # of Model#encrypt & Model#decrypt
 
 
   describe "Model#map_to_interface" do

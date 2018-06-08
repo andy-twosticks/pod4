@@ -75,6 +75,10 @@ module Pod4
   #
   # * `encryption_iv` returns the value of the IV column of the record, whatever it is.
   #
+  # * `encrypt` and `decrypt` allow you to transform arbitrary text in a manner compatible with the
+  #   model -- for example, if you removed a column from `encrypted_columns`, you could do a
+  #   one-time decrypt of your data.
+  #
   # Notes
   # -----
   #
@@ -135,12 +139,11 @@ module Pod4
         hash   = super.to_h
         cipher = get_cipher(:encrypt)
 
-        # If the IV is not set we need to set it both in the model object AND the hash, since we've
-        # already obtained the hash from the model object.
-        if use_iv? && encryption_iv.nil?
-          iv = cipher.random_iv
-          set_encryption_iv(iv)
-          hash[self.class.encryption_iv_column] = Base64.strict_encode64(iv)
+        # Each time we write, we set a new IV. We must also set it on the hash to go to the
+        # interface, where it must be base64 encoded, just like the encrypted columns.
+        if use_iv? 
+          set_encryption_iv( cipher.random_iv )
+          hash[self.class.encryption_iv_column] = Base64.strict_encode64(encryption_iv)
         end
 
         self.class.encryption_columns.each do |col|
@@ -157,10 +160,9 @@ module Pod4
         hash   = ot.to_h
         cipher = get_cipher(:decrypt)
 
-        # The IV is not in columns, we need to de-base-64 it and set it on the model ourselves
-        if use_iv?
-          iv = Base64.strict_decode64 hash[self.class.encryption_iv_column]
-          set_encryption_iv(iv)
+        # The IV column is not in columns, so we need to de-base-64 it and set it on the model here
+        if use_iv? && (iv64 = hash[self.class.encryption_iv_column])
+          set_encryption_iv Base64.strict_decode64(iv64)
         end
 
         self.class.encryption_columns.each do |col|
@@ -176,6 +178,24 @@ module Pod4
       def encryption_iv
         return nil unless use_iv?
         instance_variable_get( "@#{self.class.encryption_iv_column}".to_sym )
+      end
+
+      ##
+      # Public facing manual encryption, compatible with the current model
+      #
+      def encrypt(string)
+        cipher = get_cipher(:encrypt)
+        iv     = use_iv? ? encryption_iv : nil
+        crypt(cipher, :encrypt, iv, string)
+      end
+
+      ##
+      # Public facing manual decryption, compatible with the current model
+      #
+      def decrypt(string)
+        cipher = get_cipher(:decrypt)
+        iv     = use_iv? ? encryption_iv : nil
+        crypt(cipher, :decrypt, iv, string)
       end
 
       private
@@ -219,14 +239,16 @@ module Pod4
         cipher.key = self.class.encryption_key
         cipher.iv = iv if use_iv?
 
-        string = Base64.strict_decode64(string) if direction == :decrypt
+        case direction
+          when :encrypt
+            answer = string.to_s.empty? ? "" : cipher.update(string.to_s)
+            answer << cipher.final
+            Base64.strict_encode64(answer)
 
-        answer = ""
-        answer << cipher.update(string.to_s) unless direction == :encrypt && string.empty?
-        answer << cipher.final
-
-        answer = Base64.strict_encode64(answer) if direction == :encrypt
-        answer
+          when :decrypt
+            answer = Base64.strict_decode64(string.to_s)
+            cipher.update(answer) + cipher.final
+        end
 
       rescue OpenSSL::Cipher::CipherError
         raise Pod4::Pod4Error, $!
