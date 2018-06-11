@@ -23,7 +23,7 @@ describe "(writing encrypted data via sequel_interface)" do
 
 
   before(:all) do
-    @Connection = Sequel.connect('jdbc:postgresql://centos7andy/pod4_test?user=pod4test&password=pod4test')
+    @connection = Sequel.connect('jdbc:postgresql://centos7andy/pod4_test?user=pod4test&password=pod4test')
     db_setup(@connection)
   end
 

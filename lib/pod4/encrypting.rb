@@ -35,6 +35,9 @@ module Pod4
   # You probably have a single key for the entire database and pass it to your application via an
   # environment variable. But we don't care about that.
   #
+  # If you set the key to nil, then the model should work exactly as if the encryption mixin was
+  # not present.
+  #
   # set_iv_column
   # -------------
   #
@@ -136,6 +139,8 @@ module Pod4
       # When mapping to the interface, encrypt the encryptable columns from the model
       #
       def map_to_interface
+        return super if self.class.encryption_key.nil?
+
         hash   = super.to_h
         cipher = get_cipher(:encrypt)
 
@@ -157,6 +162,8 @@ module Pod4
       # When mapping to the model, decrypt the encrypted columns from the interface
       #
       def map_to_model(ot)
+        return super(ot) if self.class.encryption_key.nil?
+
         hash   = ot.to_h
         cipher = get_cipher(:decrypt)
 

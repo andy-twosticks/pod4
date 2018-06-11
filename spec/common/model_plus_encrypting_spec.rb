@@ -48,6 +48,17 @@ describe "(Model with Encryption)" do
     end
   end
 
+  let(:medical_model_nokey_class) do  # model with no encryption key
+    Class.new Pod4::Model do
+      include Pod4::Encrypting
+      attr_columns :id, :nhs_no 
+      encrypted_columns :name, :ailment, :prescription
+      set_key nil
+      set_iv_column :nonce
+      set_interface NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+    end
+  end
+
   let(:diary_model_class) do  # model without an IV column
     Class.new Pod4::Model do
       include Pod4::Encrypting
@@ -183,6 +194,27 @@ describe "(Model with Encryption)" do
 
   describe "(Creating a record)" do
 
+    context "when we don't have a key" do
+
+      it "writes the record without freaking out" do
+        m = medical_model_nokey_class.new
+        m.id           = 666
+        m.nhs_no       = "666666"
+        m.name         = "joe"
+        m.ailment      = "brain cloud"
+        m.prescription = "volcano"
+
+        expect{ m.create }.not_to raise_exception
+
+        record = m.interface.read(666)
+        expect( record.>>.nhs_no       ).to eq "666666"
+        expect( record.>>.name         ).to eq "joe"
+        expect( record.>>.ailment      ).to eq "brain cloud"
+        expect( record.>>.prescription ).to eq "volcano"
+      end
+
+    end
+    
     context "when we don't have an IV column" do
 
       it "scrambles the encrypted columns and leaves the others alone" do
@@ -219,6 +251,28 @@ describe "(Model with Encryption)" do
 
 
   describe "(reading a record)" do
+
+    context "when we don't have a key" do
+       
+      it "reads the record without freaking out" do
+        m = medical_model_nokey_class.new
+        m.id           = 666
+        m.nhs_no       = "666666"
+        m.name         = "joe"
+        m.ailment      = "brain cloud"
+        m.prescription = "volcano"
+        expect{ m.create }.not_to raise_exception
+
+        m666 = medical_model_nokey_class.new(666)
+        expect{ m666.read }.not_to raise_exception
+        expect( m666.model_status ).not_to eq :error
+        expect( m666.nhs_no       ).to eq "666666"
+        expect( m666.name         ).to eq "joe"
+        expect( m666.ailment      ).to eq "brain cloud"
+        expect( m666.prescription ).to eq "volcano"
+      end
+
+    end
 
     context "when we have no IV column" do
       before(:each) { d44.create }
