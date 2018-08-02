@@ -265,8 +265,9 @@ Here's a model with some validation:
       set_interface CustomerInterface.new($pg_conn)
       attr_columns :cust_code, :name, :group
 
-      def validate
+      def validate(mode)
         super
+        return if mode == :delete
 
         add_alert(:error, :name, "Name cannot be empty") \
           unless @name && @name =~ \^\s*$\
@@ -278,13 +279,12 @@ Here's a model with some validation:
 
     end
 
-(Note: as a general principal, you should always call super when overriding a
-method in Pod4 model, unless you have good reason not to.)
+(Note: as a general principal, you should always call super when overriding a method in Pod4 model,
+unless you have good reason not to.)
 
-Validation is run on create, read, update and delete.  If the model has a status of :error, then an
-update or create will fail. A delete, however, will succeed -- if you want to create validation
-that aborts a delete operation, you should override the `delete` method and only call super if the
-validation passes.  
+Validation is run on create, read, update and delete.  If the model has a status of :error, then
+the validation will fail.  (Probably you do not want this on delete; test the parameter passed
+to validate as in the example above).
 
 In passing I should note that validation is _not_ run on list: every record that list returns
 should be complete, but the `model_status` will be :empty because validation has not been run.
@@ -294,24 +294,6 @@ You should be aware that validation is not called on `set`, either. Because of t
 possible to set a model to an invalid state and not raise any alerts against it until you go to
 commit to the database.  If you want to change the state of the model and then validate it before
 that, you must call `validate` yourself.
-
-### Conditional Validation for CRUD modes ###
-
-If you want to write validation that only fires on some of :create, :read, :update or :delete --
-for example, to stop deletion if a foreign key points to another record that exists -- then you
-have two options.  The recomended way to do this is to add a parameter to your `validate()` method:
-
-    def validate(vmode)
-      super
-      add_alert(:error, "foo") if vmode == :delete && bar
-    end
-
-There's a little bit of magic here; when you override `validate()` you can choose to give it a
-parameter or not; either way will work. The value passed to the parameter will either be :create,
-:read, :update or :delete.
-
-Your second option is to override the create/read/update/delete method, instead.  Just remember to return
-self, and only call super if you want the operation to go ahead.
 
 
 Changine How a Model Represents Data
