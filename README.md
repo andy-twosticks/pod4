@@ -321,7 +321,7 @@ yourself.
 
       def map_to_model(ot)
         super
-        @cost = Bigdecimal.new(@cost)
+        @cost = Bigdecimal(@cost)
       end
 
       def map_to_interface

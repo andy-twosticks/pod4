@@ -355,7 +355,7 @@ describe "ProductModel" do
       record = customer_model_class.interface.read(11)
       expect( record.>>.code    ).to eq "foo"
       expect( record.>>.band    ).to eq 12
-      expect( record.>>.sales   ).to eq BigDecimal.new("98.76")
+      expect( record.>>.sales   ).to eq BigDecimal("98.76")
       expect( record.>>.created ).to eq Time.parse("2018-04-04 11:59")
       expect( record.>>.yrstart ).to eq Date.parse("2018-01-09")
       expect( record.>>.flag    ).to eq true
@@ -436,7 +436,7 @@ describe "ProductModel" do
      
     it "casts any columns with the ot_as option as per that option" do
       c1 = customer_model_class.new
-      c1.sales = BigDecimal.new("45.67")
+      c1.sales = BigDecimal("45.67")
       ot = c1.to_ot
       expect( ot.>>.sales ).to be_a Float
       expect( ot.>>.sales ).to eq 45.67
@@ -465,7 +465,7 @@ describe "ProductModel" do
     it "typecasts strings to any type" do
       expect( cmodel.typecast(Integer,    "123")            ).to eq 123
       expect( cmodel.typecast(Float,      "23.45")          ).to eq 23.45
-      expect( cmodel.typecast(BigDecimal, "34.56")          ).to eq BigDecimal.new("34.56")
+      expect( cmodel.typecast(BigDecimal, "34.56")          ).to eq BigDecimal("34.56")
       expect( cmodel.typecast(Date,       "2018-01-01")     ).to eq Date.parse("2018-01-01")
       expect( cmodel.typecast(Time,       "2018-02-02 14:56") ).to eq Time.parse("2018-02-02 14:56")
       expect( cmodel.typecast(:boolean,   "true")             ).to eq true
@@ -476,16 +476,16 @@ describe "ProductModel" do
       expect( cmodel.typecast(Float, 12) ).to be_a Float
       expect( cmodel.typecast(Float, 12) ).to eq 12.0
 
-      expect( cmodel.typecast(Float, BigDecimal.new("12.34")) ).to be_a Float
-      expect( cmodel.typecast(Float, BigDecimal.new("12.34")) ).to eq 12.34
+      expect( cmodel.typecast(Float, BigDecimal("12.34")) ).to be_a Float
+      expect( cmodel.typecast(Float, BigDecimal("12.34")) ).to eq 12.34
     end
     
     it "typecasts Integer and Float to BigDecimal" do
       expect( cmodel.typecast(BigDecimal, 12) ).to be_a BigDecimal
-      expect( cmodel.typecast(BigDecimal, 12) ).to eq BigDecimal.new("12.0")
+      expect( cmodel.typecast(BigDecimal, 12) ).to eq BigDecimal("12.0")
 
       expect( cmodel.typecast(BigDecimal, 12.34) ).to be_a BigDecimal
-      expect( cmodel.typecast(BigDecimal, 12.34) ).to eq BigDecimal.new("12.34")
+      expect( cmodel.typecast(BigDecimal, 12.34) ).to eq BigDecimal("12.34")
     end
 
 
@@ -524,8 +524,8 @@ describe "ProductModel" do
     end
 
     it "will not cast a float or a BigDecimal to an Integer" do
-      expect( cmodel.typecast(Integer, 12.34,                   strict: true) ).to eq nil
-      expect( cmodel.typecast(Integer, BigDecimal.new("12.34"), strict: true) ).to eq nil
+      expect( cmodel.typecast(Integer, 12.34,               strict: true) ).to eq nil
+      expect( cmodel.typecast(Integer, BigDecimal("12.34"), strict: true) ).to eq nil
     end
     
     it "will not cast a Time to a Date" do
@@ -541,7 +541,7 @@ describe "ProductModel" do
     it "returns true if the value can be cast to the type" do
       expect( cmodel.typecast?(:band,    123)                            ).to eq true
       expect( cmodel.typecast?(:bar,     23.45)                          ).to eq true
-      expect( cmodel.typecast?(:sales,   BigDecimal.new("34.56"))        ).to eq true
+      expect( cmodel.typecast?(:sales,   BigDecimal("34.56"))            ).to eq true
       expect( cmodel.typecast?(:created, Time.parse("2018-02-02 14:56")) ).to eq true
       expect( cmodel.typecast?(:yrstart, Date.parse("2018-01-01"))       ).to eq true
       expect( cmodel.typecast?(:flag,    true)                           ).to eq true

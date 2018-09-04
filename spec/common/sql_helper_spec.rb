@@ -103,7 +103,7 @@ describe "SQLHelper" do
     end
 
     it "returns a BigDecimal as a float" do
-      bd = BigDecimal.new("14.98")
+      bd = BigDecimal("14.98")
       expect( tester1.send :quote, bd ).to eq 14.98
     end
 
@@ -112,7 +112,7 @@ describe "SQLHelper" do
     end
 
     it "will wrap the value in some other character if you pass that" do
-      bd = BigDecimal.new("14.98")
+      bd = BigDecimal("14.98")
       expect( tester1.send :quote, "thing", nil ).to eq %Q|thing|
       expect( tester1.send :quote, "thing", "x" ).to eq %Q|xthingx|
       expect( tester1.send :quote, bd ).to eq 14.98

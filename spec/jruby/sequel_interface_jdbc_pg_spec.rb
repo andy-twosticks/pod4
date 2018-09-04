@@ -65,7 +65,7 @@ describe "SequelInterface (JDBC/Pg)" do
            level:     1.23,
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
-           qty:       BigDecimal.new("1.24"),
+           qty:       BigDecimal("1.24"),
            flag:      true,
            price:     nil }
 
@@ -73,7 +73,7 @@ describe "SequelInterface (JDBC/Pg)" do
            level:     2.34,
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
-           qty:       BigDecimal.new("2.35"),
+           qty:       BigDecimal("2.35"),
            flag:      false,
            price:     nil }
 
@@ -81,7 +81,7 @@ describe "SequelInterface (JDBC/Pg)" do
            level:     3.45,
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
-           qty:       BigDecimal.new("3.46"),
+           qty:       BigDecimal("3.46"),
            flag:      nil,
            price:     nil }
 
@@ -260,8 +260,8 @@ describe "SequelInterface (JDBC/Pg)" do
                  level:     4.56,
                  day:       Date.parse("2016-03-03"),
                  timestamp: Time.parse('2015-01-03 12:44'),
-                 qty:       BigDecimal.new("4.57"),
-                 price:     BigDecimal.new("4.58") }
+                 qty:       BigDecimal("4.57"),
+                 price:     BigDecimal("4.58") }
 
       interface.create(dibble)
       price = interface.read(4).>>.price

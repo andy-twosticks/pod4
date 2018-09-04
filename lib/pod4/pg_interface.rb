@@ -430,7 +430,7 @@ module Pod4
       lInt    =->(s) { Integer(s,10) rescue s }
       lTime   =->(s) { Time.parse(s) rescue s }
       lDate   =->(s) { Date.parse(s) rescue s }
-      lBigDec =->(s) { BigDecimal.new(s) rescue s }
+      lBigDec =->(s) { BigDecimal(s) rescue s }
 
       row.each_with_object({}) do |(k,v),h|
         key = k.to_sym

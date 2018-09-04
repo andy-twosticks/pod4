@@ -305,7 +305,7 @@ module Pod4
       #
       def set_guard(ot, fld, tc)
         case tc.to_s
-          when "BigDecimal" then ot.guard(fld) { BigDecimal.new("0")  }
+          when "BigDecimal" then ot.guard(fld) { BigDecimal("0")      }
           when "Float"      then ot.guard(fld) { Float(0)             }
           when "Integer"    then ot.guard(fld) { Integer(0)           }
           when "Date"       then ot.guard(fld) { Date.new(1900, 1, 1) }
@@ -316,7 +316,7 @@ module Pod4
 
       def tc_bigdecimal(thing)
         Float(thing) # BigDecimal sucks at catching bad decimals
-        BigDecimal.new(thing.to_s)
+        BigDecimal(thing.to_s)
       end
 
       def tc_float(thing)

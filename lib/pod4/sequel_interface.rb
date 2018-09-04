@@ -98,7 +98,7 @@ module Pod4
       # the money type. This workaround actually allows us to return a BigDecimal, so it's better
       # than using postgres_pr when under jRuby!
       if @db.uri =~ /jdbc:postgresql/
-        @db.conversion_procs[790] = ->(s){BigDecimal.new s[1..-1] rescue nil}
+        @db.conversion_procs[790] = ->(s){BigDecimal(s[1..-1]) rescue nil}
         c = Sequel::JDBC::Postgres::Dataset
 
         if @sequel_version >= 5

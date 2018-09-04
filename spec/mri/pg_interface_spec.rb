@@ -89,25 +89,25 @@ describe "PgInterface" do
                level:     1.23,
                day:       Date.parse("2016-01-01"),
                timestamp: Time.parse('2015-01-01 12:11'),
-               price:     BigDecimal.new("1.24"),
+               price:     BigDecimal("1.24"),
                flag:      true,
-               qty:       BigDecimal.new("1.25") }
+               qty:       BigDecimal("1.25") }
 
     @data << { name:      'Fred',
                level:     2.34,
                day:       Date.parse("2016-02-02"),
                timestamp: Time.parse('2015-01-02 12:22'),
-               price:     BigDecimal.new("2.35"),
+               price:     BigDecimal("2.35"),
                flag:      false,
-               qty:       BigDecimal.new("2.36") }
+               qty:       BigDecimal("2.36") }
 
     @data << { name:      'Betty',
                level:     3.45,
                day:       Date.parse("2016-03-03"),
                timestamp: Time.parse('2015-01-03 12:33'),
-               price:     BigDecimal.new("3.46"),
+               price:     BigDecimal("3.46"),
                flag:      nil,
-               qty:       BigDecimal.new("3.47") }
+               qty:       BigDecimal("3.47") }
 
   end
 

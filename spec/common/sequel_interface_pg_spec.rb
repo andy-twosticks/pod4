@@ -41,22 +41,22 @@ describe "SequelInterface (Pg)" do
            level:     1.23,
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
-           qty:       BigDecimal.new("1.24"),
-           price:     BigDecimal.new("1.24") }
+           qty:       BigDecimal("1.24"),
+           price:     BigDecimal("1.24") }
 
     d << { name:      'Fred',
            level:     2.34,
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
-           qty:       BigDecimal.new("2.35"),
-           price:     BigDecimal.new("2.35") }
+           qty:       BigDecimal("2.35"),
+           price:     BigDecimal("2.35") }
 
     d << { name:      'Betty',
            level:     3.45,
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
-           qty:       BigDecimal.new("3.46"),
-           price:     BigDecimal.new("3.46") }
+           qty:       BigDecimal("3.46"),
+           price:     BigDecimal("3.46") }
 
     d
   end
