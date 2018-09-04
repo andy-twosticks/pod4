@@ -57,7 +57,9 @@ module Pod4
   # so. 
   #
   # `map_to_model`: incoming data from the data source is coerced to the given encoding if
-  # `force_encoding` has been used.
+  # `force_encoding` has been used. Typecast attributes are cast as per their settings, or if they
+  # cannot be cast, are left alone. (Unless you have specified strict: true, in which case they are
+  # set to nil.)
   #
   # `set()`: typecast attributes are cast as per their settings, or if they cannot be cast, are left
   # alone. (Unless you have specified `strict: true`, in which case they are set to nil.)
@@ -67,6 +69,9 @@ module Pod4
   #
   # `map_to_interface()`: typecast attributes are cast as per their settings, or if they cannot be
   # cast, are set to nil.
+  #
+  # Note: Typecasting does not prevent you from setting any value you please on a model attibute
+  # @foo by using `model.foo = value`.
   #
   # Additional methods
   # ------------------
@@ -91,13 +96,17 @@ module Pod4
   # where value is the value to be typecast, and options is the hash of options you specified for
   # that column.  Pod4 will set the column to whatever your method returns.
   #
+  # The options hash will have an additional key :mode in case you need to cast differently in
+  # different circumstances.  Mode will be one of :set, :map_to_interface, :map_to_model, or
+  # :typecast? (if you call `typecast?` yourself).
+  #
   # What you don't get
   # ------------------
   #
   # None of this has any direct effect on validation, although of course we do provide methods such
   # as `typecast?()` to specifically help you with validation.
   #
-  # Naming an attribute using `typecast` does not automatically make is a Pod4 column; you need to
+  # Naming an attribute using `typecast` does not automatically make it a Pod4 column; you need to
   # use `attr_column`, just as in plain Pod4. Furthermore, *only* Pod4 columns can be named in the
   # typecast command, although you can use the `typecast` instance method, etc., to help you roll
   # your own typecasting for non-column attributes.
@@ -108,6 +117,10 @@ module Pod4
   # Protection from nil, except when using `ot_as:`. A column is always allowed to be nil,
   # regardless of how it is typecast. (On the contrary: by forcing strict columns to nil if they
   # fail typecasting, we help you validate.)
+  #
+  # It's theoretically possible that you could typecast a column into something that the
+  # interface cannot cast back onto the database.  We don't cover you in that case. If it happens,
+  # you will have to deal with it yourself in `map_to_interface`.
   #
   module TypeCasting
 
@@ -171,17 +184,18 @@ module Pod4
           v.force_encoding(enc) if v.kind_of?(String) && enc
         end
 
-        super(ot)
+        hash = typecast_ot(ot, mode: :map_to_model)
+        super(ot.merge hash)
       end
 
       def set(ot)
-        hash = typecast_ot(ot)
+        hash = typecast_ot(ot, mode: :set)
         super(ot.merge hash)
       end
 
       def map_to_interface
         ot   = super
-        hash = typecast_ot(ot, strict: true)
+        hash = typecast_ot(ot, strict: true, mode: :map_to_interface)
         ot.merge hash
       end
 
@@ -234,7 +248,7 @@ module Pod4
           unless (tc = self.class.typecasts[attr])
 
         val = instance_variable_get("@#{attr}".to_sym) if val.nil?
-        !typecast_one(val, tc.merge(strict: true)).nil?
+        !typecast_one(val, tc.merge(strict: true, mode: :typecast?)).nil?
       end
 
       ## 

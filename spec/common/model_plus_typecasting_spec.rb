@@ -31,7 +31,7 @@ describe "ProductModel" do
       set_interface NullInterface.new( :id, :code, :band, :sales, :created, :yrstart, 
                                        :flag, :foo, :bar, [] )
 
-      def mycast(value, opts); "blarg" end
+      def mycast(value, opts); "blarg"; end
     end
   end
 
@@ -160,6 +160,99 @@ describe "ProductModel" do
       expect( ot.>>.product.encoding ).to eq Encoding::ISO_8859_1
     end
 
+    it "typecasts strings to whatever" do
+      c  = customer_model_class.new(77)
+      ot = Octothorpe.new( id:      77,
+                           code:    "seven",
+                           band:    "7",
+                           sales:   "12.34",
+                           created: "2018-01-01 12:34",
+                           yrstart: "2018-01-02",
+                           flag:    "true",
+                           bar:     "34.56" )
+      
+      expect( c.interface ).to receive(:read).and_return(ot)
+      c.read
+
+      expect( c.id      ).to eq 77
+      expect( c.code    ).to eq "seven"
+      expect( c.band    ).to eq 7
+      expect( c.sales   ).to eq 12.34
+      expect( c.created ).to eq Time.parse("2018-01-01 12:34")
+      expect( c.yrstart ).to eq Date.parse("2018-01-02")
+      expect( c.flag    ).to eq true
+      expect( c.bar     ).to eq 34.56
+    end
+
+
+    it "allows the attribute to be nil" do
+      c  = customer_model_class.new(11)
+      ot = Octothorpe.new( id:      11,
+                           code:    "foo",
+                           band:    nil,
+                           sales:   nil,
+                           created: nil,
+                           yrstart: nil,
+                           flag:    nil,
+                           bar:     nil )
+
+      expect( c.interface ).to receive(:read).and_return(ot)
+      c.read
+
+      expect( c.code    ).to eq "foo"
+      expect( c.band    ).to eq nil
+      expect( c.sales   ).to eq nil
+      expect( c.created ).to eq nil
+      expect( c.yrstart ).to eq nil
+      expect( c.flag    ).to eq nil
+      expect( c.bar     ).to eq nil
+    end
+
+    it "leaves the column alone if it can't typecast (with strict off)" do
+      c  = customer_model_class.new(23)
+      ot = Octothorpe.new( id:      23,
+                           created: "bloob",
+                           yrstart: "flarg",
+                           flag:    "blobe",
+                           bar:     "xing" )
+
+      expect( c.interface ).to receive(:read).and_return(ot)
+      c.read
+
+      expect( c.created ).to eq "bloob"
+      expect( c.yrstart ).to eq "flarg"
+      expect( c.flag    ).to eq "blobe"
+      expect( c.bar     ).to eq "xing"
+    end
+
+    it "sets the column to nil if it can't typecast (with strict on)" do
+      c  = customer_model_class.new(23)
+      ot = Octothorpe.new( id:    23,
+                           band:  "bloob",
+                           sales: "flarg" )
+
+      expect( c.interface ).to receive(:read).and_return(ot)
+      c.read
+
+      expect( c.band  ).to be_nil
+      expect( c.sales ).to be_nil
+    end
+
+    it "calls the use method to get a typecast when the use option is given" do
+      c  = customer_model_class.new(43)
+      ot = Octothorpe.new( id: 43, foo: "12345" )
+
+      expect( c.interface ).to receive(:read).and_return(ot)
+      expect( c ).
+        to receive(:mycast).
+        with("12345", {use: :mycast, bar: 42, mode: :map_to_model} ).
+        and_call_original
+
+      c.read
+
+      expect( c.foo ).to eq "blarg"
+    end
+
   end
 
 
@@ -232,9 +325,14 @@ describe "ProductModel" do
 
     it "calls the use method to get a typecast when the use option is given" do
       c = customer_model_class.new
-      expect( c ).to receive(:mycast).with("12345", {use: :mycast, bar: 42} )
+      expect( c ).
+        to receive(:mycast).
+        with("12345", {use: :mycast, bar: 42, mode: :set} ).
+        and_call_original
 
       c.set( foo: "12345" )
+
+      expect( c.foo ).to eq "blarg"
     end
 
   end # of #set
@@ -309,7 +407,10 @@ describe "ProductModel" do
     it "calls the use method to get a typecast when the use option is given" do
       c = customer_model_class.new
       # Note that we have gained the strict option automatically since we're in map_to_interface
-      expect( c ).to receive(:mycast).with("12345", {use: :mycast, bar: 42, strict: true} )
+      expect( c ).
+        to receive(:mycast).
+        with("12345", {use: :mycast, bar: 42, strict: true, mode: :map_to_interface}).
+        and_call_original
 
       c.id   = 33
       c.code = "baz"
