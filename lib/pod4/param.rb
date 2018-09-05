@@ -5,8 +5,8 @@ module Pod4
 
 
   ##
-  # This module implements the singleton pattern and is used internally to
-  # store parameters passed to it from outside of Pod4
+  # This module implements the singleton pattern and is used internally to store parameters passed
+  # to it from outside of Pod4
   #
   module Param
     extend self

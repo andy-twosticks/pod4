@@ -1,39 +1,55 @@
 require 'pod4/tds_interface'
 
+require 'tiny_tds'
 require 'date'
 
-require_relative 'shared_examples_for_interface'
-require_relative 'fixtures/database'
+require_relative '../common/shared_examples_for_interface'
+require_relative '../fixtures/database'
 
 
-class TestTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_table  :customer
-  set_id_fld :id
-end
+describe "TdsInterface" do
 
-class SchemaTdsInterface < TdsInterface
-  set_db     :pod4_test
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+  let(:tds_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class BadTdsInterface1 < TdsInterface
-  set_db :pod4_test
-  set_table :customer
-end
+  let(:schema_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
 
-class BadTdsInterface2 < TdsInterface
-  set_db :pod4_test
-  set_id_fld :id
-end
+  let(:bad_interface_class1) do
+    Class.new TdsInterface do
+      set_db :pod4_test
+      set_table :customer
+    end
+  end
 
+  let(:bad_interface_class2) do
+    Class.new TdsInterface do
+      set_db :pod4_test
+      set_id_fld :id
+    end
+  end
 
-describe TestTdsInterface do
+  let(:prod_interface_class) do
+    Class.new TdsInterface do
+      set_db     :pod4_test
+      set_table  :product
+      set_id_fld :code
+    end
+  end
 
   def db_setup(connect)
-    client = TinyTds::Client.new(connect.dup)
+    client = TinyTds::Client.new(connect)
     client.execute(%Q|use [pod4_test];|).do
 
     # Our SQL Server does not support DROP TABLE IF EXISTS !
@@ -41,10 +57,14 @@ describe TestTdsInterface do
     client.execute(%Q|
       if exists (select * from INFORMATION_SCHEMA.TABLES 
                      where TABLE_NAME   = 'customer' 
-                       AND TABLE_SCHEMA = 'dbo' )
-            drop table dbo.customer;| ).do
+                       and TABLE_SCHEMA = 'dbo' )
+            drop table dbo.customer;
 
-    client.execute(%Q|
+      if exists (select * from INFORMATION_SCHEMA.TABLES 
+                     where TABLE_NAME   = 'product' 
+                       and TABLE_SCHEMA = 'dbo' )
+            drop table dbo.product;
+
       create table dbo.customer ( 
         id        int identity(1,1) not null,
         name      nvarchar(max),
@@ -52,7 +72,11 @@ describe TestTdsInterface do
         day       date         null,
         timestamp datetime     null,
         price     money        null,
-        qty       numeric(5,2) null );| ).do
+        qty       numeric(5,2) null );
+
+      create table dbo.product (
+        code nvarchar(20),
+        name nvarchar(max) );| ).do
 
   ensure
     client.close if client
@@ -61,6 +85,10 @@ describe TestTdsInterface do
 
   def fill_data(ifce)
     @data.each{|r| ifce.create(r) }
+  end
+
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
   end
 
 
@@ -73,22 +101,22 @@ describe TestTdsInterface do
                level:     1.23, 
                day:       Date.parse("2016-01-01"),
                timestamp: Time.parse('2015-01-01 12:11'),
-               price:     BigDecimal.new("1.24"), 
-               qty:       BigDecimal.new("1.25") }
+               price:     BigDecimal("1.24"), 
+               qty:       BigDecimal("1.25") }
 
     @data << { name:      'Fred', 
                level:     2.34, 
                day:       Date.parse("2016-02-02"),
                timestamp: Time.parse('2015-01-02 12:22'),
-               price:     BigDecimal.new("2.35"), 
-               qty:       BigDecimal.new("2.36") }
+               price:     BigDecimal("2.35"), 
+               qty:       BigDecimal("2.36") }
 
     @data << { name:      'Betty', 
                level:     3.45, 
                day:       Date.parse("2016-03-03"),
                timestamp: Time.parse('2015-01-03 12:33'),
-               price:     BigDecimal.new("3.46"), 
-               qty:       BigDecimal.new("3.47") }
+               price:     BigDecimal("3.46"), 
+               qty:       BigDecimal("3.47") }
 
   end
 
@@ -100,7 +128,11 @@ describe TestTdsInterface do
 
 
   let(:interface) do
-    TestTdsInterface.new(@connect_hash)
+    tds_interface_class.new(@connect_hash)
+  end
+
+  let(:prod_interface) do
+    prod_interface_class.new(@connect_hash)
   end
 
   #####
@@ -109,8 +141,9 @@ describe TestTdsInterface do
   it_behaves_like 'an interface' do
 
     let(:interface) do
-      TestTdsInterface.new(@connect_hash)
+      tds_interface_class.new(@connect_hash)
     end
+
 
     let(:record) { {name: 'Barney'} }
 
@@ -128,7 +161,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.db' do
     it 'returns the table' do
-      expect( TestTdsInterface.db ).to eq :pod4_test
+      expect( tds_interface_class.db ).to eq :pod4_test
     end
   end
   ##
@@ -144,12 +177,12 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaTdsInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestTdsInterface.schema }.not_to raise_exception
-      expect( TestTdsInterface.schema ).to eq nil
+      expect{ tds_interface_class.schema }.not_to raise_exception
+      expect( tds_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -165,7 +198,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.table' do
     it 'returns the table' do
-      expect( TestTdsInterface.table ).to eq :customer
+      expect( tds_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -181,7 +214,7 @@ describe TestTdsInterface do
 
   describe 'TdsInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestTdsInterface.id_fld ).to eq :id
+      expect( tds_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -189,24 +222,21 @@ describe TestTdsInterface do
 
   describe '#new' do
 
-    it 'requires a TinyTds connection string, or a Connection' do
-      con = Connection.new(@connect_hash)
+    it 'requires a TinyTds connection string' do
+      expect{ tds_interface_class.new        }.to raise_exception ArgumentError
+      expect{ tds_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ tds_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestTdsInterface.new        }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestTdsInterface.new('foo') }.to raise_exception ArgumentError
-
-      expect{ TestTdsInterface.new(@connect_hash) }.not_to raise_exception
-      expect{ TestTdsInterface.new(con) }.not_to raise_exception
+      expect{ tds_interface_class.new(@connect_hash) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
       expect{ TdsInterface.new(@connect_hash) }.to raise_exception Pod4Error
 
-      expect{ BadTdsInterface1.new(@connect_hash) }.
+      expect{ bad_interface_class1.new(@connect_hash) }.
         to raise_exception Pod4Error
 
-      expect{ BadTdsInterface2.new(@connect_hash) }.
+      expect{ bad_interface_class2.new(@connect_hash) }.
         to raise_exception Pod4Error
 
     end
@@ -222,7 +252,7 @@ describe TestTdsInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaTdsInterface.new(@connect_hash)
+      ifce = schema_interface_class.new(@connect_hash)
       expect( ifce.quoted_table ).to eq( %|[public].[customer]| )
     end
 
@@ -254,11 +284,27 @@ describe TestTdsInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       hash2 = {name: 'Ranger', price: nil}
       expect{ interface.create(hash2) }.not_to raise_exception
       id = interface.create(hash2)
       expect( interface.read(id).to_h ).to include(hash2)
+    end
+
+    it 'shouldn\'t have a problem with strings containing special characters' do
+      hash2 = {name: "T'Challa[]", price: nil}
+      expect{ interface.create(hash2) }.not_to raise_exception
+      id = interface.create(hash2)
+      expect( interface.read(id).to_h ).to include(hash2)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
     end
 
   end
@@ -292,9 +338,9 @@ describe TestTdsInterface do
     end
 
     it 'returns date fields as Date' do
-      pending "not supported by TinyTds ¬_¬ "
+      skip "not supported by TinyTds ¬_¬ "
       date = interface.read(1).>>.day
-
+      
       expect( date ).to be_a_kind_of Date
       expect( date ).to eq @data.first[:day]
     end
@@ -318,6 +364,14 @@ describe TestTdsInterface do
 
       expect( price ).to be_a_kind_of BigDecimal
       expect( price ).to eq @data.first[:price]
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
     end
 
   end
@@ -390,10 +444,22 @@ describe TestTdsInterface do
 
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.update(id, record) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
     end
 
   end
@@ -402,8 +468,8 @@ describe TestTdsInterface do
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -416,9 +482,16 @@ describe TestTdsInterface do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end
@@ -493,11 +566,22 @@ describe TestTdsInterface do
   ##
 
 
-  # BAMF -- might not need these here; might just go with shared_examples tests
-  describe '#new_connection'
+  describe "#escape" do
+    # This just wraps the TinyTDS escape method, and we don't really know what that does.
+    # But at the very least it should deal with ' inside a string.
+    # Frankly? I suspect that that's all it does.
 
-  describe '#close'
+    it "returns a simple String unchanged" do
+      expect( interface.escape "foo" ).to eq %Q|foo|
+    end
 
+    it "turns a single quote into a doubled single quote" do
+      expect( interface.escape "G'Kar" ).to eq %Q|G''Kar|
+    end
 
+  end
+  ##
+
+  
 end
 

@@ -10,8 +10,7 @@ module Pod4
 
 
     ##
-    # Intitialise a Connection by passing it whatever the Interface needs to
-    # connect to it.
+    # Intitialise a Connection by passing it whatever the Interface needs to connect to it.
     #
     def initialize(*args)
       @interface  = nil
@@ -27,13 +26,12 @@ module Pod4
 
 
     ##
-    # When an interface wants a connection, it calls connection.connection.
-    # If the connection does not have one, it asks the interface for one....
+    # When an interface wants a connection, it calls connection.connection. If the connection does
+    # not have one, it asks the interface for one....
     #
-    # interface is an instance of an object of type Interface - that is, when
-    # an interface asks us for a connection, it passes self. After the first
-    # connection, it's this instance that will be quizzed by the connection in
-    # future.
+    # interface is an instance of an object of type Interface - that is, when an interface asks us
+    # for a connection, it passes self. After the first connection, it's this instance that will be
+    # quizzed by the connection in future.
     #
     def connection(interface)
       fail_bad_interfaces(interface)
@@ -45,8 +43,8 @@ module Pod4
     ##
     # Allows a user to manually set a connection
     #
-    # You might want to do this to defer Sequel DB init until after models are
-    # required, for example.
+    # You might want to do this to defer Sequel DB init until after models are required, for
+    # example.
     #
     def set_connection(connection)
       @connection = connection
@@ -54,13 +52,12 @@ module Pod4
 
 
     ##
-    # In the unlikely) event we want to close a connection, we should know how
-    # to do it (or how to ask the interface to do it, anyway).
+    # In the unlikely) event we want to close a connection, we should know how to do it (or how to
+    # ask the interface to do it, anyway).
     #
-    # We don't really need to get the interface to pass itself again, but I
-    # want to leave the door open for any mad fool that wants to subclass
-    # Connection to make an interface pool. Such a brave soul might need to
-    # track which connection it gave which interface...
+    # We don't really need to get the interface to pass itself again, but I want to leave the door
+    # open for any mad fool that wants to subclass Connection to make an interface pool. Such a
+    # brave soul might need to track which connection it gave which interface...
     #
     def close(interface)
       @connection = interface.close_connection if @interface

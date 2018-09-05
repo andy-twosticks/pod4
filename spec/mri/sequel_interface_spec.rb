@@ -1,39 +1,51 @@
 require 'pod4/sequel_interface'
 
+require 'sequel'
 require 'date'
 require 'time'
 require 'bigdecimal'
 
-require_relative 'shared_examples_for_interface'
+require_relative '../common/shared_examples_for_interface'
 
 
-class TestSequelInterface < SequelInterface
-  set_table :customer
-  set_id_fld :id
-end
 
-class SchemaSequelInterface < SequelInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
+describe "SequelInterface" do
 
-class BadSequelInterface1 < SequelInterface
-  set_table :customer
-end
+  let(:sequel_interface_class) do
+    Class.new SequelInterface do
+      set_table :customer
+      set_id_fld :id
+    end
+  end
 
-class BadSequelInterface2 < SequelInterface
-  set_id_fld :id
-end
+  let(:schema_interface_class) do
+    Class.new SequelInterface do
+      set_schema :public
+      set_table  :customer
+      set_id_fld :id
+    end
+  end
+
+  let(:prod_interface_class) do
+    Class.new SequelInterface do
+      set_table  :product
+      set_id_fld :code
+    end
+  end
+
+  let(:bad_interface_class1) do
+    Class.new SequelInterface do
+      set_table :customer
+    end
+  end
+
+  let(:bad_interface_class2) do
+    Class.new SequelInterface do
+      set_id_fld :id
+    end
+  end
 
 
-describe TestSequelInterface do
-
-  # We actually connect to a special test database for this. I don't generally
-  # like unit tests to involve other classes at all, but otherwise we are
-  # hardly testing anything, and in any case we do need to test that this class
-  # successfully interfaces with Sequel. We can't really do that without
-  # talking to a database.
 
   let(:data) do
     d = []
@@ -41,19 +53,22 @@ describe TestSequelInterface do
            level:     1.23,
            day:       Date.parse("2016-01-01"),
            timestamp: Time.parse('2015-01-01 12:11'),
-           price:     BigDecimal.new("1.24") }
+           flag:      true,
+           price:     BigDecimal("1.24") }
 
     d << { name:      'Fred',
            level:     2.34,
            day:       Date.parse("2016-02-02"),
            timestamp: Time.parse('2015-01-02 12:22'),
-           price:     BigDecimal.new("2.35") }
+           flag:      false,
+           price:     BigDecimal("2.35") }
 
     d << { name:      'Betty',
            level:     3.45,
            day:       Date.parse("2016-03-03"),
            timestamp: Time.parse('2015-01-03 12:33'),
-           price:     BigDecimal.new("3.46") }
+           flag:      nil,
+           price:     BigDecimal("3.46") }
 
     d
   end
@@ -62,26 +77,38 @@ describe TestSequelInterface do
     data.each{|r| ifce.create(r) }
   end
 
+  def fill_product_data(ifce)
+    ifce.create( {code: "foo", name: "bar"} )
+  end
+
+
   # This is stolen almost verbatim from the Sequel Readme. We use an in-memory
   # sqlite database, and we assume that Sequel is sane and behaves broadly the
   # same for our limited purposes as it would when talking to TinyTDS or Pg.
-  # This may be an entirely unwarranted assumption. If so, we will have to
-  # change this. But in any case, we are not in the business of testing Sequel:
-  # just our interface to it.
+  # We test these elsewhere...
   let (:db) do
     db = Sequel.sqlite
+
     db.create_table :customer do
       primary_key :id
       String      :name
       Float       :level
       Date        :day
       Time        :timestamp
+      TrueClass   :flag
       BigDecimal  :price, :size=>[10.2] # Sequel doesn't support money
     end
+
+    db.create_table :product do
+      String :code, :primary_key => true
+      String :name
+    end
+
     db
   end
 
-  let(:interface) { TestSequelInterface.new(db) }
+  let(:interface)      { sequel_interface_class.new(db) }
+  let(:prod_interface) { prod_interface_class.new(db) }
 
   before do
     fill_data(interface)
@@ -100,22 +127,21 @@ describe TestSequelInterface do
         Float       :level
         Date        :day
         Time        :timestamp
+        TrueClass   :flag
         BigDecimal  :price, :size=>[10.2] 
       end
 
-      TestSequelInterface.new(db2)
+      sequel_interface_class.new(db2)
     end
 
     let(:record)    { {name: 'Barney', price: 1.11} }
-    #let(:record_id) { 'Barney' }
-
   end
   ##
 
 
   describe 'SequelInterface.set_schema' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_schema).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_schema).with(1).argument
     end
   end
   ##
@@ -123,12 +149,12 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.schema' do
     it 'returns the schema' do
-      expect( SchemaSequelInterface.schema ).to eq :public
+      expect( schema_interface_class.schema ).to eq :public
     end
 
     it 'is optional' do
-      expect{ TestSequelInterface.schema }.not_to raise_exception
-      expect( TestSequelInterface.schema ).to eq nil
+      expect{ sequel_interface_class.schema }.not_to raise_exception
+      expect( sequel_interface_class.schema ).to eq nil
     end
   end
   ##
@@ -136,7 +162,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.set_table' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_table).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_table).with(1).argument
     end
   end
   ##
@@ -144,7 +170,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.table' do
     it 'returns the table' do
-      expect( TestSequelInterface.table ).to eq :customer
+      expect( sequel_interface_class.table ).to eq :customer
     end
   end
   ##
@@ -152,7 +178,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.set_id_fld' do
     it 'takes one argument' do
-      expect( SequelInterface ).to respond_to(:set_id_fld).with(1).argument
+      expect( sequel_interface_class ).to respond_to(:set_id_fld).with(1).argument
     end
   end
   ##
@@ -160,7 +186,7 @@ describe TestSequelInterface do
 
   describe 'SequelInterface.id_fld' do
     it 'returns the ID field name' do
-      expect( TestSequelInterface.id_fld ).to eq :id
+      expect( sequel_interface_class.id_fld ).to eq :id
     end
   end
   ##
@@ -169,17 +195,17 @@ describe TestSequelInterface do
   describe '#new' do
 
     it 'requires a Sequel DB object' do
-      expect{ TestSequelInterface.new        }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new(nil)   }.to raise_exception ArgumentError
-      expect{ TestSequelInterface.new('foo') }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new        }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new(nil)   }.to raise_exception ArgumentError
+      expect{ sequel_interface_class.new('foo') }.to raise_exception ArgumentError
 
-      expect{ TestSequelInterface.new(db) }.not_to raise_exception
+      expect{ sequel_interface_class.new(db) }.not_to raise_exception
     end
 
     it 'requires the table and id field to be defined in the class' do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
-      expect{ BadSequelInterface1.new(db)   }.to raise_exception Pod4Error
-      expect{ BadSequelInterface2.new(db)   }.to raise_exception Pod4Error
+      expect{ bad_interface_class1.new(db)   }.to raise_exception Pod4Error
+      expect{ bad_interface_class2.new(db)   }.to raise_exception Pod4Error
     end
 
   end
@@ -193,7 +219,7 @@ describe TestSequelInterface do
     end
 
     it 'returns the schema plus table when the schema is set' do
-      ifce = SchemaSequelInterface.new(db)
+      ifce = schema_interface_class.new(db)
       expect( ifce.quoted_table ).to eq( %|`public`.`customer`| )
     end
 
@@ -214,6 +240,7 @@ describe TestSequelInterface do
       # kinda impossible to seperate these two tests
       id = interface.create(hash)
 
+      expect( id ).not_to be_nil
       expect{ interface.read(id) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include hash
     end
@@ -221,6 +248,7 @@ describe TestSequelInterface do
     it 'creates the record when given an Octothorpe' do
       id = interface.create(ot)
 
+      expect( id ).not_to be_nil
       expect{ interface.read(id) }.not_to raise_exception
       expect( interface.read(id).to_h ).to include ot.to_h
     end
@@ -230,11 +258,27 @@ describe TestSequelInterface do
       expect{ interface.create(name: :Booboo) }.not_to raise_exception
     end
 
-    it 'shouldnt have a problem with record values of nil' do
+    it 'shouldn\'t have a problem with record values of nil' do
       record = {name: 'Ranger', price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
       expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
+      expect{ interface.create(record) }.not_to raise_exception
+      id = interface.create(record)
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      hash = {code: "foo", name: "bar"}
+      id = prod_interface.create( Octothorpe.new(hash) )
+
+      expect( id ).to eq "foo"
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include hash
     end
 
   end
@@ -285,6 +329,23 @@ describe TestSequelInterface do
       expect( price ).to eq data.first[:price]
     end
 
+    # Not sure how this passes since SQLite doesn't have a boolean class, but, Sequel handles it.
+    it 'returns boolean fields as boolean' do
+      [1,2,3].each do |i|
+        flag = interface.read(i).>>.flag
+        expect( [true, false, nil].include? flag ).to be true
+        expect( flag ).to be data[i - 1][:flag]
+      end
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      # this is a 100% overlap with the create test above...
+      fill_product_data(prod_interface)
+
+      expect{ prod_interface.read("foo") }.not_to raise_exception
+      expect( prod_interface.read("foo").to_h ).to include(code: "foo", name: "bar")
+    end
+
   end
   ##
 
@@ -298,11 +359,21 @@ describe TestSequelInterface do
     end
 
     it 'returns an array of Octothorpes that match the records' do
-      # convert each OT to a hash and remove the ID key
-      arr = interface.list.map {|ot| x = ot.to_h; x.delete(:id); x }
+      arr = interface.list.map {|ot| x = ot.to_h}
 
-      expect( arr ).to match_array data
+      expect( arr.size ).to eq(data.size)
+
+      data.each do |d|
+        r = arr.find{|x| x[:name] == d[:name] }
+        expect( r ).not_to be_nil
+        expect( r[:level]     ).to be_within(0.001).of( d[:level] )
+        expect( r[:day]       ).to eq d[:day]
+        expect( r[:timestamp] ).to eq d[:timestamp]
+        expect( r[:qty]       ).to eq d[:qty]
+      end
+
     end
+
 
     it 'returns a subset of records based on the selection parameter' do
       expect( interface.list(name: 'Fred').size ).to eq 1
@@ -371,14 +442,26 @@ describe TestSequelInterface do
       expect( interface.read(id).to_h ).to include(record)
     end
 
+    it 'shouldnt have a problem with strings containing special characters' do
+      record = {name: "T'Challa[]", price: nil}
+      expect{ interface.update(id, record) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include(record)
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect{ prod_interface.update("foo", name: "baz") }.not_to raise_error
+      expect( prod_interface.read("foo").to_h[:name] ).to eq "baz"
+    end
+
   end
   ##
 
 
   describe '#delete' do
 
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
+    def list_contains(ifce, id)
+      ifce.list.find {|x| x[ifce.id_fld] == id }
     end
 
     let(:id) { interface.list.first[:id] }
@@ -389,9 +472,16 @@ describe TestSequelInterface do
     end
 
     it 'makes the record at ID go away' do
-      expect( list_contains(id) ).to be_truthy
+      expect( list_contains(interface, id) ).to be_truthy
       interface.delete(id)
-      expect( list_contains(id) ).to be_falsy
+      expect( list_contains(interface, id) ).to be_falsy
+    end
+
+    it 'shouldn\'t have a problem with non-integer keys' do
+      fill_product_data(prod_interface)
+      expect( list_contains(prod_interface, "foo") ).to be_truthy
+      prod_interface.delete("foo")
+      expect( list_contains(prod_interface, "foo") ).to be_falsy
     end
 
   end
@@ -457,9 +547,75 @@ describe TestSequelInterface do
       expect( ret ).to eq( [] )
     end
 
-
   end
   ##
+
+
+  describe "#executep" do
+    # For the time being lets assume that Sequel does its job and the three modes we are calling
+    # actually work
+
+    let(:sql) { 'delete from customer where price < ?;' }
+
+    it 'requires an SQL string and a mode' do
+      expect{ interface.executep                 }.to raise_exception ArgumentError
+      expect{ interface.executep(nil)            }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update)    }.to raise_exception ArgumentError
+      expect{ interface.executep(14, :update, 2) }.to raise_exception ArgumentError
+    end
+
+    it 'requires the mode to be valid' do
+      expect{ interface.executep(sql, :foo, 2) }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.executep('delete from not_a_table where thingy = ?', :delete, 14) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'executes the string' do
+      expect{ interface.executep(sql, :delete, 2.0) }.not_to raise_exception
+      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+    end
+
+  end
+
+
+  describe "#selectp" do
+
+    it 'requires an SQL string' do
+      expect{ interface.selectp      }.to raise_exception ArgumentError
+      expect{ interface.selectp(nil) }.to raise_exception ArgumentError
+      expect{ interface.selectp(14)  }.to raise_exception ArgumentError
+    end
+
+    it 'raises some sort of Pod4 error if it runs into problems' do
+      expect{ interface.selectp('select * from not_a_table where thingy = ?', 14) }.
+        to raise_exception Pod4Error
+
+    end
+
+    it 'returns the result of the sql' do
+      sql = 'select name from customer where price < ?;'
+
+      expect{ interface.selectp(sql, 2.0) }.not_to raise_exception
+      expect( interface.selectp(sql, 2.0) ).to eq( [{name: 'Barney'}] )
+      expect( interface.selectp(sql, 0.0) ).to eq( [] )
+    end
+
+    it 'works if you pass a non-select' do
+      # By which I mean: still executes the SQL; returns []
+      sql = 'delete from customer where price < ?;'
+      ret = interface.selectp(sql, 2.0)
+
+      expect( interface.list.size ).to eq(data.size - 1)
+      expect( interface.list.map{|r| r[:name] } ).not_to include 'Barney'
+      expect( ret ).to eq( [] )
+    end
+
+  end
 
 
 end

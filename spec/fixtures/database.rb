@@ -11,3 +11,8 @@ DB[:pg] =
     user:     'pod4test',
     password: 'pod4test' }
 
+DB[:sequel] = 
+  { host:     'centos7andy',
+    user:     'pod4test',
+    password: 'pod4test' }
+

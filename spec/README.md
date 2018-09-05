@@ -12,8 +12,3 @@ assumes that the schema names can be hardcoded, and since we create and wipe
 tables in these tests, you should really have a seperate database for them
 anyway.)
 
-Sequel
-------
-Note that the Sequel ORM adapter does **not** require a database -- we
-currently use an in-memory sqlite database instead.
-
