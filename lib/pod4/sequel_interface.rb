@@ -104,7 +104,7 @@ module Pod4
         if @sequel_version >= 5
           # In Sequel 5 everything is frozen, so some hacking is required.
           # See https://github.com/jeremyevans/sequel/issues/1458
-          vals = c::PG_SPECIFIC_TYPES + [Java::JavaSQL::Types::DOUBLE]
+          vals = c::PG_SPECIFIC_TYPES + [Java::JavaSQL::Types::DOUBLE] 
           c.send(:remove_const, :PG_SPECIFIC_TYPES) # We can probably get away with just const_set, but.
           c.send(:const_set,    :PG_SPECIFIC_TYPES, vals.freeze)
         else

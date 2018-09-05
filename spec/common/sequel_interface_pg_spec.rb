@@ -97,6 +97,7 @@ describe "SequelInterface (Pg)" do
   let(:prod_interface) { prod_interface_class.new(db) }
 
 
+
   before do
     interface.execute %Q|
       truncate table customer restart identity;
@@ -132,6 +133,7 @@ describe "SequelInterface (Pg)" do
     let(:hash) { {name: 'Bam-Bam', qty: 4.44} }
     let(:ot)   { Octothorpe.new(name: 'Wilma', qty: 5.55) }
 
+
     it 'raises a Pod4::DatabaseError if anything goes wrong' do
       expect{ interface.create(one: 'two') }.to raise_exception DatabaseError
     end
@@ -165,6 +167,8 @@ describe "SequelInterface (Pg)" do
     end
 
     it 'shouldnt have a problem with strings containing special characters' do
+      # Note that in passing we retest that create returns the ID for identity columns
+      
       record = {name: "T'Challa[]", price: nil}
       expect{ interface.create(record) }.not_to raise_exception
       id = interface.create(record)
@@ -172,6 +176,8 @@ describe "SequelInterface (Pg)" do
     end
 
     it 'shouldn\'t have a problem with non-integer keys' do
+      # Note that in passing we retest that create returns the ID for non-identity columns
+
       hash = {code: "foo", name: "bar"}
       id = prod_interface.create( Octothorpe.new(hash) )
 

@@ -121,10 +121,10 @@ Simple Model Usage
     x.two = "new value"
     x.update
 
-    # create a new record from the params hash -- unless validation fails.
+    # create a new record from the params hash
     y = ExampleModel.new
     y.set(params)
-    y.create unless y.model_status == :error
+    y.create 
 
 A model is a class, each instance of which represents a single record. on that instance you can
 call the following for basic operation:
@@ -141,7 +141,7 @@ call the following for basic operation:
 instance might be represented on the data source as several records, or something else entirely.)
 
 There is one more operation - `list`. Call this on the model class itself, and it will return an
-array of model instances that match the criteria you pass. What you can pass to list depends on
+array of model objects that match the criteria you pass. What you can pass to list depends on
 your model class (of course); by default it also depends on the interface the model uses. But
 normally it should except a hash, like so:
 
