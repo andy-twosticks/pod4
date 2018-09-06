@@ -288,7 +288,7 @@ module Pod4
     end
 
 
-    protected
+    private
 
 
     ##
@@ -353,9 +353,6 @@ module Pod4
       end
 
     end
-
-
-    private
 
 
     def read_or_die(id)

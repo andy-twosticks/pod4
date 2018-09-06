@@ -303,7 +303,7 @@ module Pod4
     end
 
 
-    protected
+    private
 
 
     ##

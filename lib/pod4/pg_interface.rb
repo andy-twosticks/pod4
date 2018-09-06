@@ -299,7 +299,7 @@ module Pod4
     end
 
 
-    protected
+    private
 
 
     ##
@@ -400,9 +400,6 @@ module Pod4
       end
 
     end
-
-
-    private
 
 
     ##
