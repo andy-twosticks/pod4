@@ -257,7 +257,7 @@ module Pod4
             cipher.update(answer) + cipher.final
         end
 
-      rescue OpenSSL::Cipher::CipherError
+      rescue OpenSSL::Cipher::CipherError, ArgumentError
         raise Pod4::Pod4Error, $!
       end
 
