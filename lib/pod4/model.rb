@@ -332,6 +332,7 @@ module Pod4
     #
     def run_validation(vmode)
       method(:validate).arity == 0 ? validate : validate(vmode)
+      self
     end
 
   end # of Model
