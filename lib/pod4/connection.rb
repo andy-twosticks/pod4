@@ -6,74 +6,60 @@ module Pod4
 
   class Connection
 
-    attr_reader :interface
-
+    attr_reader   :interface_class
+    attr_accessor :data_layer_options
 
     ##
-    # Intitialise a Connection by passing it whatever the Interface needs to connect to it.
+    # Intitialise a Connection. You must pass a Pod4::Interface class. The connection object will
+    # only accept calls from instances of this class.
     #
-    def initialize(*args)
-      @interface  = nil
-      @init_thing = args.count == 1 ? args.first : args
-      @connection = nil
+    # `conn = Pod4::Connection.new(interface: MyInterface)`
+    #
+    def initialize(args)
+      raise ArgumentError, "Connection#new needs a Hash" unless args.is_a? Hash
+      raise ArgumentError, "You must pass a Pod4::Interface" \
+        unless args[:interface] \
+            && args[:interface].is_a?(Class) \
+            && args[:interface].ancestors.include?(Interface)
+
+      @interface_class    = args[:interface]
+      @data_layer_options = nil
+      @client             = nil
+      @options            = nil
     end
 
-
     ##
-    # Return the value of the init thing, whatever it is
-    #
-    def init_thing; @init_thing.dup; end
-
-
-    ##
-    # When an interface wants a connection, it calls connection.connection. If the connection does
+    # When an interface wants a connection, it calls connection.client. If the connection does
     # not have one, it asks the interface for one....
     #
-    # interface is an instance of an object of type Interface - that is, when an interface asks us
-    # for a connection, it passes self. After the first connection, it's this instance that will be
-    # quizzed by the connection in future.
+    # Interface is an instance of whatever class you passed to Connection when you initialised
+    # it. That is: when an interface wants a connection, it passes `self`.
     #
-    def connection(interface)
+    def client(interface)
       fail_bad_interfaces(interface)
-      @interface  ||= interface
-      @connection ||= interface.new_connection(@init_thing)
+      @client ||= interface.new_connection(@data_layer_options)
     end
 
-
     ##
-    # Allows a user to manually set a connection
-    #
-    # You might want to do this to defer Sequel DB init until after models are required, for
-    # example.
-    #
-    def set_connection(connection)
-      @connection = connection
-    end
-
-
-    ##
-    # In the unlikely) event we want to close a connection, we should know how to do it (or how to
-    # ask the interface to do it, anyway).
-    #
-    # We don't really need to get the interface to pass itself again, but I want to leave the door
-    # open for any mad fool that wants to subclass Connection to make an interface pool. Such a
-    # brave soul might need to track which connection it gave which interface...
+    # Close the connection.  
+    # In the case of a single connection, this is probably not going to get used much. But.
     #
     def close(interface)
-      @connection = interface.close_connection if @interface
+      fail_bad_interfaces(interface)
+      interface.close_connection 
+      @client = nil
+      return self
     end
-
 
     private
 
-
     def fail_bad_interfaces(f)
-      raise ArgumentError, "That\'s not a Pod4::Interface", caller \
-        unless f.kind_of?(Interface)
+      raise ArgumentError, "That's not a #@interface_class", caller \
+        unless f.kind_of?(@interface_class)
 
     end
 
-  end
+  end # of Connection
 
 
 end

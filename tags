@@ -7,6 +7,9 @@ Alert	lib/pod4/alert.rb	/^  class Alert$/;"	c	class:Pod4
 BasicModel	lib/pod4/basic_model.rb	/^  class BasicModel$/;"	c	class:Pod4
 CantContinue	lib/pod4/errors.rb	/^  class CantContinue < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
 ClassMethods	lib/pod4/typecasting.rb	/^    module ClassMethods$/;"	m	class:Pod4.TypeCasting
+Connection	lib/pod4/connection.rb	/^  class Connection$/;"	c	class:Pod4
+ConnectionTestingI	spec/common/connection_spec.rb	/^class ConnectionTestingI < Interface$/;"	c
+ConnectionTestingIBad	spec/common/connection_spec.rb	/^class ConnectionTestingIBad < Interface$/;"	c
 DB	spec/fixtures/database.rb	/^DB = {} $/;"	C	class:
 DatabaseError	lib/pod4/errors.rb	/^  class DatabaseError < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
 DocNoPending	spec/doc_no_pending.rb	/^class DocNoPending < RSpec::Core::Formatters::DocumentationFormatter$/;"	c	inherits:RSpec.Core.Formatters.DocumentationFormatter
@@ -23,6 +26,7 @@ PgInterface	lib/pod4/pg_interface.rb	/^  class PgInterface < Interface$/;"	c	cla
 Pod4	lib/pod4.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/alert.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/basic_model.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/connection.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/errors.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/interface.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/metaxing.rb	/^module Pod4$/;"	m
@@ -52,8 +56,12 @@ cast_row_fudge	lib/pod4/pg_interface.rb	/^    def cast_row_fudge(row, oids)$/;"	
 cause	lib/pod4/errors.rb	/^      define_method(:cause) { @cos }$/;"	f	class:Pod4.Pod4Error
 clear_alerts	lib/pod4/basic_model.rb	/^    def clear_alerts$/;"	f	class:Pod4.BasicModel
 clearing_cache	lib/pod4/nebulous_interface.rb	/^    def clearing_cache$/;"	f	class:Pod4.NebulousInterface
+client	lib/pod4/connection.rb	/^    def client(interface)$/;"	f	class:Pod4.Connection.initialize
+close	lib/pod4/connection.rb	/^    def close(interface)$/;"	f	class:Pod4.Connection.initialize
 close	lib/pod4/pg_interface.rb	/^    def close$/;"	f	class:Pod4.PgInterface
 close	lib/pod4/tds_interface.rb	/^    def close$/;"	f	class:Pod4.TdsInterface
+close_connection	spec/common/connection_spec.rb	/^  def close_connection;                   end$/;"	f	class:ConnectionTestingI
+close_connection	spec/common/connection_spec.rb	/^  def close_connection;     end$/;"	f	class:ConnectionTestingIBad
 columns	lib/pod4/model.rb	/^      def columns $/;"	F	class:Pod4.Model
 columns	lib/pod4/model.rb	/^    def columns; self.class.columns.dup; end$/;"	f	class:Pod4.Model
 connected?	lib/pod4/pg_interface.rb	/^    def connected?$/;"	f	class:Pod4.PgInterface
@@ -86,6 +94,7 @@ execute	lib/pod4/sequel_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4.Seq
 execute	lib/pod4/tds_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4.TdsInterface
 executep	lib/pod4/pg_interface.rb	/^    def executep(sql, *vals)$/;"	f	class:Pod4.PgInterface
 executep	lib/pod4/sequel_interface.rb	/^    def executep(sql, mode, *values)$/;"	f	class:Pod4.SequelInterface
+fail_bad_interfaces	lib/pod4/connection.rb	/^    def fail_bad_interfaces(f)$/;"	f	class:Pod4.Connection.initialize
 fail_no_id	lib/pod4/model.rb	/^      def fail_no_id$/;"	F	class:Pod4.Model
 fail_no_id_fld	lib/pod4/model.rb	/^      def fail_no_id_fld$/;"	F	class:Pod4.Model
 field	lib/pod4/alert.rb	/^    attr_accessor :field$/;"	f	class:Pod4.Alert
@@ -117,6 +126,7 @@ id_fld	lib/pod4/tds_interface.rb	/^    def id_fld; self.class.id_fld; end$/;"	f	
 included	lib/pod4/typecasting.rb	/^    def self.included(base)$/;"	F	class:Pod4.TypeCasting
 initialize	lib/pod4/alert.rb	/^    def initialize(type, field=nil, message)$/;"	f	class:Pod4.Alert
 initialize	lib/pod4/basic_model.rb	/^    def initialize(id=nil)$/;"	f	class:Pod4.BasicModel
+initialize	lib/pod4/connection.rb	/^    def initialize(args)$/;"	f	class:Pod4.Connection
 initialize	lib/pod4/errors.rb	/^    def initialize(message=nil, field=nil)$/;"	f	class:Pod4.ValidationError
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.CantContinue
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.DatabaseError
@@ -128,6 +138,8 @@ initialize	lib/pod4/null_interface.rb	/^    def initialize(*cols, data)$/;"	f	cl
 initialize	lib/pod4/pg_interface.rb	/^    def initialize(connectHash, testClient=nil)$/;"	f	class:Pod4.PgInterface
 initialize	lib/pod4/sequel_interface.rb	/^    def initialize(db)$/;"	f	class:Pod4.SequelInterface
 initialize	lib/pod4/tds_interface.rb	/^    def initialize(connectHash, testClient=nil)$/;"	f	class:Pod4.TdsInterface
+initialize	spec/common/connection_spec.rb	/^  def initialize;                         end$/;"	f	class:ConnectionTestingI
+initialize	spec/common/connection_spec.rb	/^  def initialize;           end$/;"	f	class:ConnectionTestingIBad
 initialize	spec/common/nebulous_interface_spec.rb	/^  def initialize(data={}); @data = data; end$/;"	f	class:FakeRequester
 interface	lib/pod4/basic_model.rb	/^      def interface$/;"	F	class:Pod4.BasicModel
 interface	lib/pod4/basic_model.rb	/^    def interface; self.class.interface; end$/;"	f	class:Pod4.BasicModel
@@ -150,6 +162,8 @@ message=	lib/pod4/alert.rb	/^    attr_accessor :message$/;"	f	class:Pod4.Alert
 metaclass	lib/pod4/metaxing.rb	/^    def metaclass$/;"	f	class:Pod4.Metaxing
 model_id	lib/pod4/basic_model.rb	/^    attr_reader :model_id$/;"	f	class:Pod4.BasicModel
 model_status	lib/pod4/basic_model.rb	/^    attr_reader :model_status$/;"	f	class:Pod4.BasicModel
+new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); end$/;"	f	class:ConnectionTestingIBad
+new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); {conn: args}; end$/;"	f	class:ConnectionTestingI
 open	lib/pod4/pg_interface.rb	/^    def open$/;"	f	class:Pod4.PgInterface
 open	lib/pod4/tds_interface.rb	/^    def open$/;"	f	class:Pod4.TdsInterface
 or_die	lib/pod4/basic_model.rb	/^    alias :or_die :raise_exceptions$/;"	a	class:Pod4.BasicModel

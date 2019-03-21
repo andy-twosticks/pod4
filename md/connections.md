@@ -70,13 +70,22 @@ We will be releasing this as part of the 1.0 update.
   ConnectionPool for PgInterface) and use that, passing what it has been given as the data layer
   options.
 
-* No longer stores @client but always asks the Connection object for it, instead, passing itself.
+* `#new_connection` must now be defined for each interface, and returns a new DB client object
+  that is ready to accept SQL.
+
+* `#close_connection` must now be defined for each interface, and closes the connection somehow.
+
+* No longer stores @client but always asks `Connection#client` for it, instead, passing itself.
 
 * Continues to be the object that knows _how_ to create a client for that interface. Never 
   creates a client by itself, though; rather, it asks Connection to do that.
 
 * Must now make a point of calling `Connection#close` whenever it finishes a database operation
   (except for SequelInterface).
+
+Note that `#new_connection' and '#close_connection' were often defined against an Interface anyway
+(or something like them); the change is that they are now a formal part of the interface to
+every Pod4::Interface class.
 
 
 ### Pod4::Connection ###
@@ -93,7 +102,7 @@ NebulousInterface.
   the data layer library, but Connection doesn't care; it's just holding it to give to the
   Interface.)
 
-* `#connection` takes the calling object and returns the client. If it doesn't have one, it
+* `#client` takes the calling object and returns the client. If it doesn't have one, it
   asks the calling object to create one (passing it the DLO object), and stores it. (In the case of
   Sequel, the DLO object is actually the client object, which we've created outside Pod4; but
   Connection neither knows or cares about this.)
@@ -109,7 +118,7 @@ Inherits from `Pod4::Connection`. Used for most interfaces.
 * `#new` has a configuration parameter: maximum number of clients in the pool. Without this
   parameter, there is no limit.
 
-* `#connection` returns the client assigned to the current thread (`Thread.current.object_id`) in
+* `#client` returns the client assigned to the current thread (`Thread.current.object_id`) in
   the pool; or failing that picks a free client from the pool; or failing that, it asks the
   interface for a new client, as in Pod4::Connection. It makes any changes the pool in a Mutex, so
   that no other thread asking for a client will get the same one.
