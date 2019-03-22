@@ -1,7 +1,8 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'interface'
-require_relative 'errors'
+require_relative "interface"
+require_relative "errors"
+require_relative "connection"
 
 
 module Pod4
@@ -22,17 +23,20 @@ module Pod4
   # appropriate -- but it also depends on the underlying adapter.  TinyTds maps dates to strings,
   # for example. 
   #
+  # Connections: Because the Sequel client -- the "DB" object -- has its own connection pool and
+  # does most of the heavy lifting for us, the only reason we use the Connection class is to defer
+  # creating the DB object until the first time we need it. Most of what Connection does, we don't
+  # need, so our interactions with Connection are a little strange.
+  #
   class SequelInterface < Interface
 
     attr_reader :id_fld
-
 
     class << self
       #---
       # These are set in the class because it keeps the model code cleaner: the definition of the
       # interface stays in the interface, and doesn't leak out into the model.
       #+++
-
 
       ##
       # Use this to set the schema name (optional)
@@ -42,7 +46,6 @@ module Pod4
       end
 
       def schema; nil; end
-
 
       ##
       # Set the table name. 
@@ -55,7 +58,6 @@ module Pod4
         raise Pod4Error, "You need to use set_table to set the table name"
       end
 
-
       ##
       # Set the unique id field on the table.
       #
@@ -67,56 +69,40 @@ module Pod4
         raise Pod4Error, "You need to use set_id_fld to set the ID column name"
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
     # Initialise the interface by passing it the Sequel DB object. Or a Sequel
-    # connection string. Or a Pod4::Connection object. BAMF
+    # connection string. Or a Pod4::Connection object. 
     #
-    def initialize(db)
-      raise(ArgumentError, "Bad database") unless db.kind_of? Sequel::Database
+    def initialize(arg)
       raise(Pod4Error, 'no call to set_table in the interface definition') if self.class.table.nil?
       raise(Pod4Error, 'no call to set_id_fld in the interface definition') if self.class.id_fld.nil?
 
-      @sequel_version = Sequel.respond_to?(:qualify) ? 5 : 4
-      @db             = db # reference to the db object
-      @id_fld         = self.class.id_fld
+      case arg
+        when Sequel::Database
+          @connection = Connection.new(interface: self.class)
+          @connection.data_layer_options = arg 
 
-      @table  = 
-        if schema
-          if @sequel_version == 5
-            db[ Sequel[schema][table] ]
-          else
-            db[ "#{schema}__#{table}".to_sym ]
-          end
-        else
-          db[table]
-        end
-          
-      # Work around a problem with jdbc-postgresql where it throws an exception whenever it sees
-      # the money type. This workaround actually allows us to return a BigDecimal, so it's better
-      # than using postgres_pr when under jRuby!
-      if @db.uri =~ /jdbc:postgresql/
-        @db.conversion_procs[790] = ->(s){BigDecimal(s[1..-1]) rescue nil}
-        c = Sequel::JDBC::Postgres::Dataset
+        when Hash, String
+          @connection = Connection.new(interface: self.class)
+          @connection.data_layer_options = Sequel.connect(arg)
 
-        if @sequel_version >= 5
-          # In Sequel 5 everything is frozen, so some hacking is required.
-          # See https://github.com/jeremyevans/sequel/issues/1458
-          vals = c::PG_SPECIFIC_TYPES + [Java::JavaSQL::Types::DOUBLE] 
-          c.send(:remove_const, :PG_SPECIFIC_TYPES) # We can probably get away with just const_set, but.
-          c.send(:const_set,    :PG_SPECIFIC_TYPES, vals.freeze)
+        when Connection
+          @connection = arg
+
         else
-          c::PG_SPECIFIC_TYPES << Java::JavaSQL::Types::DOUBLE
-        end
+          raise(ArgumentError, "Bad argument")
+
       end
+
+      @sequel_version = Sequel.respond_to?(:qualify) ? 5 : 4
+      @id_fld         = self.class.id_fld
+      @db             = nil
 
     rescue => e
       handle_error(e)
     end
-
 
     def schema; self.class.schema; end
     def table;  self.class.table;  end
@@ -124,13 +110,11 @@ module Pod4
 
     def quoted_table
       if schema 
-        %Q|#{@db.quote_identifier schema}.#{@db.quote_identifier table}|
+        %Q|#{db.quote_identifier schema}.#{db.quote_identifier table}|
       else
-        @db.quote_identifier(table)
+        db.quote_identifier(table)
       end
     end
-
-
 
     ##
     # Selection is whatever Sequel's `where` supports.
@@ -139,11 +123,10 @@ module Pod4
       sel = sanitise_hash(selection)
       Pod4.logger.debug(__FILE__) { "Listing #{self.class.table}: #{sel.inspect}" }
 
-      (sel ? @table.where(sel) : @table.all).map {|x| Octothorpe.new(x) }
+      (sel ? db_table.where(sel) : db_table.all).map {|x| Octothorpe.new(x) }
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Record is a hash of field: value
@@ -154,7 +137,7 @@ module Pod4
 
       Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{record.inspect}" }
 
-      id = @table.insert( sanitise_hash(record.to_h) )
+      id = db_table.insert( sanitise_hash(record.to_h) )
 
       # Sequel doesn't return the key unless it is an autoincrement; otherwise it turns a row
       # number regardless.  It probably doesn' t matter, but try to catch that anyway.
@@ -172,7 +155,6 @@ module Pod4
       handle_error(e) 
     end
 
-
     ##
     # ID corresponds to whatever you set in set_id_fld
     #
@@ -180,7 +162,7 @@ module Pod4
       raise(ArgumentError, "ID parameter is nil") if id.nil?
       Pod4.logger.debug(__FILE__) { "Reading #{self.class.table} where #{@id_fld}=#{id}" }
 
-      Octothorpe.new( @table[@id_fld => id] )
+      Octothorpe.new( db_table[@id_fld => id] )
 
     rescue Sequel::DatabaseError
       raise CantContinue, "Problem reading record. Is '#{id}' really an ID?"
@@ -188,7 +170,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # ID is whatever you set in the interface using set_id_fld record should be a Hash or
@@ -201,12 +182,11 @@ module Pod4
         "Updating #{self.class.table} where #{@id_fld}=#{id}: #{record.inspect}"
       end
 
-      @table.where(@id_fld => id).update( sanitise_hash(record.to_h) )
+      db_table.where(@id_fld => id).update( sanitise_hash(record.to_h) )
       self
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # ID is whatever you set in the interface using set_id_fld
@@ -218,12 +198,11 @@ module Pod4
         "Deleting #{self.class.table} where #{@id_fld}=#{id}"
       end
 
-      @table.where(@id_fld => id).delete
+      db_table.where(@id_fld => id).delete
       self
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Bonus method: execute arbitrary SQL. Returns nil.
@@ -232,11 +211,11 @@ module Pod4
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
       Pod4.logger.debug(__FILE__) { "Execute SQL: #{sql}" }
 
-      @db.run(sql)
+      @connection.client(self).run(sql)
+
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Bonus method: execute SQL as per execute(), but parameterised.
@@ -253,12 +232,10 @@ module Pod4
       raise(ArgumentError, "Bad mode parameter")   unless %i|insert delete update|.include?(mode)
       Pod4.logger.debug(__FILE__) { "Parameterised execute #{mode} SQL: #{sql}" }
 
-      @db[sql, *values].send(mode)
+      @connection.client(self)[sql, *values].send(mode)
     rescue => e
       handle_error(e)
     end
-
-
 
     ## 
     # Bonus method: execute arbitrary SQL and return the resulting dataset as a Hash.
@@ -267,11 +244,10 @@ module Pod4
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
       Pod4.logger.debug(__FILE__) { "Select SQL: #{sql}" }
 
-      @db[sql].all
+      @connection.client(self)[sql].all
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Bonus method: execute arbitrary SQL as per select(), but parameterised.
@@ -283,14 +259,38 @@ module Pod4
       raise(ArgumentError, "Bad sql parameter")    unless sql.kind_of?(String)
       Pod4.logger.debug(__FILE__) { "Parameterised select SQL: #{sql}" }
 
-      @db.fetch(sql, *values).all
+      @connection.client(self).fetch(sql, *values).all
+
     rescue => e
       handle_error(e)
     end
 
+    ## 
+    # Called by @connection to get the DB object.
+    # Never called internally. Given the way Sequel works -- the data layer option object passed
+    # to Connection actually is the client object -- we do something a bit weird here.
+    #
+    def new_connection(options)
+      options
+    end
 
-    protected
+    ###
+    # Called by @connection to "close" the DB object.
+    # Never called internally, and given the way Sequel works, we implement this as a dummy
+    # operation
+    #
+    def close_connection
+      self
+    end
 
+    ##
+    # Return the connection object, for testing purposes only
+    #
+    def _connection
+      @connection
+    end
+
+    private
 
     ##
     # Helper routine to handle or re-raise the right exception.
@@ -330,7 +330,28 @@ module Pod4
       end
 
     end
+    
+    def sequel_fudges(db)
+      # Work around a problem with jdbc-postgresql where it throws an exception whenever it sees
+      # the money type. This workaround actually allows us to return a BigDecimal, so it's better
+      # than using postgres_pr when under jRuby!
+      if db.uri =~ /jdbc:postgresql/
+        db.conversion_procs[790] = ->(s){BigDecimal(s[1..-1]) rescue nil}
+        c = Sequel::JDBC::Postgres::Dataset
 
+        if @sequel_version >= 5
+          # In Sequel 5 everything is frozen, so some hacking is required.
+          # See https://github.com/jeremyevans/sequel/issues/1458
+          vals = c::PG_SPECIFIC_TYPES + [Java::JavaSQL::Types::DOUBLE] 
+          c.send(:remove_const, :PG_SPECIFIC_TYPES) # We can probably get away with just const_set, but.
+          c.send(:const_set,    :PG_SPECIFIC_TYPES, vals.freeze)
+        else
+          c::PG_SPECIFIC_TYPES << Java::JavaSQL::Types::DOUBLE
+        end
+      end
+
+      db
+    end
 
     ##
     # Sequel behaves VERY oddly if you pass a symbol as a value to the hash you give to a
@@ -355,15 +376,34 @@ module Pod4
 
     end
 
-
-    private
-
-
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
-  end
+    def db
+      if @db
+        @db
+      else
+        @db = @connection.client(self)
+        sequel_fudges(@db)
+      end
+    end
+
+    def db_table
+
+      if schema
+        if @sequel_version == 5
+          db[ Sequel[schema][table] ]
+        else
+          db[ "#{schema}__#{table}".to_sym ]
+        end
+      else
+        db[table]
+      end
+
+    end
+
+  end # of SequelInterface
 
 
 end

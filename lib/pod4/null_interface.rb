@@ -1,7 +1,7 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'interface'
-require_relative 'errors'
+require_relative "interface"
+require_relative "errors"
 
 
 module Pod4
@@ -23,7 +23,6 @@ module Pod4
 
     attr_reader :id_fld
 
-
     ##
     # Initialise the interface by passing it a list of columns and an array of hashes to fill them.
     #
@@ -37,7 +36,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Selection is a hash, but only the first key/value pair is honoured.
@@ -56,7 +54,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # Record is a hash of field: value
     #
@@ -72,7 +69,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # ID is the first column you named in new()
     #
@@ -85,7 +81,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # ID is the first column you named in new(). Record should be a Hash or Octothorpe.
@@ -103,7 +98,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # ID is that first column
     #
@@ -117,9 +111,7 @@ module Pod4
       handle_error(e)
     end
 
-
     private
-
 
     def handle_error(err, kaller=nil)
       kaller ||= caller[1..-1]

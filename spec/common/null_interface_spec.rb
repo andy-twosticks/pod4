@@ -5,6 +5,10 @@ require_relative 'shared_examples_for_interface'
 
 describe NullInterface do
 
+  def list_contains(id)
+    interface.list.find {|x| x[interface.id_fld] == id }
+  end
+
   let(:data) do
     [ {name: 'Barney', price: 1.11},
       {name: 'Fred',   price: 2.22},
@@ -12,8 +16,6 @@ describe NullInterface do
   end
 
   let (:interface) { NullInterface.new(:name, :price, data) }
-
-  ##
 
 
   it_behaves_like "an interface" do
@@ -32,8 +34,7 @@ describe NullInterface do
       expect{ NullInterface.new(:one, [{one:1}]) }.not_to raise_exception
     end
 
-  end
-  ##
+  end # of #new
 
 
   describe '#create' do
@@ -55,8 +56,7 @@ describe NullInterface do
       expect( interface.read(id).to_h ).to include ot.to_h
     end
 
-  end
-  ##
+  end # of #create
 
 
   describe '#read' do
@@ -74,8 +74,7 @@ describe NullInterface do
       expect( interface.read(:foo) ).to be_empty
     end
 
-  end
-  ##
+  end # of #read
 
 
   describe '#list' do
@@ -107,12 +106,10 @@ describe NullInterface do
       expect( interface.list ).to eq([])
     end
 
-  end
-  ##
+  end # of #list
   
 
   describe '#update' do
-
     let(:id) { interface.list.first[:name] }
 
     it 'updates the record at ID with record parameter' do
@@ -122,16 +119,10 @@ describe NullInterface do
       expect( interface.read(id).to_h ).to include(record)
     end
 
-  end
-  ##
+  end # of #update
 
 
   describe '#delete' do
-  
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
-    end
-
     let(:id) { interface.list.first[:name] }
 
     it 'raises CantContinue if anything hinky happens with the ID' do
@@ -145,8 +136,7 @@ describe NullInterface do
       expect( list_contains(id) ).to be_falsy
     end
 
-  end
-  ##
+  end # of #delete
 
 
 end

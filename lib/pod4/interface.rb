@@ -41,7 +41,6 @@ module Pod4
       raise NotImplemented, "Interface needs to define an 'id_fld' method"
     end
 
-
     ##
     # Individual implementations are likely to have very different initialize methods, which will
     # accept whatever SwingShift object is needed to contact the data store, eg. the Sequel DB
@@ -50,7 +49,6 @@ module Pod4
     def initialize
       raise NotImplemented, "Interface needs to define an 'initialize' method"
     end
-
 
     ##
     # List accepts a parameter as selection criteria, and returns an array of Octothorpes. Exactly
@@ -61,62 +59,63 @@ module Pod4
     # Note that list should ALWAYS return an array; never nil.
     #
     def list(selection=nil)
-      raise NotImplemented, "Interface needs to define 'list' method"
+      raise NotImplemented, "Interface needs to define a 'list' method"
     end
-
 
     ##
     # Create accepts a record parameter (Hash or OT, but again, the format of this will vary)
     # representing a record, and creates the record.  Should return the ID for the new record.
     #
     def create(record)
-      raise NotImplemented, "Interface needs to define 'create' method"
+      raise NotImplemented, "Interface needs to define a 'create' method"
     end
-
 
     ##
     # Read accepts an ID, and returns an Octothorpe representing the unique record for that ID. If
     # there is no record matching the ID then it returns an empty Octothorpe.
     #
     def read(id)
-      raise NotImplemented, "Interface needs to define 'read' method"
+      raise NotImplemented, "Interface needs to define a 'read' method"
     end
-
 
     ##
     # Update accepts an ID and a record parameter. It updates the record on the data source that
     # matches the ID using the record parameter.  It returns self.
     #
     def update(id, record)
-      raise NotImplemented, "Interface needs to define 'update' method"
+      raise NotImplemented, "Interface needs to define a 'update' method"
     end
-
 
     ##
     # delete removes the record with the given ID. returns self.
     #
     def delete(id)
-      raise NotImplemented, "Interface needs to define 'delete' method"
+      raise NotImplemented, "Interface needs to define a 'delete' method"
     end
-
 
     ##
     # Called by a Connection object to start a database connection
     #
     def new_connection(args)
-      raise NotImplemented, "Interface needs to define 'new_connection' method"
+      raise NotImplemented, "Interface needs to define a 'new_connection' method"
     end
-
 
     ##
     # Called by a Connection Object to close the connection.
     #
     def close_connection
-      raise NotImplemented, "Interface needs to define 'close_connection' method"
+      raise NotImplemented, "Interface needs to define a 'close_connection' method"
     end
 
+    ##
+    # For testing purposes you should expose a _connection method that returns the Connection
+    # object the Interface uses
+    #
+    def _connection
+      raise NotImplemented, "Interface needs to define a '_connection' method"
+    end
 
-  end
+  end # of Interface
 
 
 end

@@ -233,7 +233,7 @@ module Pod4
         end
         cipher
 
-      rescue OpenSSL::Cipher::CipherError
+      rescue OpenSSL::Cipher::CipherError, ArgumentError
         raise Pod4::Pod4Error, $!
       end
 

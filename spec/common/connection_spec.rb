@@ -2,6 +2,11 @@ require 'pod4/connection'
 require 'pod4/null_interface'
 
 
+##
+# I can't make these anonymous classes in an Rspec `let`, because the name of the interface class is
+# passed to the Connection object when it is initialised.
+##
+
 class ConnectionTestingI < Interface
   def initialize;                         end
   def close_connection;                   end

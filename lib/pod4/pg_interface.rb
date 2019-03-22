@@ -299,9 +299,6 @@ module Pod4
     end
 
 
-    protected
-
-
     ##
     # Open the connection to the database.
     #
