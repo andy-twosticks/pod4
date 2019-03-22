@@ -24,14 +24,14 @@ describe "(Model with Encryption)" do
     Base64.strict_encode64(answer)
   end
 
-  let(:encryption_key) { "dflkasdgklajndgnalkghlgasdgasdghaalsdg" }
+  let(:encryption_key) { "dflkasdgklajndgn" }
 
   let(:medical_model_class) do  # model with an IV column
     Class.new Pod4::Model do
       include Pod4::Encrypting
       attr_columns :id, :nhs_no  # note, we don't bother to name encrypted columns
       encrypted_columns :name, :ailment, :prescription
-      set_key "dflkasdgklajndgnalkghlgasdgasdghaalsdg"
+      set_key "dflkasdgklajndgn"
       set_iv_column :nonce
       set_interface NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
     end
@@ -64,7 +64,7 @@ describe "(Model with Encryption)" do
       include Pod4::Encrypting
       attr_columns :id, :date, :heading, :text
       encrypted_columns :heading, :text
-      set_key "dflkasdgklajndgnalkghlgasdgasdghaalsdg"
+      set_key "dflkasdgklajndgn"
       set_interface NullInterface.new(:id, :date, :heading, :text, [])
     end
   end

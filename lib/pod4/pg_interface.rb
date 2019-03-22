@@ -299,6 +299,9 @@ module Pod4
     end
 
 
+    private
+
+
     ##
     # Open the connection to the database.
     #
@@ -397,9 +400,6 @@ module Pod4
       end
 
     end
-
-
-    private
 
 
     ##

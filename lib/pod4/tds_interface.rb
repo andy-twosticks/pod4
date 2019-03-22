@@ -6,7 +6,6 @@ require 'bigdecimal'
 require_relative 'interface'
 require_relative 'errors'
 require_relative 'sql_helper'
-require_relative 'connection'
 
 
 module Pod4
@@ -89,21 +88,20 @@ module Pod4
 
 
     ##
-    # Initialise the interface by passing it a TinyTds connection hash. For testing ONLY you can
+    # Initialise the interface by passing it a TinyTds connection hash.# For testing ONLY you can
     # also pass an object which pretends to be a TinyTds client, in which case the hash is pretty
     # much ignored.
     #
-    def initialize(connection)
-      fail_missing_def('set_db')     if self.class.db.nil?
-      fail_missing_def('set_table')  if self.class.table.nil?
-      fail_missing_def('set_id_fld') if self.class.id_fld.nil?
-      case connection
-        when Connection then @connection = connection
-        when Hash       then @connection = Connection.new(connection)
-        else raise(ArgumentError, 'invalid connection parameter')
-      end
+    def initialize(connectHash, testClient=nil)
+      sc = self.class
+      raise(Pod4Error, 'no call to set_db in the interface definition')     if sc.db.nil?
+      raise(Pod4Error, 'no call to set_table in the interface definition')  if sc.table.nil?
+      raise(Pod4Error, 'no call to set_id_fld in the interface definition') if sc.id_fld.nil?
+      raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
 
-      @client = nil
+      @connect_hash = connectHash.dup
+      @test_client  = testClient 
+      @client       = nil
 
       TinyTds::Client.default_query_options[:as] = :hash
       TinyTds::Client.default_query_options[:symbolize_keys] = true
@@ -132,6 +130,7 @@ module Pod4
     # where the given fields equal the given values.
     #
     def list(selection=nil)
+
       raise(Pod4::DatabaseError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
@@ -295,15 +294,6 @@ module Pod4
 
 
     ##
-    # Close the connection to the database.
-    # We don't actually use this, but it's here for completeness. Maybe a caller will find it useful.
-    #
-    def close
-      @connection.close(self)
-    end
-    
-    
-    ##
     # Wrapper for the data source library escape routine, which is all we can offer in terms of SQL
     # injection protection. (Its not much.)
     #
@@ -311,48 +301,6 @@ module Pod4
       open unless connected?
       thing.kind_of?(String) ? @client.escape(thing) : thing
     end
-
-
-
-
-    ##
-    # True if we are connected to a database
-    #
-    def connected?
-      @client && @client.active?
-    end
-
-
-
-    ##
-    # Called by Connection if it does not have one
-    #
-    def new_connection(connect_hash)
-      Pod4.logger.info(__FILE__){ "Connecting to DB" }
-
-      client = TinyTds::Client.new(connect_hash)
-      raise DatabaseError, "Bad Connection" unless client.active?
-
-      client
-
-    rescue => e
-      handle_error(e)
-    end
-
-
-    ##
-    # Called by Connection if it needs to close 
-    # useful.
-    #
-    def close_connection
-      Pod4.logger.info(__FILE__){ "Closing connection to DB" }
-      @client.close unless @client.nil?
-      nil
-
-    rescue => e
-      handle_error(e)
-    end
-
 
 
     private
@@ -364,16 +312,40 @@ module Pod4
     # No parameters are needed: the option hash has everything we need.
     #
     def open
-      return if connected?
+      Pod4.logger.info(__FILE__){ "Connecting to DB" }
+      client = @test_Client || TinyTds::Client.new(@connect_hash)
+      raise "Bad Connection" unless client.active?
 
-      @client = @connection.connection(self)
-      raise "Bad Connection" unless @client.active?
+      @client = client
       execute("use [#{self.class.db}]")
 
       self
 
     rescue => e
       handle_error(e)
+    end
+
+
+    ##
+    # Close the connection to the database.
+    #
+    # We don't actually use this, but it's here for completeness. Maybe a caller will find it
+    # useful.
+    #
+    def close
+      Pod4.logger.info(__FILE__){ "Closing connection to DB" }
+      @client.close unless @client.nil?
+
+    rescue => e
+      handle_error(e)
+    end
+
+
+    ##
+    # True if we are connected to a database
+    #
+    def connected?
+      @client && @client.active?
     end
 
 
@@ -421,11 +393,6 @@ module Pod4
 
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
-    end
-
-
-    def fail_missing_def(thing)
-      raise(Pod4Error, "No call to #{thing} in the interface definition")
     end
 
   end
