@@ -77,6 +77,7 @@ close	lib/pod4/tds_interface.rb	/^    def close$/;"	f	class:Pod4.list.create.rea
 close_connection	lib/pod4/interface.rb	/^    def close_connection$/;"	f	class:Pod4.Interface
 close_connection	lib/pod4/sequel_interface.rb	/^    def close_connection$/;"	f	class:Pod4.create
 close_connection	lib/pod4/tds_interface.rb	/^    def close_connection$/;"	f	class:Pod4.list.create.read.update
+close_connection	spec/common/connection_pool_parallelism_spec.rb	/^      def close_connection;            end$/;"	f
 close_connection	spec/common/connection_pool_spec.rb	/^      def close_connection;            end$/;"	f
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;                   end$/;"	f	class:ConnectionTestingI
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;     end$/;"	f	class:ConnectionTestingIBad
@@ -158,7 +159,7 @@ id_fld	lib/pod4/tds_interface.rb	/^      def id_fld$/;"	f	class:Pod4.TdsInterfac
 id_fld	lib/pod4/tds_interface.rb	/^    def id_fld; self.class.id_fld; end$/;"	f	class:Pod4
 included	lib/pod4/encrypting.rb	/^    def self.included(base)$/;"	F	class:Pod4.Encrypting
 included	lib/pod4/typecasting.rb	/^    def self.included(base)$/;"	F	class:Pod4.TypeCasting
-init_nebulous	spec/common/nebulous_interface_spec.rb	/^  def init_nebulous$/;"	f
+init_nebulous	spec/common/nebulous_interface_spec.rb	/^def init_nebulous$/;"	f
 initialize	lib/pod4/alert.rb	/^    def initialize(type, field=nil, message)$/;"	f	class:Pod4.Alert
 initialize	lib/pod4/basic_model.rb	/^    def initialize(id=nil)$/;"	f	class:Pod4.BasicModel
 initialize	lib/pod4/connection.rb	/^    def initialize(args)$/;"	f	class:Pod4.Connection
@@ -177,6 +178,7 @@ initialize	lib/pod4/null_interface.rb	/^    def initialize(*cols, data)$/;"	f	cl
 initialize	lib/pod4/pg_interface.rb	/^    def initialize(connectHash, testClient=nil)$/;"	f	class:Pod4
 initialize	lib/pod4/sequel_interface.rb	/^    def initialize(arg)$/;"	f	class:Pod4
 initialize	lib/pod4/tds_interface.rb	/^    def initialize(connection)$/;"	f	class:Pod4
+initialize	spec/common/connection_pool_parallelism_spec.rb	/^      def initialize;                  end$/;"	f
 initialize	spec/common/connection_pool_spec.rb	/^      def initialize;                  end$/;"	f
 initialize	spec/common/connection_spec.rb	/^  def initialize;                         end$/;"	f	class:ConnectionTestingI
 initialize	spec/common/connection_spec.rb	/^  def initialize;           end$/;"	f	class:ConnectionTestingIBad
@@ -214,6 +216,7 @@ model_status	lib/pod4/basic_model.rb	/^    attr_reader :model_status$/;"	f	class
 new_connection	lib/pod4/interface.rb	/^    def new_connection(args)$/;"	f	class:Pod4.Interface
 new_connection	lib/pod4/sequel_interface.rb	/^    def new_connection(options)$/;"	f	class:Pod4.create
 new_connection	lib/pod4/tds_interface.rb	/^    def new_connection(connect_hash)$/;"	f	class:Pod4.list.create.read.update
+new_connection	spec/common/connection_pool_parallelism_spec.rb	/^      def new_connection(opts); @conn; end$/;"	f
 new_connection	spec/common/connection_pool_spec.rb	/^      def new_connection(opts); @conn; end$/;"	f
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); end$/;"	f	class:ConnectionTestingIBad
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); {conn: args}; end$/;"	f	class:ConnectionTestingI
@@ -268,6 +271,7 @@ send_no_cache	spec/common/nebulous_interface_spec.rb	/^      def send_no_cache(*
 sequel_fudges	lib/pod4/sequel_interface.rb	/^    def sequel_fudges(db)$/;"	f	class:Pod4.create
 set	lib/pod4/model.rb	/^    def set(ot)$/;"	f	class:Pod4.Model.test_for_octo
 set	lib/pod4/param.rb	/^    def set(p,v); params[p.to_s.to_sym] = v; end$/;"	f	class:Pod4.Param
+set_conn	spec/common/connection_pool_parallelism_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	spec/common/connection_pool_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_db	lib/pod4/tds_interface.rb	/^      def set_db(db)$/;"	f	class:Pod4.TdsInterface
 set_encryption_iv	lib/pod4/encrypting.rb	/^      def set_encryption_iv(iv)$/;"	f	class:Pod4.Encrypting.InstanceMethods

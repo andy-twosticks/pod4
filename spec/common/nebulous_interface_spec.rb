@@ -111,6 +111,26 @@ class FakeRequester
 end
 ##
 
+def init_nebulous
+  stomp_hash = { hosts: [{ login:    'guest',
+                           passcode: 'guest',
+                           host:     '10.0.0.150',
+                           port:     61613,
+                           ssl:      false }],
+                 reliable: false }
+
+  # We turn Redis off for this test; we're not testing Nebulous here.
+  NebulousStomp.init( :stompConnectHash => stomp_hash,
+                      :redisConnectHash => {},
+                      :messageTimeout   => 5,
+                      :cacheTimeout     => 20 )
+
+  NebulousStomp.add_target( :faketarget,
+                            :sendQueue      => "/queue/fake.in",
+                            :receiveQueue   => "/queue/fake.out",
+                            :messageTimeout => 1 )
+
+end
 
 
 describe "NebulousInterface" do
@@ -136,34 +156,15 @@ describe "NebulousInterface" do
   end
 
 
-  def init_nebulous
-    stomp_hash = { hosts: [{ login:    'guest',
-                             passcode: 'guest',
-                             host:     '10.0.0.150',
-                             port:     61613,
-                             ssl:      false }],
-                   reliable: false }
-
-    # We turn Redis off for this test; we're not testing Nebulous here.
-    NebulousStomp.init( :stompConnectHash => stomp_hash,
-                        :redisConnectHash => {},
-                        :messageTimeout   => 5,
-                        :cacheTimeout     => 20 )
-
-    NebulousStomp.add_target( :faketarget,
-                              :sendQueue      => "/queue/fake.in",
-                              :receiveQueue   => "/queue/fake.out",
-                              :messageTimeout => 1 )
-
-  end
-
-
   it_behaves_like 'an interface' do
     let(:record) { {id: 1, name: 'percy', price: 1.23} }
 
     let(:interface) do 
-      init_nebulous
-      nebulous_interface_class.new( FakeRequester.new )
+      # init_nebulous
+
+      ifce = nebulous_interface_class.new
+
+      expect( ifce ).to receive(
     end
 
   end
