@@ -92,7 +92,7 @@ module Pod4
           @connection = arg
 
         else
-          raise(ArgumentError, "Bad argument")
+          raise ArgumentError, "Bad argument"
 
       end
 

@@ -72,6 +72,10 @@ module Pod4
   #       self
   #     end
   #
+  # NB: Connections: Nebulous does not use the Connection class. The user must configure
+  # NebulousStomp themselves, once, when their application starts; but they don't need to do this
+  # before requiring the models. And there is no need for a connection pool.
+  #
   class NebulousInterface < Interface
 
     attr_reader :id_fld

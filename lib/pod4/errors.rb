@@ -94,6 +94,26 @@ module Pod4
   end
 
 
+  ##
+  # Raised if ConnectionPool times out waiting for a client to become free.
+  # This can only happen if your pool has a maximum number of clients set, and a max_wait value
+  # set; and if all the clients are currently in use.
+  #
+  class PoolTimeout < Pod4Error
+    attr_reader :field
+
+    def self.from_alert(alert)
+      self.new(alert.message, alert.field)
+    end
+
+    def initialize(message=nil, field=nil)
+      super(message || $! && $!.message)
+      @field = field.to_s.to_sym
+    end
+
+  end
+
+
 
 end
 

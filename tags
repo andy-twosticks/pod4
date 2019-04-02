@@ -1,17 +1,19 @@
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+<<	lib/pod4/connection_pool.rb	/^      def <<(cl)$/;"	f	class:Pod4.ConnectionPool.Pool
 <=>	lib/pod4/alert.rb	/^    def <=>(other)$/;"	f	class:Pod4.Alert
 ALERTTYPES	lib/pod4/alert.rb	/^    ALERTTYPES = [:error, :warning, :info, :success]$/;"	C	class:Pod4.Alert
 Alert	lib/pod4/alert.rb	/^  class Alert$/;"	c	class:Pod4
 BasicModel	lib/pod4/basic_model.rb	/^  class BasicModel$/;"	c	class:Pod4
-CantContinue	lib/pod4/errors.rb	/^  class CantContinue < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
+CantContinue	lib/pod4/errors.rb	/^  class CantContinue < Pod4Error$/;"	c	class:Pod4
 ClassMethods	lib/pod4/encrypting.rb	/^    module ClassMethods$/;"	m	class:Pod4.Encrypting
 ClassMethods	lib/pod4/typecasting.rb	/^    module ClassMethods$/;"	m	class:Pod4.TypeCasting
 Connection	lib/pod4/connection.rb	/^  class Connection$/;"	c	class:Pod4
+ConnectionPool	lib/pod4/connection_pool.rb	/^  class ConnectionPool < Connection$/;"	c	class:Pod4
 ConnectionTestingI	spec/common/connection_spec.rb	/^class ConnectionTestingI < Interface$/;"	c
 ConnectionTestingIBad	spec/common/connection_spec.rb	/^class ConnectionTestingIBad < Interface$/;"	c
 DB	spec/fixtures/database.rb	/^DB = {} $/;"	C	class:
-DatabaseError	lib/pod4/errors.rb	/^  class DatabaseError < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
+DatabaseError	lib/pod4/errors.rb	/^  class DatabaseError < Pod4Error$/;"	c	class:Pod4
 DocNoPending	spec/doc_no_pending.rb	/^class DocNoPending < RSpec::Core::Formatters::DocumentationFormatter$/;"	c	inherits:RSpec.Core.Formatters.DocumentationFormatter
 Encrypting	lib/pod4/encrypting.rb	/^  module Encrypting$/;"	m	class:Pod4
 FakeRequester	spec/common/nebulous_interface_spec.rb	/^class FakeRequester$/;"	c
@@ -21,7 +23,7 @@ Interface	lib/pod4/interface.rb	/^  class Interface$/;"	c	class:Pod4
 Metaxing	lib/pod4/metaxing.rb	/^  module Metaxing$/;"	m	class:Pod4
 Model	lib/pod4/model.rb	/^  class Model < Pod4::BasicModel$/;"	c	class:Pod4
 NebulousInterface	lib/pod4/nebulous_interface.rb	/^  class NebulousInterface < Interface$/;"	c	class:Pod4
-NotImplemented	lib/pod4/errors.rb	/^  class NotImplemented < Exception$/;"	c	class:Pod4	inherits:Exception
+NotImplemented	lib/pod4/errors.rb	/^  class NotImplemented < Exception$/;"	c	class:Pod4
 NullInterface	lib/pod4/null_interface.rb	/^  class NullInterface < Interface$/;"	c	class:Pod4
 Param	lib/pod4/param.rb	/^  module Param$/;"	m	class:Pod4
 PgInterface	lib/pod4/pg_interface.rb	/^  class PgInterface < Interface$/;"	c	class:Pod4
@@ -29,6 +31,7 @@ Pod4	lib/pod4.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/alert.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/basic_model.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/connection.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/connection_pool.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/encrypting.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/errors.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/interface.rb	/^module Pod4$/;"	m
@@ -43,30 +46,38 @@ Pod4	lib/pod4/sql_helper.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/tds_interface.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/typecasting.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/version.rb	/^module Pod4 $/;"	m
-Pod4Error	lib/pod4/errors.rb	/^  class Pod4Error < StandardError$/;"	c	class:Pod4	inherits:StandardError
+Pod4Error	lib/pod4/errors.rb	/^  class Pod4Error < StandardError$/;"	c	class:Pod4
+Pool	lib/pod4/connection_pool.rb	/^    class Pool$/;"	c	class:Pod4.ConnectionPool
+PoolTimeout	lib/pod4/errors.rb	/^  class PoolTimeout < Pod4Error$/;"	c	class:Pod4
 SQLHelper	lib/pod4/sql_helper.rb	/^  module SQLHelper$/;"	m	class:Pod4
 STATII	lib/pod4/basic_model.rb	/^    STATII = %i|error warning okay deleted empty|$/;"	C	class:Pod4.BasicModel
 SequelInterface	lib/pod4/sequel_interface.rb	/^  class SequelInterface < Interface$/;"	c	class:Pod4
 TdsInterface	lib/pod4/tds_interface.rb	/^  class TdsInterface < Interface$/;"	c	class:Pod4
 TypeCasting	lib/pod4/typecasting.rb	/^  module TypeCasting$/;"	m	class:Pod4
-ValidationError	lib/pod4/errors.rb	/^  class ValidationError < Pod4Error$/;"	c	class:Pod4	inherits:Pod4Error
+ValidationError	lib/pod4/errors.rb	/^  class ValidationError < Pod4Error$/;"	c	class:Pod4
+WeakError	lib/pod4/errors.rb	/^  class WeakError < Pod4Error$/;"	c	class:Pod4
 _connection	lib/pod4/interface.rb	/^    def _connection$/;"	f	class:Pod4.Interface
 _connection	lib/pod4/sequel_interface.rb	/^    def _connection$/;"	f	class:Pod4.create
+_dump	lib/pod4/connection_pool.rb	/^      def _dump$/;"	f	class:Pod4.ConnectionPool.Pool
+_pool	lib/pod4/connection_pool.rb	/^    def _pool$/;"	f	class:Pod4.ConnectionPool
 add_alert	lib/pod4/basic_model.rb	/^    def add_alert(type, field=nil, message)$/;"	f	class:Pod4.BasicModel
 alerts	lib/pod4/basic_model.rb	/^    def alerts; @alerts.dup; end$/;"	f	class:Pod4.BasicModel
 attr_columns	lib/pod4/model.rb	/^      def attr_columns(*cols)$/;"	f	class:Pod4.Model
 cast_bool	lib/pod4/pg_interface.rb	/^    def cast_bool(val)$/;"	f	class:Pod4.list.create.read.update.open
 cast_row_fudge	lib/pod4/pg_interface.rb	/^    def cast_row_fudge(row, oids)$/;"	f	class:Pod4.list.create.read.update.open
-cause	lib/pod4/errors.rb	/^      define_method(:cause) { @cos }$/;"	f	class:Pod4.Pod4Error
 clear_alerts	lib/pod4/basic_model.rb	/^    def clear_alerts$/;"	f	class:Pod4.BasicModel
+clear_method	spec/common/nebulous_interface_spec.rb	/^    def clear_method;   @@method = nil;  end$/;"	f	class:FakeRequester
 clearing_cache	lib/pod4/nebulous_interface.rb	/^    def clearing_cache$/;"	f	class:Pod4.NebulousInterface.validate_params
 client	lib/pod4/connection.rb	/^    def client(interface)$/;"	f	class:Pod4.Connection.initialize
+client	lib/pod4/connection_pool.rb	/^    def client(interface)$/;"	f	class:Pod4.ConnectionPool
 close	lib/pod4/connection.rb	/^    def close(interface)$/;"	f	class:Pod4.Connection.initialize
+close	lib/pod4/connection_pool.rb	/^    def close(interface)$/;"	f	class:Pod4.ConnectionPool
 close	lib/pod4/pg_interface.rb	/^    def close$/;"	f	class:Pod4.list.create.read.update.open
 close	lib/pod4/tds_interface.rb	/^    def close$/;"	f	class:Pod4.list.create.read.update
 close_connection	lib/pod4/interface.rb	/^    def close_connection$/;"	f	class:Pod4.Interface
 close_connection	lib/pod4/sequel_interface.rb	/^    def close_connection$/;"	f	class:Pod4.create
 close_connection	lib/pod4/tds_interface.rb	/^    def close_connection$/;"	f	class:Pod4.list.create.read.update
+close_connection	spec/common/connection_pool_spec.rb	/^      def close_connection;            end$/;"	f
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;                   end$/;"	f	class:ConnectionTestingI
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;     end$/;"	f	class:ConnectionTestingIBad
 columns	lib/pod4/model.rb	/^      def columns $/;"	f	class:Pod4.Model
@@ -80,7 +91,7 @@ create	lib/pod4/null_interface.rb	/^    def create(record)$/;"	f	class:Pod4.Null
 create	lib/pod4/pg_interface.rb	/^    def create(record)$/;"	f	class:Pod4.list
 create	lib/pod4/sequel_interface.rb	/^    def create(record)$/;"	f	class:Pod4
 create	lib/pod4/tds_interface.rb	/^    def create(record)$/;"	f	class:Pod4.list
-create	spec/common/nebulous_interface_spec.rb	/^  def create(name, price)$/;"	f	class:FakeRequester
+create	spec/common/nebulous_interface_spec.rb	/^  def create(name, price)$/;"	f
 crypt	lib/pod4/encrypting.rb	/^      def crypt(cipher, direction, iv, string)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 db	lib/pod4/sequel_interface.rb	/^    def db$/;"	f	class:Pod4.create
 db	lib/pod4/tds_interface.rb	/^      def db $/;"	f	class:Pod4.TdsInterface
@@ -116,16 +127,21 @@ fail_bad_interfaces	lib/pod4/connection.rb	/^    def fail_bad_interfaces(f)$/;"	
 fail_missing_def	lib/pod4/tds_interface.rb	/^    def fail_missing_def(thing)$/;"	f	class:Pod4.list.create.read.update
 fail_no_id	lib/pod4/model.rb	/^      def fail_no_id$/;"	f	class:Pod4.Model.test_for_octo.test_for_invalid_status
 fail_no_id_fld	lib/pod4/model.rb	/^      def fail_no_id_fld$/;"	f	class:Pod4.Model.test_for_octo.test_for_invalid_status
+fake_an_alert	spec/common/model_new_validate_spec.rb	/^      def fake_an_alert(*args)$/;"	f
 field	lib/pod4/alert.rb	/^    attr_accessor :field$/;"	f	class:Pod4.Alert
-field	lib/pod4/errors.rb	/^    attr_reader :field$/;"	f	class:Pod4.ValidationError
 field=	lib/pod4/alert.rb	/^    attr_accessor :field$/;"	f	class:Pod4.Alert
 fill_data	spec/common/sequel_interface_pg_spec.rb	/^  def fill_data(ifce, data)$/;"	f
+fill_data	spec/mri/sequel_interface_spec.rb	/^  def fill_data(ifce)$/;"	f
 fill_product_data	spec/common/sequel_interface_pg_spec.rb	/^  def fill_product_data(ifce)$/;"	f
+fill_product_data	spec/mri/sequel_interface_spec.rb	/^  def fill_product_data(ifce)$/;"	f
 force_encoding	lib/pod4/typecasting.rb	/^      def force_encoding(enc)$/;"	f	class:Pod4.TypeCasting.ClassMethods
+from_alert	lib/pod4/errors.rb	/^    def self.from_alert(alert)$/;"	F	class:Pod4.PoolTimeout
 from_alert	lib/pod4/errors.rb	/^    def self.from_alert(alert)$/;"	F	class:Pod4.ValidationError
 get	lib/pod4/param.rb	/^    def get(p); params[p.to_s.to_sym]; end$/;"	f	class:Pod4.Param
 get_all	lib/pod4/param.rb	/^    def get_all; Octothorpe.new(params.dup); end$/;"	f	class:Pod4.Param
 get_cipher	lib/pod4/encrypting.rb	/^      def get_cipher(direction)$/;"	f	class:Pod4.Encrypting.InstanceMethods
+get_current	lib/pod4/connection_pool.rb	/^      def get_current $/;"	f	class:Pod4.ConnectionPool.Pool
+get_free	lib/pod4/connection_pool.rb	/^      def get_free$/;"	f	class:Pod4.ConnectionPool.Pool
 handle_error	lib/pod4/nebulous_interface.rb	/^    def handle_error(err, kaller=caller[1..-1])$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
 handle_error	lib/pod4/null_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.NullInterface
 handle_error	lib/pod4/pg_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.list.create.read.update.open
@@ -142,23 +158,29 @@ id_fld	lib/pod4/tds_interface.rb	/^      def id_fld$/;"	f	class:Pod4.TdsInterfac
 id_fld	lib/pod4/tds_interface.rb	/^    def id_fld; self.class.id_fld; end$/;"	f	class:Pod4
 included	lib/pod4/encrypting.rb	/^    def self.included(base)$/;"	F	class:Pod4.Encrypting
 included	lib/pod4/typecasting.rb	/^    def self.included(base)$/;"	F	class:Pod4.TypeCasting
+init_nebulous	spec/common/nebulous_interface_spec.rb	/^  def init_nebulous$/;"	f
 initialize	lib/pod4/alert.rb	/^    def initialize(type, field=nil, message)$/;"	f	class:Pod4.Alert
 initialize	lib/pod4/basic_model.rb	/^    def initialize(id=nil)$/;"	f	class:Pod4.BasicModel
 initialize	lib/pod4/connection.rb	/^    def initialize(args)$/;"	f	class:Pod4.Connection
+initialize	lib/pod4/connection_pool.rb	/^      def initialize$/;"	f	class:Pod4.ConnectionPool.Pool
+initialize	lib/pod4/connection_pool.rb	/^    def initialize(args)$/;"	f	class:Pod4.ConnectionPool
+initialize	lib/pod4/errors.rb	/^    def initialize(message=nil, field=nil)$/;"	f	class:Pod4.PoolTimeout
 initialize	lib/pod4/errors.rb	/^    def initialize(message=nil, field=nil)$/;"	f	class:Pod4.ValidationError
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.CantContinue
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.DatabaseError
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.NotImplemented
 initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.Pod4Error
+initialize	lib/pod4/errors.rb	/^    def initialize(msg=nil)$/;"	f	class:Pod4.WeakError
 initialize	lib/pod4/interface.rb	/^    def initialize$/;"	f	class:Pod4.Interface
 initialize	lib/pod4/nebulous_interface.rb	/^    def initialize(requestObj=nil)$/;"	f	class:Pod4.NebulousInterface.validate_params
 initialize	lib/pod4/null_interface.rb	/^    def initialize(*cols, data)$/;"	f	class:Pod4.NullInterface
 initialize	lib/pod4/pg_interface.rb	/^    def initialize(connectHash, testClient=nil)$/;"	f	class:Pod4
 initialize	lib/pod4/sequel_interface.rb	/^    def initialize(arg)$/;"	f	class:Pod4
 initialize	lib/pod4/tds_interface.rb	/^    def initialize(connection)$/;"	f	class:Pod4
+initialize	spec/common/connection_pool_spec.rb	/^      def initialize;                  end$/;"	f
 initialize	spec/common/connection_spec.rb	/^  def initialize;                         end$/;"	f	class:ConnectionTestingI
 initialize	spec/common/connection_spec.rb	/^  def initialize;           end$/;"	f	class:ConnectionTestingIBad
-initialize	spec/common/nebulous_interface_spec.rb	/^  def initialize(data={}); @data = data; end$/;"	f	class:FakeRequester
+initialize	spec/common/nebulous_interface_spec.rb	/^  def initialize(data={}); @data = data; end$/;"	f
 interface	lib/pod4/basic_model.rb	/^      def interface$/;"	F	class:Pod4.BasicModel
 interface	lib/pod4/basic_model.rb	/^    def interface; self.class.interface; end$/;"	f	class:Pod4.BasicModel
 list	lib/pod4/interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.Interface
@@ -168,25 +190,31 @@ list	lib/pod4/null_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.N
 list	lib/pod4/pg_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
 list	lib/pod4/sequel_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
 list	lib/pod4/tds_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
+list_contains	spec/common/nebulous_interface_spec.rb	/^    def list_contains(id)$/;"	f
 list_contains	spec/common/null_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/sequel_interface_pg_spec.rb	/^  def list_contains(ifce, id)$/;"	f
+list_contains	spec/mri/sequel_interface_spec.rb	/^    def list_contains(ifce, id)$/;"	f
 log	lib/pod4/alert.rb	/^    def log(file='')$/;"	f	class:Pod4.Alert
 logger	lib/pod4.rb	/^  def self.logger$/;"	F	class:Pod4
 make_oid_hash	lib/pod4/pg_interface.rb	/^    def make_oid_hash(query)$/;"	f	class:Pod4.list.create.read.update.open
 map_to_interface	lib/pod4/encrypting.rb	/^      def map_to_interface$/;"	f	class:Pod4.Encrypting.InstanceMethods
 map_to_interface	lib/pod4/model.rb	/^    def map_to_interface$/;"	f	class:Pod4.Model.test_for_octo
+map_to_interface	spec/common/model_new_validate_spec.rb	/^      def map_to_interface$/;"	f
 map_to_model	lib/pod4/encrypting.rb	/^      def map_to_model(ot)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 map_to_model	lib/pod4/model.rb	/^    def map_to_model(ot)$/;"	f	class:Pod4.Model.test_for_octo
 map_to_model	lib/pod4/typecasting.rb	/^      def map_to_model(ot)$/;"	f	class:Pod4.TypeCasting.InstanceMethods
+map_to_model	spec/common/model_new_validate_spec.rb	/^      def map_to_model(ot)$/;"	f
 merge	lib/pod4/model.rb	/^    def merge(ot)$/;"	f	class:Pod4.Model.test_for_octo
 message	lib/pod4/alert.rb	/^    attr_accessor :message$/;"	f	class:Pod4.Alert
 message=	lib/pod4/alert.rb	/^    attr_accessor :message$/;"	f	class:Pod4.Alert
 metaclass	lib/pod4/metaxing.rb	/^    def metaclass$/;"	f	class:Pod4.Metaxing
+method	spec/common/nebulous_interface_spec.rb	/^    def method;         @@method;        end$/;"	f	class:FakeRequester
 model_id	lib/pod4/basic_model.rb	/^    attr_reader :model_id$/;"	f	class:Pod4.BasicModel
 model_status	lib/pod4/basic_model.rb	/^    attr_reader :model_status$/;"	f	class:Pod4.BasicModel
 new_connection	lib/pod4/interface.rb	/^    def new_connection(args)$/;"	f	class:Pod4.Interface
 new_connection	lib/pod4/sequel_interface.rb	/^    def new_connection(options)$/;"	f	class:Pod4.create
 new_connection	lib/pod4/tds_interface.rb	/^    def new_connection(connect_hash)$/;"	f	class:Pod4.list.create.read.update
+new_connection	spec/common/connection_pool_spec.rb	/^      def new_connection(opts); @conn; end$/;"	f
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); end$/;"	f	class:ConnectionTestingIBad
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); {conn: args}; end$/;"	f	class:ConnectionTestingI
 open	lib/pod4/pg_interface.rb	/^    def open$/;"	f	class:Pod4.list.create.read.update
@@ -215,8 +243,10 @@ read	lib/pod4/tds_interface.rb	/^    def read(id)$/;"	f	class:Pod4.list.create
 read_or_die	lib/pod4/pg_interface.rb	/^    def read_or_die(id)$/;"	f	class:Pod4.list.create.read.update.open
 read_or_die	lib/pod4/sequel_interface.rb	/^    def read_or_die(id)$/;"	f	class:Pod4.create
 read_or_die	lib/pod4/tds_interface.rb	/^    def read_or_die(id)$/;"	f	class:Pod4.list.create.read.update
+release	lib/pod4/connection_pool.rb	/^      def release$/;"	f	class:Pod4.ConnectionPool.Pool
 reset	lib/pod4/param.rb	/^    def reset; @params = {}; end$/;"	f	class:Pod4.Param
-response_message_hash	spec/common/nebulous_interface_spec.rb	/^  def response_message_hash(requestmsg)$/;"	f	class:FakeRequester
+reset_alerts	spec/common/model_new_validate_spec.rb	/^      def reset_alerts; @alerts = []; end$/;"	f
+response_message_hash	spec/common/nebulous_interface_spec.rb	/^  def response_message_hash(requestmsg)$/;"	f
 run_validation	lib/pod4/model.rb	/^    def run_validation(vmode)$/;"	f	class:Pod4.Model.test_for_octo
 sanitise_hash	lib/pod4/sequel_interface.rb	/^    def sanitise_hash(sel)$/;"	f	class:Pod4.create
 schema	lib/pod4/pg_interface.rb	/^      def schema; nil; end$/;"	f	class:Pod4.PgInterface
@@ -230,12 +260,15 @@ select	lib/pod4/sequel_interface.rb	/^    def select(sql)$/;"	f	class:Pod4.creat
 select	lib/pod4/tds_interface.rb	/^    def select(sql)$/;"	f	class:Pod4.list.create.read.update
 selectp	lib/pod4/pg_interface.rb	/^    def selectp(sql, *vals)$/;"	f	class:Pod4.list.create.read.update
 selectp	lib/pod4/sequel_interface.rb	/^    def selectp(sql, *values)$/;"	f	class:Pod4.create
-send	spec/common/nebulous_interface_spec.rb	/^  def send(target, requestmsg)$/;"	f	class:FakeRequester
+send	spec/common/nebulous_interface_spec.rb	/^      def send(*args);          FakeRequester.set_method :send;          super; end$/;"	f	class:send
+send	spec/common/nebulous_interface_spec.rb	/^  def send(target, requestmsg)$/;"	f
 send_message	lib/pod4/nebulous_interface.rb	/^    def send_message(verb, paramStr, with_cache=true)$/;"	f	class:Pod4.NebulousInterface.validate_params
 send_message_helper	lib/pod4/nebulous_interface.rb	/^    def send_message_helper(verb, paramStr, with_cache)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+send_no_cache	spec/common/nebulous_interface_spec.rb	/^      def send_no_cache(*args); FakeRequester.set_method :send_no_cache; super; end$/;"	f	class:send
 sequel_fudges	lib/pod4/sequel_interface.rb	/^    def sequel_fudges(db)$/;"	f	class:Pod4.create
 set	lib/pod4/model.rb	/^    def set(ot)$/;"	f	class:Pod4.Model.test_for_octo
 set	lib/pod4/param.rb	/^    def set(p,v); params[p.to_s.to_sym] = v; end$/;"	f	class:Pod4.Param
+set_conn	spec/common/connection_pool_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_db	lib/pod4/tds_interface.rb	/^      def set_db(db)$/;"	f	class:Pod4.TdsInterface
 set_encryption_iv	lib/pod4/encrypting.rb	/^      def set_encryption_iv(iv)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 set_id_fld	lib/pod4/nebulous_interface.rb	/^      def set_id_fld(idFld)$/;"	f	class:Pod4.NebulousInterface
@@ -246,6 +279,7 @@ set_interface	lib/pod4/basic_model.rb	/^      def set_interface(interface)$/;"	F
 set_iv_column	lib/pod4/encrypting.rb	/^      def set_iv_column(column)$/;"	f	class:Pod4.Encrypting.ClassMethods
 set_key	lib/pod4/encrypting.rb	/^      def set_key(key)$/;"	f	class:Pod4.Encrypting.ClassMethods
 set_logger	lib/pod4.rb	/^  def self.set_logger(instance)$/;"	F	class:Pod4
+set_method	spec/common/nebulous_interface_spec.rb	/^    def set_method(x);  @@method ||= x;  end $/;"	f	class:FakeRequester
 set_schema	lib/pod4/pg_interface.rb	/^      def set_schema(schema) $/;"	f	class:Pod4.PgInterface
 set_schema	lib/pod4/sequel_interface.rb	/^      def set_schema(schema)$/;"	f	class:Pod4.SequelInterface
 set_schema	lib/pod4/tds_interface.rb	/^      def set_schema(schema)$/;"	f	class:Pod4.TdsInterface
@@ -254,6 +288,7 @@ set_table	lib/pod4/sequel_interface.rb	/^      def set_table(table)$/;"	f	class:
 set_table	lib/pod4/tds_interface.rb	/^      def set_table(table)$/;"	f	class:Pod4.TdsInterface
 set_target	lib/pod4/nebulous_interface.rb	/^      def set_target(target)$/;"	f	class:Pod4.NebulousInterface
 set_verb	lib/pod4/nebulous_interface.rb	/^      def set_verb(action, verb, *paramKeys)$/;"	f	class:Pod4.NebulousInterface
+size	lib/pod4/connection_pool.rb	/^      def size $/;"	f	class:Pod4.ConnectionPool.Pool
 sql_delete	lib/pod4/sql_helper.rb	/^    def sql_delete(selection)$/;"	f	class:Pod4.SQLHelper
 sql_insert	lib/pod4/sql_helper.rb	/^    def sql_insert(fldsValues)$/;"	f	class:Pod4.SQLHelper
 sql_insert	lib/pod4/tds_interface.rb	/^    def sql_insert(record)$/;"	f	class:Pod4.list.create.read.update
@@ -280,9 +315,10 @@ update	lib/pod4/null_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.
 update	lib/pod4/pg_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.list.create.read
 update	lib/pod4/sequel_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.create
 update	lib/pod4/tds_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.list.create.read
-update	spec/common/nebulous_interface_spec.rb	/^  def update(id, name, price)$/;"	f	class:FakeRequester
+update	spec/common/nebulous_interface_spec.rb	/^  def update(id, name, price)$/;"	f
 use_iv?	lib/pod4/encrypting.rb	/^      def use_iv?$/;"	f	class:Pod4.Encrypting.InstanceMethods
 validate	lib/pod4/model.rb	/^    def validate(vmode=nil)$/;"	f	class:Pod4.Model.test_for_octo
+validate	spec/common/model_new_validate_spec.rb	/^      def validate(vmode)$/;"	f
 validate_params	lib/pod4/nebulous_interface.rb	/^      def validate_params$/;"	f	class:Pod4.NebulousInterface
 verb_for	lib/pod4/nebulous_interface.rb	/^    def verb_for(action)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
 verbs	lib/pod4/nebulous_interface.rb	/^      def verbs; {}; end$/;"	f	class:Pod4.NebulousInterface

@@ -194,13 +194,7 @@ describe "SequelInterface" do
 
   describe '#new' do
 
-    it 'requires a Sequel DB object' do
-      expect{ sequel_interface_class.new        }.to raise_exception ArgumentError
-      expect{ sequel_interface_class.new(nil)   }.to raise_exception ArgumentError
-      expect{ sequel_interface_class.new('foo') }.to raise_exception ArgumentError
-
-      expect{ sequel_interface_class.new(db) }.not_to raise_exception
-    end
+    # See also common/sequel_interface_pg_spec
 
     it 'requires the table and id field to be defined in the class' do
       expect{ SequelInterface.new(db) }.to raise_exception Pod4Error
