@@ -135,6 +135,10 @@ end
 
 describe "NebulousInterface" do
 
+  def list_contains(id)
+    interface.list.find {|x| x[interface.id_fld] == id }
+  end
+
   ##
   # In order to conform with 'acts_like an interface', our CRUDL routines must
   # pass a single value as the record, which we are making an array. When you
@@ -160,11 +164,8 @@ describe "NebulousInterface" do
     let(:record) { {id: 1, name: 'percy', price: 1.23} }
 
     let(:interface) do 
-      # init_nebulous
-
-      ifce = nebulous_interface_class.new
-
-      expect( ifce ).to receive(
+      init_nebulous
+      nebulous_interface_class.new( FakeRequester.new )
     end
 
   end
@@ -329,10 +330,6 @@ describe "NebulousInterface" do
   describe '#delete' do
 
     let(:id) { interface.list.first[:id] }
-
-    def list_contains(id)
-      interface.list.find {|x| x[interface.id_fld] == id }
-    end
 
     it 'raises WeakError if anything hinky happens with the ID' do
       expect{ interface.delete(:foo) }.to raise_exception WeakError

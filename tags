@@ -192,7 +192,7 @@ list	lib/pod4/null_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.N
 list	lib/pod4/pg_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
 list	lib/pod4/sequel_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
 list	lib/pod4/tds_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
-list_contains	spec/common/nebulous_interface_spec.rb	/^    def list_contains(id)$/;"	f
+list_contains	spec/common/nebulous_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/null_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/sequel_interface_pg_spec.rb	/^  def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/sequel_interface_spec.rb	/^    def list_contains(ifce, id)$/;"	f
