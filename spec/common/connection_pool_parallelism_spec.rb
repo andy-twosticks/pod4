@@ -5,7 +5,7 @@ require "pod4/connection_pool"
 # These tests cover how connection pool handles being called by simultaneous threads.  Note that
 # none of these tests _can ever_ fail when running under MRI, because of the GIL.
 #
-# Under jRuby, though, they fail. Probably!  We're relying on >1 thread making the same call
+# Under jRuby, though, they can fail. Probably!  We're relying on >1 thread making the same call
 # simultaneously, with 50 threads all trying to act at the same time. That's not actually _certain_
 # to happen.  Without the Mutex in ConnectionPool::Pool, these seem to fail MOST of the time.  For
 # me.
