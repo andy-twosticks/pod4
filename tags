@@ -22,6 +22,7 @@ InstanceMethods	lib/pod4/typecasting.rb	/^    module InstanceMethods$/;"	m	class
 Interface	lib/pod4/interface.rb	/^  class Interface$/;"	c	class:Pod4
 Metaxing	lib/pod4/metaxing.rb	/^  module Metaxing$/;"	m	class:Pod4
 Model	lib/pod4/model.rb	/^  class Model < Pod4::BasicModel$/;"	c	class:Pod4
+MyInterface	thread_test.rb	/^class MyInterface < Interface$/;"	c
 NebulousInterface	lib/pod4/nebulous_interface.rb	/^  class NebulousInterface < Interface$/;"	c	class:Pod4
 NotImplemented	lib/pod4/errors.rb	/^  class NotImplemented < Exception$/;"	c	class:Pod4
 NullInterface	lib/pod4/null_interface.rb	/^  class NullInterface < Interface$/;"	c	class:Pod4
@@ -82,6 +83,7 @@ close_connection	spec/common/connection_pool_parallelism_spoc.rb	/^      def clo
 close_connection	spec/common/connection_pool_spec.rb	/^      def close_connection;            end$/;"	f
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;                   end$/;"	f	class:ConnectionTestingI
 close_connection	spec/common/connection_spec.rb	/^  def close_connection;     end$/;"	f	class:ConnectionTestingIBad
+close_connection	thread_test.rb	/^  def close_connection;            end$/;"	f	class:MyInterface
 columns	lib/pod4/model.rb	/^      def columns $/;"	f	class:Pod4.Model
 columns	lib/pod4/model.rb	/^    def columns; self.class.columns.dup; end$/;"	f	class:Pod4.Model.test_for_octo
 connected?	lib/pod4/pg_interface.rb	/^    def connected?$/;"	f	class:Pod4.list.create.read.update.open
@@ -99,7 +101,13 @@ db	lib/pod4/sequel_interface.rb	/^    def db$/;"	f	class:Pod4.create
 db	lib/pod4/tds_interface.rb	/^      def db $/;"	f	class:Pod4.TdsInterface
 db	lib/pod4/tds_interface.rb	/^    def db;     self.class.db;     end$/;"	f	class:Pod4
 db_setup	spec/common/sequel_interface_pg_spec.rb	/^  def db_setup(db)$/;"	f
+db_setup	spec/mri/pg_encrypting_spec.rb	/^  def db_setup(connect)$/;"	f
+db_setup	spec/mri/sequel_encrypting_spec.rb	/^  def db_setup(connection)$/;"	f
+db_setup	spec/mri/tds_encrypting_spec.rb	/^  def db_setup(connect)$/;"	f
 db_table	lib/pod4/sequel_interface.rb	/^    def db_table$/;"	f	class:Pod4.create
+db_truncate	spec/mri/pg_encrypting_spec.rb	/^  def db_truncate(connect)$/;"	f
+db_truncate	spec/mri/sequel_encrypting_spec.rb	/^  def db_truncate(connection)$/;"	f
+db_truncate	spec/mri/tds_encrypting_spec.rb	/^  def db_truncate(connect)$/;"	f	class:db_setup
 decrypt	lib/pod4/encrypting.rb	/^      def decrypt(string)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 define_class_method	lib/pod4/metaxing.rb	/^    def define_class_method(method, *args, &blk)$/;"	f	class:Pod4.Metaxing
 delete	lib/pod4/interface.rb	/^    def delete(id)$/;"	f	class:Pod4.Interface
@@ -185,6 +193,7 @@ initialize	spec/common/connection_pool_spec.rb	/^      def initialize;          
 initialize	spec/common/connection_spec.rb	/^  def initialize;                         end$/;"	f	class:ConnectionTestingI
 initialize	spec/common/connection_spec.rb	/^  def initialize;           end$/;"	f	class:ConnectionTestingIBad
 initialize	spec/common/nebulous_interface_spec.rb	/^  def initialize(data={}); @data = data; end$/;"	f
+initialize	thread_test.rb	/^  def initialize;                  end$/;"	f	class:MyInterface
 interface	lib/pod4/basic_model.rb	/^      def interface$/;"	F	class:Pod4.BasicModel
 interface	lib/pod4/basic_model.rb	/^    def interface; self.class.interface; end$/;"	f	class:Pod4.BasicModel
 list	lib/pod4/interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4.Interface
@@ -201,6 +210,10 @@ list_contains	spec/mri/sequel_interface_spec.rb	/^    def list_contains(ifce, id
 log	lib/pod4/alert.rb	/^    def log(file='')$/;"	f	class:Pod4.Alert
 logger	lib/pod4.rb	/^  def self.logger$/;"	F	class:Pod4
 make_oid_hash	lib/pod4/pg_interface.rb	/^    def make_oid_hash(query)$/;"	f	class:Pod4.list.create.read.update.open
+make_thread	thread_test3.rb	/^def make_thread(idx)$/;"	f
+make_threads	spec/common/connection_pool_parallelism_spec.rb	/^  def make_threads(count, connection, interface)$/;"	f
+make_threads	thread_test.rb	/^def make_threads(count, connection, interface)$/;"	f
+make_threads	thread_test2.rb	/^def make_threads(count)$/;"	f
 map_to_interface	lib/pod4/encrypting.rb	/^      def map_to_interface$/;"	f	class:Pod4.Encrypting.InstanceMethods
 map_to_interface	lib/pod4/model.rb	/^    def map_to_interface$/;"	f	class:Pod4.Model.test_for_octo
 map_to_interface	spec/common/model_new_validate_spec.rb	/^      def map_to_interface$/;"	f
@@ -223,6 +236,7 @@ new_connection	spec/common/connection_pool_parallelism_spoc.rb	/^      def new_c
 new_connection	spec/common/connection_pool_spec.rb	/^      def new_connection(opts); @conn; end$/;"	f
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); end$/;"	f	class:ConnectionTestingIBad
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); {conn: args}; end$/;"	f	class:ConnectionTestingI
+new_connection	thread_test.rb	/^  def new_connection(opts); @conn; end$/;"	f	class:MyInterface
 open	lib/pod4/pg_interface.rb	/^    def open$/;"	f	class:Pod4.list.create.read.update
 open	lib/pod4/tds_interface.rb	/^    def open$/;"	f	class:Pod4.list.create.read.update
 or_die	lib/pod4/basic_model.rb	/^    alias :or_die :raise_exceptions$/;"	a	class:Pod4.BasicModel
@@ -277,6 +291,7 @@ set	lib/pod4/param.rb	/^    def set(p,v); params[p.to_s.to_sym] = v; end$/;"	f	c
 set_conn	spec/common/connection_pool_parallelism_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	spec/common/connection_pool_parallelism_spoc.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	spec/common/connection_pool_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
+set_conn	thread_test.rb	/^  def set_conn(c); @conn = c; end$/;"	f	class:MyInterface
 set_db	lib/pod4/tds_interface.rb	/^      def set_db(db)$/;"	f	class:Pod4.TdsInterface
 set_encryption_iv	lib/pod4/encrypting.rb	/^      def set_encryption_iv(iv)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 set_id_fld	lib/pod4/nebulous_interface.rb	/^      def set_id_fld(idFld)$/;"	f	class:Pod4.NebulousInterface

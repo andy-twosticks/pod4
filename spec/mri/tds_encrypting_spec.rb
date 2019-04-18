@@ -63,7 +63,7 @@ describe "(writing encrypted data via tds_interface)" do
       include Pod4::Encrypting
 
       encrypted_columns :name, :ailment
-      set_key           "dflkasdgklajndgnalkghlgasdgasdghaalsdg"
+      set_key           "dflkasdgklajndgn"
       set_iv_column     :nonce
     end
   end
