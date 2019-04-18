@@ -32,6 +32,31 @@ require "pod4/connection_pool"
 #
 describe Pod4::ConnectionPool do
 
+  def make_threads(count, connection, interface)
+    threads = []
+
+    1.upto(count) do |idx|
+      threads << Thread.new do 
+        # Set things up and wait
+        Thread.current[:idx] = idx # might be useful for debugging
+        Thread.stop
+
+        # wait for the given sync time;  call #client; signal done; then wait
+        sleep 0.1 until Time.now >= Thread.current[:time]
+        connection.client(interface)
+        Thread.current[:done1] = true
+        Thread.stop 
+
+        # call #close; signal done; then wait
+        connection.close(interface)
+        Thread.current[:done2] = true
+        Thread.stop
+      end
+    end
+
+    threads
+  end
+
   let(:ifce_class) do
     Class.new Pod4::Interface do
       def initialize;                  end
@@ -56,28 +81,7 @@ describe Pod4::ConnectionPool do
       @interface.set_conn "floom"
 
       # Set up 50 threads to call things at the same time.
-      # Note -- for some unknown reason `Thread.stop` is better than `sleep` for making the 
-      # unsecured code fail.
-      @threads = []
-      1.upto(50) do |idx|
-        @threads << Thread.new do 
-          # Set things up and wait
-          Thread.current[:idx] = idx # might be useful for debugging
-          Thread.stop
-
-          # wait for the given sync time;  call #client; signal done; then wait
-          sleep 0.1 until Time.now >= Thread.current[:time]
-          @connection.client(@interface)
-          Thread.current[:done] = true
-          Thread.stop 
-
-          # call #close; signal done; then wait
-          @connection.close(@interface)
-          Thread.current[:done] = true
-          Thread.stop
-        end
-      end
-
+      @threads = make_threads(50, @connection, @interface)
     end
 
     after(:each) { @threads.each{|t| t.kill} }
@@ -85,14 +89,18 @@ describe Pod4::ConnectionPool do
     it "assigns new items to the pool from multiple threads successfully" do
       test_start = Time.now
 
-      # tell all the threads to connect
+      # Ask all the threads to restart, calling #client all at the same time
+      # (Unfortunately it's in the hands of Ruby's scheduler whether the thread gets restarted)
       at = Time.now + 2
       @threads.each{|t| t[:time] = at }
-      @threads.each{|t| t.run         }
-      sleep 0.1 until @threads.all?{|t| t[:done] } || Time.now >= test_start + 10
-      expect( @threads.all?{|t| t[:done] } ).to eq true
+      @threads.each{|t| t.run }
+      sleep 0.1 until (@threads.all?{|t| t[:done1] } || Time.now >= test_start + 5)
 
-      expect( @connection._pool.size                               ).to eq 50
+      # We have no control over whether the scheduler will actually restart each thread!
+      # Best we can do is count the number of threads that ran
+      count = @threads.count{|t| t[:done1] }
+
+      expect( @connection._pool.size                               ).to eq count
       expect( @connection._pool.select{|x| x.thread_id.nil? }.size ).to eq 0
     end
 
@@ -105,41 +113,35 @@ describe Pod4::ConnectionPool do
     it "reassigns items to new threads from multiple threads successfully" do
       test_start = Time.now
 
-      # tell all the threads to connect
-      @threads.each{|t| t[:time] = Time.now }
-      @threads.each{|t| t.run               }
-      sleep 0.1 until @threads.all?{|t| t[:done] } || Time.now >= test_start + 10
-      expect( @threads.all?{|t| t[:done] } ).to eq true
+      # ask all the threads to connect -- again, the scheduler might let us down.
+      at = Time.now
+      @threads.each{|t| t[:time] = at }
+      @threads.each{|t| t.run }
+      sleep 0.1 until (@threads.all?{|t| t[:done1] } || Time.now >= test_start + 5)
+      count1 = @threads.count{|t| t[:done1] }
 
-      # Release all the connections
-      @threads.each{|t| t[:done] = false }
-      @threads.each{|t| t.run            }
-      sleep 0.1 until @threads.all?{|t| t[:done] } || Time.now >= test_start + 10
-      expect( @threads.all?{|t| t[:done] } ).to eq true
+      # Release all the connections (that got run in the connect phase...)
+      # (Again, just because we ask a thread to run, that doesn't mean it does!)
+      @threads.select{|t| t[:done1] }.each{|t| t.run }
+      sleep 0.1 until (@threads.all?{|t| t[:done2] } || Time.now >= test_start + 10)
+      count2 = @threads.count{|t| t[:done2] }
 
-      # Make some new threads. These should reuse connections from the pool.
-      newthreads = []
-      1.upto(48) do |idx|
-        newthreads << Thread.new do
-          Thread.current[:idx] = "n#{idx}" # might be useful for debugging
-          Thread.stop
-          # sleep
-
-          sleep 0.1 until Time.now >= Thread.current[:time]
-          @connection.client(@interface)
-          Thread.current[:done] = true
-          Thread.stop
-        end
-      end
+      # Make some new threads. These should reuse connections from the pool. Make a couple less
+      # than should be free.
+      newthreads = make_threads(count2 - 2, @connection, @interface)
 
       at = Time.now + 2
       newthreads.each{|t| t[:time] = at }
-      newthreads.each{|t| t.run         }
-      sleep 0.1 until newthreads.all?{|t| t[:done] } || Time.now >= test_start + 10
-      expect( newthreads.all?{|t| t[:done] } ).to eq true
+      newthreads.each{|t| t.run }
+      sleep 0.1 until (newthreads.all?{|t| t[:done1] } || Time.now >= test_start + 15)
 
-      expect( @connection._pool.size                               ).to eq 50
-      expect( @connection._pool.select{|x| x.thread_id.nil? }.size ).to eq 50 - 48
+      count3 = newthreads.count{|t| t[:done1] }
+
+      # So at this point count1 is the number of threads in @threads that were connected; count2
+      # the number that were then released; count3 the number of threads in newthreads that were
+      # (re-)connected.
+      expect( @connection._pool.size                               ).to eq count1
+      expect( @connection._pool.select{|x| x.thread_id.nil? }.size ).to eq(count1 - count3)
 
       # tidy up
       newthreads.each{|t| t.kill }
