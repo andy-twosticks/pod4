@@ -12,6 +12,7 @@ Connection	lib/pod4/connection.rb	/^  class Connection$/;"	c	class:Pod4
 ConnectionPool	lib/pod4/connection_pool.rb	/^  class ConnectionPool < Connection$/;"	c	class:Pod4
 ConnectionTestingI	spec/common/connection_spec.rb	/^class ConnectionTestingI < Interface$/;"	c
 ConnectionTestingIBad	spec/common/connection_spec.rb	/^class ConnectionTestingIBad < Interface$/;"	c
+Customer	ffile.rb	/^class Customer$/;"	c
 DB	spec/fixtures/database.rb	/^DB = {} $/;"	C	class:
 DatabaseError	lib/pod4/errors.rb	/^  class DatabaseError < Pod4Error$/;"	c	class:Pod4
 DocNoPending	spec/doc_no_pending.rb	/^class DocNoPending < RSpec::Core::Formatters::DocumentationFormatter$/;"	c	inherits:RSpec.Core.Formatters.DocumentationFormatter
@@ -19,6 +20,7 @@ Encrypting	lib/pod4/encrypting.rb	/^  module Encrypting$/;"	m	class:Pod4
 FakeRequester	spec/common/nebulous_interface_spec.rb	/^class FakeRequester$/;"	c
 InstanceMethods	lib/pod4/encrypting.rb	/^    module InstanceMethods$/;"	m	class:Pod4.Encrypting
 InstanceMethods	lib/pod4/typecasting.rb	/^    module InstanceMethods$/;"	m	class:Pod4.TypeCasting
+Interface	ffile.rb	/^  class Interface < Pod4::PgInterface$/;"	c	class:Customer
 Interface	lib/pod4/interface.rb	/^  class Interface$/;"	c	class:Pod4
 Metaxing	lib/pod4/metaxing.rb	/^  module Metaxing$/;"	m	class:Pod4
 Model	lib/pod4/model.rb	/^  class Model < Pod4::BasicModel$/;"	c	class:Pod4
