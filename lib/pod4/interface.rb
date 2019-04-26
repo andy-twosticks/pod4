@@ -103,7 +103,7 @@ module Pod4
     ##
     # Called by a Connection Object to close the connection.
     #
-    def close_connection
+    def close_connection(conn)
       raise NotImplemented, "Interface needs to define a 'close_connection' method"
     end
 

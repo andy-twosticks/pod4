@@ -1,16 +1,17 @@
-require 'octothorpe'
-require 'date'
-require 'time'
-require 'bigdecimal'
+require "octothorpe"
+require "date"
+require "time"
+require "bigdecimal"
 
-require_relative 'interface'
-require_relative 'errors'
-require_relative 'sql_helper'
+require_relative "interface"
+require_relative "connection_pool"
+require_relative "errors"
+require_relative "sql_helper"
 
 
 module Pod4
 
-
+  
   ##
   # Pod4 Interface for requests on a SQL table via pg, the PostgresQL adapter.
   #
@@ -27,7 +28,6 @@ module Pod4
     include SQLHelper
 
     attr_reader :id_fld
-
 
     class << self
       #--
@@ -68,34 +68,33 @@ module Pod4
         raise Pod4Error, "You need to use set_id_fld to set the ID column"
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
-    # Initialise the interface by passing it a Pg connection hash. For testing ONLY you can also
-    # pass an object which pretends to be a Pg client, in which case the hash is pretty much
-    # ignored.
+    # Initialise the interface by passing it a Pg connection hash, or a Pod4::ConnectionPool
+    # object.
     #
-    def initialize(connectHash, testClient=nil)
-      raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
+    def initialize(arg)
+      case arg
+        when Hash
+          @connection = ConnectionPool.new(interface: self.class)
+          @connection.data_layer_options = arg
 
-      @connect_hash = connectHash.dup
-      @test_client  = testClient 
-      @client       = nil
+        when ConnectionPool
+          @connection = arg
+
+        else
+          raise ArgumentError, "Bad argument"
+      end
 
     rescue => e
       handle_error(e)
     end
 
-
     def schema; self.class.schema; end
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
 
-
-    ##
-    #
     def list(selection=nil)
       raise(ArgumentError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
@@ -106,7 +105,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Record is a hash of field: value
@@ -125,7 +123,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # ID corresponds to whatever you set in set_id_fld
@@ -146,7 +143,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # ID is whatever you set in the interface using set_id_fld record should be a Hash or
     # Octothorpe.
@@ -166,7 +162,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # ID is whatever you set in the interface using set_id_fld
     #
@@ -181,7 +176,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Run SQL code on the server. Return the results.
@@ -198,12 +192,11 @@ module Pod4
     def select(sql)
       raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
 
-      ensure_connection
-
+      client = ensure_connection
       Pod4.logger.debug(__FILE__){ "select: #{sql}" }
 
       rows = []
-      @client.exec(sql) do |query|
+      client.exec(sql) do |query|
         oids = make_oid_hash(query)
 
         query.each do |r| 
@@ -218,14 +211,12 @@ module Pod4
         end
       end
 
-      @client.cancel 
-
+      client.cancel 
       rows
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Run SQL code on the server as per select() but with parameter insertion.
@@ -236,12 +227,11 @@ module Pod4
     def selectp(sql, *vals)
       raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
 
-      ensure_connection
-
+      client = ensure_connection
       Pod4.logger.debug(__FILE__){ "select: #{sql} #{vals.inspect}" }
 
       rows = []
-      @client.exec_params( *parse_for_params(sql, vals) ) do |query|
+      client.exec_params( *parse_for_params(sql, vals) ) do |query|
         oids = make_oid_hash(query)
 
         query.each do |r| 
@@ -256,13 +246,12 @@ module Pod4
         end
       end
 
-      @client.cancel 
+      client.cancel 
       rows
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Run SQL code on the server; return true or false for success or failure
@@ -270,15 +259,13 @@ module Pod4
     def execute(sql)
       raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
 
-      ensure_connection
-
+      client = ensure_connection
       Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
-      @client.exec(sql)
+      client.exec(sql)
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Run SQL code on the server as per execute() but with parameter insertion.
@@ -289,97 +276,83 @@ module Pod4
     def executep(sql, *vals)
       raise(ArgumentError, "Bad SQL parameter") unless sql.kind_of?(String)
 
-      ensure_connection
-
+      client = ensure_connection
       Pod4.logger.debug(__FILE__){ "parameterised execute: #{sql}" }
-      @client.exec_params( *parse_for_params(sql, vals) )
+      client.exec_params( *parse_for_params(sql, vals) )
 
     rescue => e
       handle_error(e)
     end
-
-
-    private
-
 
     ##
     # Open the connection to the database.
     #
-    # No parameters are needed: the option hash has everything we need.
+    # This is called from a Connection Object.
     #
-    def open
+    def new_connection(params)
       Pod4.logger.info(__FILE__){ "Connecting to DB" }
 
-      client = @test_Client || PG.connect(@connect_hash)
-      raise DataBaseError, "Bad Connection" \
-        unless client.status == PG::CONNECTION_OK
+      client = PG.connect(params)
+      raise DataBaseError, "Bad Connection" unless client.status == PG::CONNECTION_OK
 
-      # This gives us type mapping for integers, floats, booleans, and dates -- but annoyingly the
-      # PostgreSQL types 'numeric' and 'money' remain as strings... we fudge that elsewhere.
-      #
-      # NOTE we now deal with ALL mapping elsewhere, since pg_jruby does not support type mapping.
-      # Also: no annoying error messages, and it seems to be a hell of a lot faster now...
-      # 
-      #     if defined?(PG::BasicTypeMapForQueries)
-      #       client.type_map_for_queries = PG::BasicTypeMapForQueries.new(client)
-      #     end
-      #
-      #     if defined?(PG::BasicTypeMapForResults)
-      #       client.type_map_for_results = PG::BasicTypeMapForResults.new(client)
-      #     end
-
-      @client = client
-      self
+      client
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Close the connection to the database.
     #
-    # We don't actually use this, but it's here for completeness. Maybe a caller will find it
-    # useful.
+    # Pod4 itself doesn't use this(?)
     #
-    def close
+    def close_connection(conn)
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }
-      @client.finish unless @client.nil?
+      conn.finish unless conn.nil?
 
     rescue => e
       handle_error(e)
     end
 
+    ##
+    # Expose @connection, for testing only.
+    #
+    def _connection
+      @connection
+    end
+
+    private
 
     ##
     # True if we are connected to a database
     #
-    def connected?
-      return false if @client.nil?
-      return false if @client.status != PG::CONNECTION_OK
+    def connected?(conn)
+      return false if conn.nil?
+      return false if conn.status != PG::CONNECTION_OK
 
       # pg's own examples suggest we poke the database rather than trust
       # @client.status, so...
-      @client.exec('select 1;')
+      conn.exec('select 1;')
       true
     rescue PG::Error
       return false
     end
 
-
     ##
+    # Return a client from the connection pool and check it is open.
     # Since pg gives us @client.reset to reconnect, we should use it rather than just call open
     #
     def ensure_connection
+      client = @connection.client(self)
 
-      if @client.nil?
+      if client.nil?
         open
-      elsif ! connected?
-        @client.reset
+      elsif ! connected?(client)
+        client.reset
       end
 
+      client
     end
-
 
     def handle_error(err, kaller=nil)
       kaller ||= caller[1..-1]
@@ -387,7 +360,6 @@ module Pod4
       Pod4.logger.error(__FILE__){ err.message }
 
       case err
-
         when ArgumentError, Pod4::Pod4Error, Pod4::CantContinue
           raise err.class, err.message, kaller
 
@@ -396,11 +368,9 @@ module Pod4
 
         else
           raise Pod4::Pod4Error, err.message, kaller
-
       end
 
     end
-
 
     ##
     # build a hash of column -> oid
@@ -413,11 +383,10 @@ module Pod4
 
     end
 
-
     ##
     # Cast a query row
     #
-    # This is to step around problems with pg type mapping There is definitely a way to tell pg to
+    # This is to step around problems with pg type mapping. There is definitely a way to tell pg to
     # cast money and numeric as BigDecimal, but, it's not documented...
     #
     # Also, for the pg_jruby gem, type mapping doesn't work at all?
@@ -452,7 +421,6 @@ module Pod4
       end
 
     end
-
     
     ##
     # Given a value from the database which supposedly represents a boolean ... return one.
@@ -470,11 +438,9 @@ module Pod4
       end
     end
 
-
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
-
 
     def parse_for_params(sql, vals)
       new_params = sql.scan("%s").map.with_index{|e,i| "$#{i + 1}" }
@@ -483,8 +449,7 @@ module Pod4
       [ sql_subst(sql, *new_params), new_vals ]
     end
 
-
-  end
+  end # of PgInterface
 
 
 end

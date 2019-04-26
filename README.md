@@ -202,8 +202,8 @@ single ID field that provides a unique identifier. Pod4 does not care what it's 
 type it is -- if you say that's what makes it unique, that's good enough.
 
 Internally, Interfaces talk the same basic language of list / create / read / update / delete that
-models do. But I'm not finding the need to subclass these much. So that's probably going to be it
-for your Interface definition.
+models do. Sometimes you might want to add a special interface method for a specific database
+operation, but otherwise that's probably going to be it for your Interface definition.
 
 ### Model ###
 
@@ -214,14 +214,16 @@ Models have two of their own DSLish methods:
 
 You can see that interfaces are instantiated when the model is required.  Exactly what you need to
 pass to the interface to instantiate it depends on the interface. SequelInterface wants the Sequel
-DB object (which means you have to require sequel, connect, and *then* require your models); the
-other interfaces only want connection hashes.  
+DB object; the other interfaces only want connection hashes. 
+
+(If you are finding it annoying to have to, for example, figure out your database connection hash
+or get a Sequel DB object _before_ requiring your models, then see "Connections", below.)
 
 Any attributes you define using `attr_columns` are treated specially by Pod4::Model. You get all
 the effect of the standard Ruby `attr_accessor` call, but in addition, the attribute will be passed
 to and from the interface, and to and from your external code, by the standard model methods.
 
-In addition to the ones above, we have:
+In addition to the methods above, we have:
 
 * `validate`         -- override this to provide validation
 * `map_to_model`     -- controls how the interface sets attributes on the model
@@ -244,8 +246,8 @@ against the instance of the model class. Each alert can have a status of :error,
 :success. If any alert has a status of :error :warning or :success then that is reflected in the
 model's `model_status` attribute. 
 
-(In fact, there are two other possible statuses -- models are :empty when first created
-and :deleted after a call to delete.)
+(There are two other possible statuses -- models are :empty when first created and :deleted after a
+call to delete.)
 
 You can raise alerts yourself, and you normally do so by overriding `validate`.  This method is
 called after a read as well as when you write to the database; so that a model object should always
@@ -304,9 +306,9 @@ datatimes should all end up as the right type in the model.  (It depends on the 
 going to get tired of me saying that, aren't you?) But maybe you want more than that.
 
 Let's imagine you have a database table in PostreSQL with a column called cost that uses the money
-type. And you want it to be a `BigDecimal` in the model.  Well, Pod4 won't do that for you -- for
-all I know someone might have a problem with my requiring BigDecimal -- but it's not hard to do
-yourself.
+type. (This is a terrible idea, by the way.) And you want it to be a `BigDecimal` in the model.
+Well, Pod4 won't do that for you -- for all I know someone might have a problem with my requiring
+BigDecimal -- but it's not hard to do yourself.
 
     class Product < Pod4::Model
 
@@ -340,7 +342,8 @@ interface from the model. It _returns_ an Octothorpe to the interface. By defaul
 You might also want to ensure that your data types are honoured when your application updates a
 model object; in which case you will need to override `set` as well.
 
-At some point in the future, the Pod4::TypeCasting mixin will do most of this for you.
+If this seems like a lot of work, take a look at the Pod4::TypeCasting mixin. it will handle it for
+you.
 
 
 Relations
@@ -434,6 +437,93 @@ certainly need revisiting if you change database. But how often does that happen
 it ever does, you are likely to need to revisit the effected models anyway...
 
 
+Connections
+-----------
+
+### A Couple Of Wrinkles ###
+
+There are a couple of weird wrinkles in all this which you may or may not have missed.  Wrinkle
+one:
+
+    class MyModel < Pod4::Model
+
+      class Interface < Pod4::PgInterface
+        set_id_fld :id
+        set_table  :my_table
+      end
+
+      set_interface Interface.new($pgconn)  # <- wrinkle
+      attr_columns :one, two, three
+    end
+      
+You _instantiate_ the interface at the point where you _define_ the model.  I admit this is a
+little odd. It wasn't a specific design decision on my part; rather it was the cleanest way to get
+where I was going. 
+
+In practice this means you need to get your DB connection details from somewhere, maybe create your
+Sequel DB object; and only then can you require your models.
+
+Leading on from this, wrinkle two: except when using Sequel (which behaves differently) each
+interface has its own connection to the database. This means that your application has (simplifying
+a bit here) one database connection for each model class.  So if you have a Customer model and a
+Orders model, your application will hold two connections to the database.  All customer enquiries
+share a single connection, and all order enquiries share a single connection.
+
+I'm finding that, generally, this scales about right. But if you have a lot of different models and a
+database that runs out of connections easily, it might be problematic.
+
+### The Connection Object ###
+
+The solution to both of these wrinkles, if you need one, is to use a Pod4::Connection object:
+
+    #
+    # init.rb -- bootup for my project
+    #
+
+    # Require libraries
+    require "sequel"
+    require "pod4"
+    require "pod4/sequel_interface"
+    require "pod4/connection"
+
+    # require models
+    $conn = Pod4::Connection.new(interface: Pod4::SequelInterface)
+    require_relative "models/customer"
+
+    # set up database connection
+    hash = get_sequel_params
+    $conn.data_layer_options = Sequel.connect(hash)
+
+    #############
+
+    #
+    # models/customer.rb ( only a part shown)
+    #
+
+    class Foo < Pod4::Model
+      class Interface < Pod4::SequelInterface
+        set_table    :foo
+        set_id_field :id
+      end
+
+      set_interface Interface.new($conn)
+
+TL;DR: the only code that needs to go in the middle of your requires is the line defining a
+Connection object; you pass that to the interface instead.  You can set up the parameters
+the interface needs and pass them to the connection object afterwards.  
+
+With TdsInterface and PgInterface you can pass the same connection to multiple models and they will
+share it.  These interfaces take a Pod4::ConnectionPool instead, but otherwise the code looks
+exactly the same as the above example.
+
+(Technical note: the ConnectionPool object will actually provide multiple connections, one per
+thread that uses it.  This satisfies the requirement of the underlying libraries that connections
+are not shared between threads, and therefore ensures that Pod4 is more or less thread safe.  You
+get this functionality automatically -- if you don't define a ConnectionPool, then the interface
+will create one internally. Sequel uses its own thread pool, of course, and we only use the one
+Sequel DB object for the whole of Pod4, so it doesn't need any of that.)
+
+
 BasicModel
 ----------
 
@@ -470,7 +560,6 @@ get the idea:
         set_id_fld :id
       end
 
-
       # Here we set what settings always exist for a user
       Setting = Struct.new(:setName, :default)
 
@@ -485,19 +574,14 @@ get the idea:
       set_interface UserInterface.new($db)
       attr_reader :userid, :depot, :store, :menu, :roles, :name, :nick, :mail
 
-
       class << self
-
         def keys; DefaultSettings.map{|x| x.setName }; end
 
         def list
           array = interface.select(%Q|select distinct userid from settings;|)
           array.map {|r| self.new( r[:userid] ).read }
         end
-
-      end
-      ##
-      
+      end # of class << self
 
       def initialize(userid=nil)
         super(userid)
@@ -506,7 +590,6 @@ get the idea:
           instance_variable_set( "@#{key}".to_sym, nil )
         end
       end
-
 
       def read
         lst = interface.list(userid: @model_id)
@@ -522,7 +605,6 @@ get the idea:
         self
       end
 
-
       def to_ot
         hash = self.class.keys.each_with_object({}) do |k,m| 
           m[k] = instance_variable_get("@#{k}".to_sym)
@@ -530,7 +612,6 @@ get the idea:
 
         Octothorpe.new(hash)
       end
-
 
       def set_merge(hash)
         self.class.keys.each do |key|
@@ -542,131 +623,12 @@ get the idea:
     end
 
 
-Connections
------------
-
-### A Couple Of Wrinkles ###
-
-There are a couple of weird wrinkles in all this which you may or may not have
-missed.  Wrinkle one:
-
-    class MyModel < Pod4::Model
-
-      class Interface < Pod4::PgInterface
-        set_id_fld :id
-        set_table  :my_table
-      end
-
-      set_interface Interface.new($pgconn)  # <- wrinkle
-      attr_columns :one, two, three
-    end
-      
-You *instantiate* the interface at the point where you *define* the model.
-
-This wasn't a specific design decision on my part; rather it was the cleanest
-way to get where I was going. I'm not normally finding it a problem, but you
-might need a way around it.
-
-For example, if you are using SequelInterface and passing it a Sequel DB object
-to instantiate, it might be awkward to delay defining all the models until you
-have made a Sequel connection.
-
-Wrinkle two: each interface stores its own connection. So all the instances of
-MyModel you create will share that connection, and if I have a MyOtherModel
-which connects to the same database, it will use a different one. 
-
-Normally I think this is about right, but you might need more control. You
-might have a lot of little models that you want to share a connection, or you
-might have one model for which a single connection is not enough.  
-
-These two wrinkles play together. For example, since Interfaces are
-instantiated when the model is defined, and each model gets one connection,
-then in my default Sinatra application that uses Pod4 *all users* would share a
-single connection to a model! -- except that I use SequelInterface, which has
-its own connection pool, to get around this.
-
-### Pod4::Connection ###
-
-The solution is a very simple class, Pod4::Connection. You may pass an instance
-of it instead of the usual parameter to any Interface when you instantiate it.
-You can give it an connection manually yourself if you want, but failing that,
-the interface will give it a connection the first time it needs one.
-
-So, you can use it to share a common connection between models:
-
-    $conn = Pod4::Connection.new
-
-    class FirstModel < Pod4::Model
-      class Interface < PgInterface
-        set_table  :foo
-        set_id_fld :id
-      end
-
-      set_interface Interface.new($conn)
-      attr_columns :one, :two
-    end
-
-    class SecondModel < Pod4::Model
-      class Interface < PgInterface
-        set_table  :bar
-        set_id_fld :id
-      end
-
-      set_interface Interface.new($conn)
-      attr_columns :one, :two
-    end
-
-You can use it to defer Sequel connection until all the models are defined:
-
-    $conn = Pod4::Connection.new
-
-    class MyModel < Pod4::Model
-      class Interface < SequelInterface
-        set_table  :foo
-        set_id_fld :id
-      end
-
-      set_interface Interface.new($conn)
-      attr_columns :one, :two
-    end
-
-    $conn.set_connection(do_sequel_connecting_now)
-
-And in theory you could subclass it to provide a connection pool, if you were
-mad enough to use Pod4 for something that needed one (and not use
-SequelInterface, which in the nature of things uses Sequel's connection pool).
-
-Here's a stupid example that would accept multiple connections and pick a
-random one each time it was asked:
-
-    class ConnectionPool < Pod4::Connection
-
-      def initialize(*args)
-        super
-        @pool = []
-      end
-
-      def connection(interface)
-        @connection = @pool.shuffle!.first unless @pool.empty?
-        super
-      end
-
-      def set_connection(connection)
-        @pool << @connection
-      end
-
-    end
-
-Picking a random connection like this is probably a terrible idea, by the way.
-I'm imagining a model getting into a race condition with *itself* over two
-consecutive interface calls. To do it properly, I suspect you would need to
-keep track of which interface you gave which connection.
-
 Extensions
 ----------
 
-There are now some mixins that you can use to extend the functionality of Pod4 models.  Have a look
+There are some mixins that you can use to extend the functionality of Pod4 models.  Have a look
 at the comments at the top of the mixin in question if you want details.
 
 * typecasting -- force columns to be a specific ruby type, validation helpers, some encoding stuff
 * encrypting  -- encrypt text columns
+

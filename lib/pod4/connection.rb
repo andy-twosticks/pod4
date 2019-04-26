@@ -38,6 +38,7 @@ module Pod4
     def client(interface)
       fail_bad_interfaces(interface)
       @client ||= interface.new_connection(@data_layer_options)
+      @client
     end
 
     ##

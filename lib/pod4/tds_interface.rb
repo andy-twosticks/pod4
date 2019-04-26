@@ -1,11 +1,12 @@
-require 'octothorpe'
-require 'date'
-require 'time'
-require 'bigdecimal'
+require "octothorpe"
+require "date"
+require "time"
+require "bigdecimal"
 
-require_relative 'interface'
-require_relative 'errors'
-require_relative 'sql_helper'
+require_relative "interface"
+require_relative "connection_pool"
+require_relative "errors"
+require_relative "sql_helper"
 
 
 module Pod4
@@ -30,13 +31,11 @@ module Pod4
 
     attr_reader :id_fld
 
-
     class << self
       #--
       # These are set in the class because it keeps the model code cleaner: the definition of the
       # interface stays in the interface, and doesn't leak out into the model.
       #++
-
 
       ##
       # Use this to set the database name.
@@ -49,7 +48,6 @@ module Pod4
         raise Pod4Error, "You need to use set_db to set the database name"
       end
 
-
       ##
       # Use this to set the schema name (optional)
       #
@@ -58,7 +56,6 @@ module Pod4
       end
 
       def schema; nil; end
-
 
       ##
       # Use this to set the name of the table
@@ -71,7 +68,6 @@ module Pod4
         raise Pod4Error, "You need to use set_table to set the table name"
       end
 
-
       ##
       # This sets the column that holds the unique id for the table
       #
@@ -83,25 +79,28 @@ module Pod4
         raise Pod4Error, "You need to use set_table to set the table name"
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
-    # Initialise the interface by passing it a TinyTds connection hash.# For testing ONLY you can
-    # also pass an object which pretends to be a TinyTds client, in which case the hash is pretty
-    # much ignored.
+    # Initialise the interface by passing it a TinyTds connection hash OR a ConnectionPool object.
     #
-    def initialize(connectHash, testClient=nil)
+    def initialize(args)
+      case args
+        when Hash
+          @connection = ConnectionPool.new(interface: self.class)
+          @connection.data_layer_options = args
+
+        when ConnectionPool
+          @connection = args
+
+        else
+          raise ArgumentError, "Bad Argument"
+      end
+
       sc = self.class
       raise(Pod4Error, 'no call to set_db in the interface definition')     if sc.db.nil?
       raise(Pod4Error, 'no call to set_table in the interface definition')  if sc.table.nil?
       raise(Pod4Error, 'no call to set_id_fld in the interface definition') if sc.id_fld.nil?
-      raise(ArgumentError, 'invalid connection hash') unless connectHash.kind_of?(Hash)
-
-      @connect_hash = connectHash.dup
-      @test_client  = testClient 
-      @client       = nil
 
       TinyTds::Client.default_query_options[:as] = :hash
       TinyTds::Client.default_query_options[:symbolize_keys] = true
@@ -109,7 +108,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     def db;     self.class.db;     end
     def schema; self.class.schema; end
@@ -124,13 +122,11 @@ module Pod4
       "[#{super(fld, nil)}]"
     end
 
-
     ##
     # Selection is a hash or something like it: keys should be field names. We return any records
     # where the given fields equal the given values.
     #
     def list(selection=nil)
-
       raise(Pod4::DatabaseError, 'selection parameter is not a hash') \
         unless selection.nil? || selection.respond_to?(:keys)
 
@@ -140,7 +136,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Record is a hash of field: value
@@ -157,7 +152,6 @@ module Pod4
     rescue => e
       handle_error(e) 
     end
-
 
     ##
     # ID corresponds to whatever you set in set_id_fld
@@ -178,10 +172,8 @@ module Pod4
         && e.cause.class   == TinyTds::Error \
         && e.cause.message =~ /conversion failed/i
 
-
       handle_error(e)
     end
-
 
     ##
     # ID is whatever you set in the interface using set_id_fld record should be a Hash or
@@ -202,7 +194,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # ID is whatever you set in the interface using set_id_fld
     #
@@ -217,7 +208,6 @@ module Pod4
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Override the sql_insert method in sql_helper since our SQL is rather different
@@ -234,7 +224,6 @@ module Pod4
       [sql, vals]
     end
 
-
     ##
     # Run SQL code on the server. Return the results.
     #
@@ -250,10 +239,10 @@ module Pod4
     def select(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
 
-      open unless connected?
+      client = ensure_connected
 
       Pod4.logger.debug(__FILE__){ "select: #{sql}" }
-      query = @client.execute(sql)
+      query = client.execute(sql)
 
       rows = []
       query.each do |r| 
@@ -273,17 +262,16 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # Run SQL code on the server; return true or false for success or failure
     #
     def execute(sql)
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
 
-      open unless connected?
+      client = ensure_connected
 
       Pod4.logger.debug(__FILE__){ "execute: #{sql}" }
-      r = @client.execute(sql)
+      r = client.execute(sql)
 
       r.do
       r
@@ -292,62 +280,79 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # Wrapper for the data source library escape routine, which is all we can offer in terms of SQL
     # injection protection. (Its not much.)
     #
     def escape(thing)
-      open unless connected?
-      thing.kind_of?(String) ? @client.escape(thing) : thing
+      client = ensure_connected
+      thing.kind_of?(String) ? client.escape(thing) : thing
     end
-
-
-    private
-
 
     ##
     # Open the connection to the database.
     #
-    # No parameters are needed: the option hash has everything we need.
+    # This is called by ConnectionPool.
     #
-    def open
+    def new_connection(params)
       Pod4.logger.info(__FILE__){ "Connecting to DB" }
-      client = @test_Client || TinyTds::Client.new(@connect_hash)
+      client = TinyTds::Client.new(params)
       raise "Bad Connection" unless client.active?
 
-      @client = client
-      execute("use [#{self.class.db}]")
+      client.execute("use [#{self.class.db}]").do
 
-      self
+      client
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Close the connection to the database.
     #
-    # We don't actually use this, but it's here for completeness. Maybe a caller will find it
-    # useful.
+    # We don't actually use this.  Theoretically it would be called by ConnectionPool, but we
+    # don't.  I've left it in for completeness.
     #
-    def close
+    def close_connection(conn)
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }
-      @client.close unless @client.nil?
+      conn.close unless conn.nil?
 
     rescue => e
       handle_error(e)
     end
 
+    ##
+    # Expose @connection for test purposes only
+    #
+    def _connection
+      @connection
+    end
+
+    private
+
+    ##
+    # Return an open client connection from the Connection Pool, or else raise an error
+    #
+    def ensure_connected
+      client = @connection.client(self)
+      
+      # If this connection has expired somehow, try to get another one.
+      unless connected?(client)
+        @connection.drop(self)
+        client = @connection.client(self)
+      end
+
+      fail "Bad Connection" unless connected?(client)
+
+      client
+    end
 
     ##
     # True if we are connected to a database
     #
-    def connected?
-      @client && @client.active?
+    def connected?(conn)
+      conn && conn.active?
     end
-
 
     def handle_error(err, kaller=nil)
       kaller ||= caller[1..-1]
@@ -369,7 +374,6 @@ module Pod4
 
     end
 
-
     ##
     # Overrride the quote routine in sql_helper.
     #
@@ -390,12 +394,11 @@ module Pod4
 
     end
 
-
     def read_or_die(id)
       raise CantContinue, "'No record found with ID '#{id}'" if read(id).empty?
     end
 
-  end
+  end # of TdsInterface
 
 
 end

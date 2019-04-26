@@ -211,7 +211,8 @@ module Pod4
       raise(ArgumentError, "Bad sql parameter") unless sql.kind_of?(String)
       Pod4.logger.debug(__FILE__) { "Execute SQL: #{sql}" }
 
-      @connection.client(self).run(sql)
+      c = @connection.client(self)
+      c.run(sql)
 
     rescue => e
       handle_error(e)

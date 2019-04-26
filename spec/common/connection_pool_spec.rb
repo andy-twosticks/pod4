@@ -220,5 +220,27 @@ describe Pod4::ConnectionPool do
   end # of #close
 
 
+  describe "#drop" do
+    before(:each) do
+      @connection = ConnectionPool.new(interface: ifce_class)
+      @connection.data_layer_options = "meh"
+      @interface = ifce_class.new
+      @interface.set_conn "flong"
+
+      @connection.client(@interface)
+      expect( @connection._pool.size ).to eq 1
+      expect( @connection._pool.first.thread_id ).to eq Thread.current.object_id
+    end
+     
+    it "removes the client object from the pool entirely" do
+      @connection.drop(@interface)
+      expect( @connection._pool.size ).to eq 0
+    end
+    
+  end # of #drop
+  
+  
+
+
 end
 

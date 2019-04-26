@@ -38,8 +38,12 @@ module Pod4
       end
 
       def release
-        pi = @items.find{|x| x.thread_id == Thread.current.object_id }
-        pi.thread_id = nil
+        pi = get_current
+        pi.thread_id = nil if pi
+      end
+
+      def drop
+        @items.delete_if{|x| x.thread_id == Thread.current.object_id }
       end
 
       def size 
@@ -118,11 +122,22 @@ module Pod4
     ##
     # De-assign the client for the current thread from that thread.
     #
+    # We never ask the interface to close the connection to the database.  There is no advantage in
+    # doing that for us.
+    #
     # Note: The interface passes itself in case we want to call it back to actually close the
     # client; but clients are assigned to a _thread_.
     #
     def close(interface)
       @pool.release
+    end
+
+    ##
+    # Remove the client object entirely -- for example, because the connection to the database has
+    # expired.
+    #
+    def drop(interface)
+      @pool.drop
     end
 
     ##

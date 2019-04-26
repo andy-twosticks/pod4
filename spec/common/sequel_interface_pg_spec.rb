@@ -140,6 +140,7 @@ describe "SequelInterface (Pg)" do
         expect( ifce._connection.interface_class ).to eq sequel_interface_class
       end
       
+      # Normally we'd expect on _every_ use, but Sequel is different
       it "calls Connection#client on first use" do
         expect( ifce._connection ).to receive(:client).with(ifce).and_call_original
         ifce.list
@@ -156,6 +157,7 @@ describe "SequelInterface (Pg)" do
         expect( ifce._connection.interface_class ).to eq sequel_interface_class
       end
     
+      # Normally we'd expect on _every_ use, but Sequel is different
       it "calls Connection#client on first use" do
         # When we pass a connection object we are expected to set the data layer option
         conn.data_layer_options = Sequel.connect(db_url)
@@ -553,6 +555,12 @@ describe "SequelInterface (Pg)" do
     end
 
   end # #selectp
+
+
+  #
+  # We'll not be testing #new_connection or #close_connection since for Sequel, they basically do
+  # nothing.
+  #
 
 
 end
