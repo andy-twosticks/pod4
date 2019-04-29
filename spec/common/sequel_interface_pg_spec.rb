@@ -62,7 +62,7 @@ describe "SequelInterface (Pg)" do
   let(:prod_interface_class) do
     Class.new SequelInterface do
       set_table  :product
-      set_id_fld :code
+      set_id_fld :code, autoincrement: false
     end
   end
 

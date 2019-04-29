@@ -61,11 +61,17 @@ module Pod4
       ##
       # Set the unique id field on the table.
       #
-      def set_id_fld(idFld)
+      def set_id_fld(idFld, opts={})
+        ai = opts.fetch(:autoincrement) { true }
         define_class_method(:id_fld) {idFld.to_s.to_sym}
+        define_class_method(:id_ai)  {!!ai}
       end
 
       def id_fld
+        raise Pod4Error, "You need to use set_id_fld to set the ID column name"
+      end
+
+      def id_ai
         raise Pod4Error, "You need to use set_id_fld to set the ID column name"
       end
 
@@ -107,6 +113,7 @@ module Pod4
     def schema; self.class.schema; end
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
+    def id_ai;  self.class.id_ai;  end
 
     def quoted_table
       if schema 
@@ -135,22 +142,21 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
+      raise(ArgumentError, "ID field missing from record") \
+        if !id_ai && record[id_fld].nil? && record[id_fld.to_s].nil?
+
       Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{record.inspect}" }
 
       id = db_table.insert( sanitise_hash(record.to_h) )
 
       # Sequel doesn't return the key unless it is an autoincrement; otherwise it turns a row
-      # number regardless.  It probably doesn' t matter, but try to catch that anyway.
-      # (bamf: If your non-incrementing key happens to be an integer, this won't work...)
-
-      id_val = record[id_fld] || record[id_fld.to_s]
-
-      if (id.kind_of?(Fixnum) || id.nil?) && id_val && !id_val.kind_of?(Fixnum)
-        id_val
-      else
+      # number, which isn't much use to us. We always return the key.
+      if id_ai
         id
+      else
+        record[id_fld] || record[id_fld.to_s]
       end
-
+    
     rescue => e
       handle_error(e) 
     end

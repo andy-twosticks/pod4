@@ -73,13 +73,12 @@ describe "TdsInterface" do
       set_db     :pod4_test
       set_schema :public
       set_table  :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
   let(:bad_interface_class1) do
     Class.new TdsInterface do
-      set_db :pod4_test
       set_table :customer
     end
   end
@@ -95,7 +94,7 @@ describe "TdsInterface" do
     Class.new TdsInterface do
       set_db     :pod4_test
       set_table  :product
-      set_id_fld :code
+      set_id_fld :code, autoincrement: false
     end
   end
 
@@ -217,7 +216,28 @@ describe "TdsInterface" do
       expect( TdsInterface ).to respond_to(:set_id_fld).with(1).argument
     end
 
+    it "takes an optional second 'autoincrement' argument" do
+      expect{ TdsInterface.set_id_fld(:foo, autoincrement: false) }.not_to raise_error
+    end
+
   end
+
+
+  describe "TdsInterface.id_ai" do
+
+    it "returns true if autoincrement is true" do
+      expect( schema_interface_class.id_ai ).to eq true
+    end
+
+    it "returns false if autoincrement is false" do
+      expect( prod_interface_class.id_ai ).to eq false
+    end
+
+    it "returns true if autoincrement is not specified" do
+      expect( tds_interface_class.id_ai ).to eq true
+    end
+
+  end # of PgInterface.id_ai
 
 
   describe "TdsInterface.id_fld" do
@@ -278,6 +298,11 @@ describe "TdsInterface" do
 
     it "raises a Pod4::DatabaseError if anything goes wrong" do
       expect{ interface.create(one: "two") }.to raise_exception DatabaseError
+    end
+
+    it "raises an ArgumentError if ID field is missing in hash and not AI" do
+      hash = {name: "bar"}
+      expect{ prod_interface.create(Octothorpe.new hash) }.to raise_error ArgumentError
     end
 
     it "creates the record when given a hash" do

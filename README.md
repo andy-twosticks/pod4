@@ -168,7 +168,7 @@ Here is the model and interface definition that goes with the above example:
 
       class ExampleInterface < Pod4::PgInterface
         set_table :example
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface ExampleInterface.new($pg_conn)
@@ -199,7 +199,8 @@ the data. What they are depends on the interface, but the ones for PgInterface a
 
 Actually, _every_ interface defines `set_id_fld`. Instances of a model _must_ be represented by a
 single ID field that provides a unique identifier. Pod4 does not care what it's called or what data
-type it is -- if you say that's what makes it unique, that's good enough.
+type it is -- if you say that's what makes it unique, that's good enough. Additionally you can
+specify whether your key autoincrements or not. If you don't say, we assume that it does.
 
 Internally, Interfaces talk the same basic language of list / create / read / update / delete that
 models do. Sometimes you might want to add a special interface method for a specific database
@@ -261,7 +262,7 @@ Here's a model with some validation:
       class CustomerInterface < Pod4::PgInterface
         set_schema :pod4example
         set_table  :customer
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface CustomerInterface.new($pg_conn)
@@ -315,7 +316,7 @@ BigDecimal -- but it's not hard to do yourself.
       class ProductInterface < Pod4::PgInterface
         set_schema :pod4example
         set_table  :product
-        set_id_fld :product_id
+        set_id_fld :product_id, autoincrement: true
       end
 
       set_interface ProductInterface.new($pg_conn)
@@ -355,7 +356,7 @@ Pod4 does not provide relations. But, I'm not sure that it needs to. Look:
 
       class BlogPostInterface < Pod4::PgInterface
         set_table  :blogpost
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface BlogPostInterface.new($conn)
@@ -399,7 +400,7 @@ If your interface is connected to a SQL database, it should provide two more met
 
       class BlogPostInterface < Pod4::PgInterface
         set_table  :blogpost
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface BlogPostInterface.new($conn)
@@ -448,7 +449,7 @@ one:
     class MyModel < Pod4::Model
 
       class Interface < Pod4::PgInterface
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
         set_table  :my_table
       end
 
@@ -503,7 +504,7 @@ The solution to both of these wrinkles, if you need one, is to use a Pod4::Conne
     class Foo < Pod4::Model
       class Interface < Pod4::SequelInterface
         set_table    :foo
-        set_id_field :id
+        set_id_field :id, autoincrement: true
       end
 
       set_interface Interface.new($conn)

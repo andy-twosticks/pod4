@@ -72,7 +72,7 @@ cast_bool	lib/pod4/pg_interface.rb	/^    def cast_bool(val)$/;"	f	class:Pod4.lis
 cast_row_fudge	lib/pod4/pg_interface.rb	/^    def cast_row_fudge(row, oids)$/;"	f	class:Pod4.list.create.read.update
 clear_alerts	lib/pod4/basic_model.rb	/^    def clear_alerts$/;"	f	class:Pod4.BasicModel
 clear_method	spec/common/nebulous_interface_spec.rb	/^    def clear_method;   @@method = nil;  end$/;"	f	class:FakeRequester
-clearing_cache	lib/pod4/nebulous_interface.rb	/^    def clearing_cache$/;"	f	class:Pod4.NebulousInterface.validate_params
+clearing_cache	lib/pod4/nebulous_interface.rb	/^    def clearing_cache$/;"	f	class:Pod4.NebulousInterface.validate_params.create
 client	lib/pod4/connection.rb	/^    def client(interface)$/;"	f	class:Pod4.Connection.initialize
 client	lib/pod4/connection_pool.rb	/^    def client(interface)$/;"	f	class:Pod4.ConnectionPool
 close	lib/pod4/connection.rb	/^    def close(interface)$/;"	f	class:Pod4.Connection.initialize
@@ -117,7 +117,7 @@ decrypt	lib/pod4/encrypting.rb	/^      def decrypt(string)$/;"	f	class:Pod4.Encr
 define_class_method	lib/pod4/metaxing.rb	/^    def define_class_method(method, *args, &blk)$/;"	f	class:Pod4.Metaxing
 delete	lib/pod4/interface.rb	/^    def delete(id)$/;"	f	class:Pod4.Interface
 delete	lib/pod4/model.rb	/^    def delete$/;"	f	class:Pod4.Model.test_for_octo
-delete	lib/pod4/nebulous_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.NebulousInterface.validate_params
+delete	lib/pod4/nebulous_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.NebulousInterface.validate_params.create
 delete	lib/pod4/null_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.NullInterface
 delete	lib/pod4/pg_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.list.create.read.update
 delete	lib/pod4/sequel_interface.rb	/^    def delete(id)$/;"	f	class:Pod4.create
@@ -165,12 +165,19 @@ get_all	lib/pod4/param.rb	/^    def get_all; Octothorpe.new(params.dup); end$/;"
 get_cipher	lib/pod4/encrypting.rb	/^      def get_cipher(direction)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 get_current	lib/pod4/connection_pool.rb	/^      def get_current $/;"	f	class:Pod4.ConnectionPool.Pool
 get_free	lib/pod4/connection_pool.rb	/^      def get_free$/;"	f	class:Pod4.ConnectionPool.Pool
-handle_error	lib/pod4/nebulous_interface.rb	/^    def handle_error(err, kaller=caller[1..-1])$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+handle_error	lib/pod4/nebulous_interface.rb	/^    def handle_error(err, kaller=caller[1..-1])$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 handle_error	lib/pod4/null_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.NullInterface
 handle_error	lib/pod4/pg_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.list.create.read.update
 handle_error	lib/pod4/sequel_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.create
 handle_error	lib/pod4/tds_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.list.create.read.update
-hashy?	lib/pod4/nebulous_interface.rb	/^    def hashy?(obj)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+hashy?	lib/pod4/nebulous_interface.rb	/^    def hashy?(obj)$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
+id_ai	lib/pod4/interface.rb	/^    def id_ai$/;"	f	class:Pod4.Interface
+id_ai	lib/pod4/nebulous_interface.rb	/^      def id_ai$/;"	f	class:Pod4.NebulousInterface
+id_ai	lib/pod4/pg_interface.rb	/^      def id_ai$/;"	f	class:Pod4.PgInterface
+id_ai	lib/pod4/pg_interface.rb	/^    def id_ai;  self.class.id_ai;  end$/;"	f	class:Pod4
+id_ai	lib/pod4/sequel_interface.rb	/^      def id_ai$/;"	f	class:Pod4.SequelInterface
+id_ai	lib/pod4/sequel_interface.rb	/^    def id_ai;  self.class.id_ai;  end$/;"	f	class:Pod4
+id_ai	lib/pod4/tds_interface.rb	/^    def id_ai ; self.class.id_ai;  end$/;"	f	class:Pod4
 id_fld	lib/pod4/interface.rb	/^    def id_fld$/;"	f	class:Pod4.Interface
 id_fld	lib/pod4/nebulous_interface.rb	/^      def id_fld$/;"	f	class:Pod4.NebulousInterface
 id_fld	lib/pod4/pg_interface.rb	/^      def id_fld$/;"	f	class:Pod4.PgInterface
@@ -220,7 +227,7 @@ list_contains	spec/common/nebulous_interface_spec.rb	/^  def list_contains(id)$/
 list_contains	spec/common/null_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/sequel_interface_pg_spec.rb	/^  def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/pg_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f
-list_contains	spec/mri/sequel_interface_spec.rb	/^    def list_contains(ifce, id)$/;"	f
+list_contains	spec/mri/sequel_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/tds_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f	class:db_setup
 log	lib/pod4/alert.rb	/^    def log(file='')$/;"	f	class:Pod4.Alert
 logger	lib/pod4.rb	/^  def self.logger$/;"	F	class:Pod4
@@ -254,7 +261,7 @@ new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); end$
 new_connection	spec/common/connection_spec.rb	/^  def new_connection(args); {conn: args}; end$/;"	f	class:ConnectionTestingI
 new_connection	thread_test.rb	/^  def new_connection(opts); @conn; end$/;"	f	class:MyInterface
 or_die	lib/pod4/basic_model.rb	/^    alias :or_die :raise_exceptions$/;"	a	class:Pod4.BasicModel
-param_string	lib/pod4/nebulous_interface.rb	/^    def param_string(action, hashParam, id=nil)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+param_string	lib/pod4/nebulous_interface.rb	/^    def param_string(action, hashParam, id=nil)$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 params	lib/pod4/param.rb	/^    def params; @params ||= {}; end$/;"	f	class:Pod4.Param
 parse_fldsvalues	lib/pod4/sql_helper.rb	/^    def parse_fldsvalues(hash)$/;"	f	class:Pod4.SQLHelper
 parse_for_params	lib/pod4/pg_interface.rb	/^    def parse_for_params(sql, vals)$/;"	f	class:Pod4.list.create.read.update
@@ -269,7 +276,7 @@ quoted_table	lib/pod4/tds_interface.rb	/^    def quoted_table$/;"	f	class:Pod4
 raise_exceptions	lib/pod4/basic_model.rb	/^    def raise_exceptions$/;"	f	class:Pod4.BasicModel
 read	lib/pod4/interface.rb	/^    def read(id)$/;"	f	class:Pod4.Interface
 read	lib/pod4/model.rb	/^    def read$/;"	f	class:Pod4.Model.test_for_octo
-read	lib/pod4/nebulous_interface.rb	/^    def read(id, opts={})$/;"	f	class:Pod4.NebulousInterface.validate_params
+read	lib/pod4/nebulous_interface.rb	/^    def read(id, opts={})$/;"	f	class:Pod4.NebulousInterface.validate_params.create
 read	lib/pod4/null_interface.rb	/^    def read(id)$/;"	f	class:Pod4.NullInterface
 read	lib/pod4/pg_interface.rb	/^    def read(id)$/;"	f	class:Pod4.list.create
 read	lib/pod4/sequel_interface.rb	/^    def read(id)$/;"	f	class:Pod4.create
@@ -296,8 +303,8 @@ selectp	lib/pod4/pg_interface.rb	/^    def selectp(sql, *vals)$/;"	f	class:Pod4.
 selectp	lib/pod4/sequel_interface.rb	/^    def selectp(sql, *values)$/;"	f	class:Pod4.create
 send	spec/common/nebulous_interface_spec.rb	/^      def send(*args);          FakeRequester.set_method :send;          super; end$/;"	f	class:send
 send	spec/common/nebulous_interface_spec.rb	/^  def send(target, requestmsg)$/;"	f
-send_message	lib/pod4/nebulous_interface.rb	/^    def send_message(verb, paramStr, with_cache=true)$/;"	f	class:Pod4.NebulousInterface.validate_params
-send_message_helper	lib/pod4/nebulous_interface.rb	/^    def send_message_helper(verb, paramStr, with_cache)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+send_message	lib/pod4/nebulous_interface.rb	/^    def send_message(verb, paramStr, with_cache=true)$/;"	f	class:Pod4.NebulousInterface.validate_params.create
+send_message_helper	lib/pod4/nebulous_interface.rb	/^    def send_message_helper(verb, paramStr, with_cache)$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 send_no_cache	spec/common/nebulous_interface_spec.rb	/^      def send_no_cache(*args); FakeRequester.set_method :send_no_cache; super; end$/;"	f	class:send
 sequel_fudges	lib/pod4/sequel_interface.rb	/^    def sequel_fudges(db)$/;"	f	class:Pod4.create
 set	lib/pod4/model.rb	/^    def set(ot)$/;"	f	class:Pod4.Model.test_for_octo
@@ -308,10 +315,10 @@ set_conn	spec/common/connection_pool_spec.rb	/^      def set_conn(c); @conn = c;
 set_conn	thread_test.rb	/^  def set_conn(c); @conn = c; end$/;"	f	class:MyInterface
 set_db	lib/pod4/tds_interface.rb	/^      def set_db(db)$/;"	f	class:Pod4.TdsInterface
 set_encryption_iv	lib/pod4/encrypting.rb	/^      def set_encryption_iv(iv)$/;"	f	class:Pod4.Encrypting.InstanceMethods
-set_id_fld	lib/pod4/nebulous_interface.rb	/^      def set_id_fld(idFld)$/;"	f	class:Pod4.NebulousInterface
-set_id_fld	lib/pod4/pg_interface.rb	/^      def set_id_fld(idFld)$/;"	f	class:Pod4.PgInterface
-set_id_fld	lib/pod4/sequel_interface.rb	/^      def set_id_fld(idFld)$/;"	f	class:Pod4.SequelInterface
-set_id_fld	lib/pod4/tds_interface.rb	/^      def set_id_fld(idFld) $/;"	f	class:Pod4.TdsInterface
+set_id_fld	lib/pod4/nebulous_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.NebulousInterface
+set_id_fld	lib/pod4/pg_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.PgInterface
+set_id_fld	lib/pod4/sequel_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.SequelInterface
+set_id_fld	lib/pod4/tds_interface.rb	/^      def set_id_fld(idFld, opts={}) $/;"	f	class:Pod4.TdsInterface
 set_interface	lib/pod4/basic_model.rb	/^      def set_interface(interface)$/;"	F	class:Pod4.BasicModel
 set_iv_column	lib/pod4/encrypting.rb	/^      def set_iv_column(column)$/;"	f	class:Pod4.Encrypting.ClassMethods
 set_key	lib/pod4/encrypting.rb	/^      def set_key(key)$/;"	f	class:Pod4.Encrypting.ClassMethods
@@ -347,7 +354,7 @@ to_ot	lib/pod4/model.rb	/^    def to_ot$/;"	f	class:Pod4.Model.test_for_octo
 type	lib/pod4/alert.rb	/^    attr_reader :type$/;"	f	class:Pod4.Alert
 update	lib/pod4/interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.Interface
 update	lib/pod4/model.rb	/^    def update$/;"	f	class:Pod4.Model.test_for_octo
-update	lib/pod4/nebulous_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.NebulousInterface.validate_params
+update	lib/pod4/nebulous_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.NebulousInterface.validate_params.create
 update	lib/pod4/null_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.NullInterface
 update	lib/pod4/pg_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.list.create.read
 update	lib/pod4/sequel_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.create
@@ -357,5 +364,5 @@ use_iv?	lib/pod4/encrypting.rb	/^      def use_iv?$/;"	f	class:Pod4.Encrypting.I
 validate	lib/pod4/model.rb	/^    def validate(vmode=nil)$/;"	f	class:Pod4.Model.test_for_octo
 validate	spec/common/model_new_validate_spec.rb	/^      def validate(vmode)$/;"	f
 validate_params	lib/pod4/nebulous_interface.rb	/^      def validate_params$/;"	f	class:Pod4.NebulousInterface
-verb_for	lib/pod4/nebulous_interface.rb	/^    def verb_for(action)$/;"	f	class:Pod4.NebulousInterface.validate_params.send_message
+verb_for	lib/pod4/nebulous_interface.rb	/^    def verb_for(action)$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 verbs	lib/pod4/nebulous_interface.rb	/^      def verbs; {}; end$/;"	f	class:Pod4.NebulousInterface

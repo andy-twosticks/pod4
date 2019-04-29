@@ -38,7 +38,14 @@ module Pod4
     # A field name in the data source, the name of the unique ID field.
     #
     def id_fld
-      raise NotImplemented, "Interface needs to define an 'id_fld' method"
+      raise NotImplemented, "Interface has no 'id_fld' method (use `set_id_fld`?)"
+    end
+
+    ##
+    # true if id_fld autoincrements
+    #
+    def id_ai
+      raise NotImplemented, "Interface has no 'id_ai' method (use `set_id_fld`?)"
     end
 
     ##

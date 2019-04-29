@@ -18,8 +18,6 @@ Autoincrement defaults to true if missing. This should make it a non-breaking ch
 the DSL, although we will be removing the code that attempts to divine whether an ID autoincrements,
 so it might in theory break things, and we should treat it as a breaking change.
 
-We also accept `AutoIncrement: true`, `auto_increment: true`, `"autoincrement" => true`, etc.
-
 You can now add the id field to `attr_columns` even if the ID field autoincrements. Which means
 that you can refer to the id field by name as an attribute instead of using `@model_id`, if you
 want.

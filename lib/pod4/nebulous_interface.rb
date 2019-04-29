@@ -8,7 +8,7 @@ module Pod4
   ##
   # An interface to talk to a Nebulous Target.
   #
-  # Each interface can only speak with one target, designated with #set_target.# The developer must
+  # Each interface can only speak with one target, designated with #set_target. The developer must
   # also set a unique ID key using #set_id_fld.
   #
   # The primary challenge here is to map the CRUDL methods (which interfaces contract to implement)
@@ -42,7 +42,7 @@ module Pod4
   # only keys which are symbols are translated to the corresponding values in the record or
   # selection hash; anything else is passed literally in the Nebulous parameter string.
   #
-  # When you subclass NebulousInterfce, you may want to override some or all of the CRUDL methods
+  # When you subclass NebulousInterface, you may want to override some or all of the CRUDL methods
   # so that your callers can pass specific parameters rather than a hash; the above example
   # demonstrates this.
   #
@@ -78,7 +78,7 @@ module Pod4
   #
   class NebulousInterface < Interface
 
-    attr_reader :id_fld
+    attr_reader :id_fld, :id_ai
 
     # The NebulousStomp Message object holding the response from the last message sent, or, nil.
     attr_reader :response 
@@ -136,11 +136,17 @@ module Pod4
 
       ##
       # Set the name of the ID parameter (needs to be in the CRUD verbs param list)
-      def set_id_fld(idFld)
+      def set_id_fld(idFld, opts={})
+        ai = opts.fetch(:autoincrement) { true }
         define_class_method(:id_fld) {idFld}
+        define_class_method(:id_ai)  {!!ai}
       end
 
       def id_fld
+        raise Pod4Error, "You need to use set_id_fld"
+      end
+
+      def id_ai
         raise Pod4Error, "You need to use set_id_fld"
       end
 
@@ -179,6 +185,7 @@ module Pod4
       @response        = nil
       @response_status = nil
       @id_fld          = self.class.id_fld
+      @id_ai           = self.class.id_ai
 
       self.class.validate_params
     end
@@ -218,6 +225,9 @@ module Pod4
     #
     def create(record)
       raise ArgumentError, 'create takes a Hash or an Octothorpe' unless hashy?(record)
+
+      raise ArgumentError, "ID field missing from record" \
+        if !@id_ai && record[@id_fld].nil? && record[@id_fld.to_s].nil?
 
       send_message( verb_for(:create), param_string(:create, record), false )
       @response.params

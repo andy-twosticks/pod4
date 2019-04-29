@@ -53,8 +53,6 @@ describe "PgInterface" do
     Class.new PgInterface do
       set_table :customer
       set_id_fld :id
-
-      #def stop; close; end # We open a lot of connections, unusually
     end
   end
 
@@ -62,14 +60,14 @@ describe "PgInterface" do
     Class.new PgInterface do
       set_schema :public
       set_table  :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
   let(:prod_interface_class) do
     Class.new PgInterface do
       set_table  :product
-      set_id_fld :code
+      set_id_fld :code, autoincrement: false
     end
   end
 
@@ -192,6 +190,10 @@ describe "PgInterface" do
       expect( pg_interface_class ).to respond_to(:set_id_fld).with(1).argument
     end
 
+    it "takes an optional second 'autoincrement' argument" do
+      expect{ PgInterface.set_id_fld(:foo, autoincrement: false) }.not_to raise_error
+    end
+
   end # of PgInterface.set_id_fld
 
 
@@ -202,6 +204,23 @@ describe "PgInterface" do
     end
 
   end # of PgInterface.id_fld
+
+
+  describe "PgInterface.id_ai" do
+     
+    it "returns true if autoincrement is true" do
+      expect( schema_interface_class.id_ai ).to eq true
+    end
+
+    it "returns false if autoincrement is false" do
+      expect( prod_interface_class.id_ai ).to eq false
+    end
+
+    it "returns true if autoincrement is not specified" do
+      expect( pg_interface_class.id_ai ).to eq true
+    end
+    
+  end # of PgInterface.id_ai
 
 
   describe "#new" do
@@ -247,6 +266,11 @@ describe "PgInterface" do
 
     it "raises a Pod4::DatabaseError if anything goes wrong" do
       expect{ interface.create(one: "two") }.to raise_exception DatabaseError
+    end
+
+    it "raises an ArgumentError if ID field is missing in hash and not AI" do
+      hash = {name: "bar"}
+      expect{ prod_interface.create(Octothorpe.new hash) }.to raise_error ArgumentError
     end
 
     it "creates the record when given a hash" do

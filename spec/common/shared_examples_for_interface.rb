@@ -45,6 +45,15 @@ RSpec.shared_examples "an interface" do
   end # of #id_fld
 
 
+  describe "#id_ai" do
+
+    it "is an attribute" do
+      expect( interface.id_ai ).not_to be_nil
+    end
+
+  end # of #id_ai
+
+
   describe "#create" do
 
     it "requires a hash or an Octothorpe" do

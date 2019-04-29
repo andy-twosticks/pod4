@@ -71,8 +71,10 @@ module Pod4
       ##
       # This sets the column that holds the unique id for the table
       #
-      def set_id_fld(idFld) 
+      def set_id_fld(idFld, opts={}) 
+        ai = opts.fetch(:autoincrement) { true }
         define_class_method(:id_fld) {idFld.to_s.to_sym}
+        define_class_method(:id_ai)  {!!ai}
       end
 
       def id_fld
@@ -113,6 +115,7 @@ module Pod4
     def schema; self.class.schema; end
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
+    def id_ai ; self.class.id_ai;  end
 
     def quoted_table
       schema ? %Q|[#{schema}].[#{table}]| : %Q|[#{table}]|
@@ -144,8 +147,10 @@ module Pod4
       raise(ArgumentError, "Bad type for record parameter") \
             unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
 
-      sql, vals = sql_insert(record)
+      raise(ArgumentError, "ID field missing from record") \
+        if !id_ai && record[id_fld].nil? && record[id_fld.to_s].nil?
 
+      sql, vals = sql_insert(record)
       x = select sql_subst(sql, *vals.map{|v| quote v})
       x.first[id_fld]
 

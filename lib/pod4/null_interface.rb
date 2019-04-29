@@ -21,7 +21,7 @@ module Pod4
   #
   class NullInterface < Interface
 
-    attr_reader :id_fld
+    attr_reader :id_fld, :id_ai
 
     ##
     # Initialise the interface by passing it a list of columns and an array of hashes to fill them.
@@ -32,6 +32,7 @@ module Pod4
       @cols   = cols.dup.map(&:to_sym)
       @data   = Array.new(data.dup).flatten 
       @id_fld = @cols.first
+      @id_ai  = false
 
     rescue => e
       handle_error(e)

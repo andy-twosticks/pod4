@@ -21,7 +21,7 @@ module Pod4
   #     class CustomerInterface < SwingShift::PgInterface
   #       set_schema :public    # optional
   #       set_table  :customer
-  #       set_id_fld :id
+  #       set_id_fld :id, autoincrement: true
   #     end
   #
   class PgInterface < Interface
@@ -60,11 +60,17 @@ module Pod4
       ##
       # Set the name of the column that holds the unique id for the table.
       #
-      def set_id_fld(idFld)
+      def set_id_fld(idFld, opts={})
+        ai = opts.fetch(:autoincrement) { true }
         define_class_method(:id_fld) {idFld.to_s.to_sym}
+        define_class_method(:id_ai)  {!!ai}
       end
 
       def id_fld
+        raise Pod4Error, "You need to use set_id_fld to set the ID column"
+      end
+
+      def id_ai
         raise Pod4Error, "You need to use set_id_fld to set the ID column"
       end
 
@@ -94,6 +100,7 @@ module Pod4
     def schema; self.class.schema; end
     def table;  self.class.table;  end
     def id_fld; self.class.id_fld; end
+    def id_ai;  self.class.id_ai;  end
 
     def list(selection=nil)
       raise(ArgumentError, 'selection parameter is not a hash') \
@@ -115,6 +122,9 @@ module Pod4
     def create(record)
       raise(ArgumentError, "Bad type for record parameter") \
         unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
+
+      raise(ArgumentError, "ID field missing from record") \
+        if !id_ai && record[id_fld].nil? && record[id_fld.to_s].nil?
 
       sql, vals = sql_insert(record) 
       x = selectp(sql, *vals)
@@ -144,7 +154,7 @@ module Pod4
     end
 
     ##
-    # ID is whatever you set in the interface using set_id_fld record should be a Hash or
+    # ID is whatever you set in the interface using set_id_fld; record should be a Hash or
     # Octothorpe.
     #
     def update(id, record)
