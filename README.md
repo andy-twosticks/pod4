@@ -49,7 +49,8 @@ I don't want the people who maintain my code to have to know the differences bet
 or so methods you need to worry about, and six of those are pretty much self-explanatory. Or, you
 can inherit from Pod4::BasicModel instead, and do without even that.
 
-I honestly don't think of it as an Object Relational Manager.  I think of it as a Way To Have Nice Models.
+I honestly don't think of it as an Object Relational Manager.  I think of it as a Way To Have Nice
+Models.
 
 If you are looking for something with all the features of, say, ActiveRecord, then this isn't for
 you. I provide basic access to and maintenance of records, with validation. For anything more, you
@@ -515,14 +516,15 @@ the interface needs and pass them to the connection object afterwards.
 
 With TdsInterface and PgInterface you can pass the same connection to multiple models and they will
 share it.  These interfaces take a Pod4::ConnectionPool instead, but otherwise the code looks
-exactly the same as the above example.
+exactly the same as the above example. 
 
 (Technical note: the ConnectionPool object will actually provide multiple connections, one per
 thread that uses it.  This satisfies the requirement of the underlying libraries that connections
 are not shared between threads, and therefore ensures that Pod4 is more or less thread safe.  You
 get this functionality automatically -- if you don't define a ConnectionPool, then the interface
 will create one internally. Sequel uses its own thread pool, of course, and we only use the one
-Sequel DB object for the whole of Pod4, so it doesn't need any of that.)
+Sequel DB object for the whole of Pod4, so it doesn't need any of that. That's why it uses
+Pod4::Connection, instead.)
 
 
 BasicModel
@@ -530,7 +532,17 @@ BasicModel
 
 Sometimes your model needs to represent data in a way which is so radically different from the data
 source that the whole list, create, read, update, delete thing that Pod4::Model gives you is no
-use. Enter Pod4::BasicModel.
+use. 
+
+Pod4::BasicModel gives you:
+
+* `set_interface`
+* the `model_id`, `model_status` and `alerts` attributes
+* `add_alert`
+
+...and nothing else. But that's enough to make a model, your way, using the methods on the
+interface. These are the same CRUDL methods that Pod4::Model provides -- except that on the
+interface, the CRUD methods take a record id as a key.
 
 A real world example: at James Hall my intranet system has a User model, where each attribute is a
 parameter that controls how the system behaves for that user -- email address, security settings,
@@ -541,16 +553,6 @@ add a user parameter. The logical place to change the parameter is in the User m
 database, and certainly not both. So on the database, I have a settings table where the key runs:
 userid, setting name.
 
-Pod4::BasicModel gives you:
-
-* `set_interface`
-* the `model_id`, `model_status` and `alerts` attributes
-* `add_alert`
-
-...and nothing else. But that's enough to make a model, your way, using the methods on the
-interface. These are the same CRUDL methods that Pod4::Model provides -- except that the CRUD
-methods take a record id as a key.
-
 Here's a simplified version of my User model. This one is read only, but it's hopefully enough to
 get the idea:
 
@@ -558,7 +560,7 @@ get the idea:
 
       class UserInterface < ::Pod4::SequelInterface
         set_table :settings
-        set_id_fld :id
+        set_id_fld :id, autoincrement: false
       end
 
       # Here we set what settings always exist for a user
@@ -633,3 +635,18 @@ at the comments at the top of the mixin in question if you want details.
 * typecasting -- force columns to be a specific ruby type, validation helpers, some encoding stuff
 * encrypting  -- encrypt text columns
 
+
+Gotchas
+-------
+
+Some hopefully-not-too-unexpected behaviour:
+
+* If you change attributes on a record, then call #delete or #read on it, we don't warn you that
+  your changes are lost.
+
+* If you attempt to update an autoincrement ID field, we don't write that change to the database
+  and we don't warn you about that.
+
+* As mentioned above, we only run validate on #create, #read, #update and #delete. So you can
+  change the attributes of a record to something invalid without it immediately warning you. (You
+  can always run #validate yourself, though.)

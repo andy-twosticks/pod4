@@ -22,6 +22,16 @@ You can now add the id field to `attr_columns` even if the ID field autoincremen
 that you can refer to the id field by name as an attribute instead of using `@model_id`, if you
 want.
 
+Some minor points that arise from this:
+
+* #to_ot should always include the ID field, whether or not it is named in `attr_columns`.
+  Currently we don't do this, although now you can name the ID field in `attr_columns` it becomes
+  less of a problem.
+
+* We should not allow manual update of the ID field if it exists as an attribute and auto-increment
+  is true.  We don't pass such changes on to the interface.
+
+
 
 You can declare a custom list method
 ------------------------------------
@@ -57,3 +67,14 @@ think of a need for it, but at the end of the day this is just a convenience fea
 all this yourself already if you create your own method in the model. So far I've made about a
 dozen custom list methods, but maybe one custom action method (for a Nebulous verb)? 
 
+
+Possibly also
+-------------
+
+* Remove the facility to call validate without passing a mode.
+
+* Tests for Model say that a comma-seperated list is automatically represented as an array in the
+  model? Do we want that functionality? It breaks POLA.
+
+* NullInterface is incapable of properly supporting autoincrement, defaults to autoincrement false;
+  this breaks POLA. 

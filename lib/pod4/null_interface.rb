@@ -13,15 +13,22 @@ module Pod4
   # Example:
   #     class TestModel < Pod4::Model
   #       attr_columns :one, :two
-  #       set_interface NullInterface.new( :one, :two [ {one: 1, two: 2} ] )
+  #       set_interface NullInterface.new( :one, :two [ {one: 1, two: 2},
+  #                                                     {one: 2, two: 4} ] )
   #       ...
   #
-  # The first column passed is taken to be the ID. Note that ID is not auto-assigned; you need to
-  # specify it in the record.
+  # The first column passed is taken to be the ID.  We default to autoincrement = true, as
+  # standard.  Note that ID values for the initial data are not auto-assigned; you need to specify them.
+  #
+  # You can switch to autoincrement = false by setting `interface.id_ai = false`.
+  #
+  # Note: this is quite different from the behaviour before v1.0, where NullInterface effectively
+  # only allowed you to create a non-autoincrement interface.
   #
   class NullInterface < Interface
 
-    attr_reader :id_fld, :id_ai
+    attr_reader   :id_fld
+    attr_accessor :id_ai
 
     ##
     # Initialise the interface by passing it a list of columns and an array of hashes to fill them.
@@ -32,7 +39,7 @@ module Pod4
       @cols   = cols.dup.map(&:to_sym)
       @data   = Array.new(data.dup).flatten 
       @id_fld = @cols.first
-      @id_ai  = false
+      @id_ai  = true
 
     rescue => e
       handle_error(e)
@@ -63,8 +70,14 @@ module Pod4
     def create(record)
       raise(ArgumentError, "Create requires an ID") if record.nil? || ! record.respond_to?(:to_h)
 
+      raise(ArgumentError, "Record missing ID field") \
+        if !@id_ai && record[@id_fld].nil? && record[@id_fld.to_s].nil?
+
+      datum = record.to_h
+      datum[@id_fld] = (@data.size + 1) if @id_ai
       @data << record.to_h
-      record[@id_fld]
+
+      datum[@id_fld]
 
     rescue => e
       handle_error(e)

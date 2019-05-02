@@ -1,8 +1,8 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'basic_model'
-require_relative 'errors'
-require_relative 'alert'
+require_relative "basic_model"
+require_relative "errors"
+require_relative "alert"
 
 
 module Pod4
@@ -159,7 +159,7 @@ module Pod4
     ##
     # Call this to write a new record to the data source.
     #
-    # Note: create needs to set @id. But interface.create should return it, so that's okay.
+    # Note: create needs to set @model_id. But interface.create should return it, so that's okay.
     #
     def create
       run_validation(:create)

@@ -1,8 +1,8 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'metaxing'
-require_relative 'errors'
-require_relative 'alert'
+require_relative "metaxing"
+require_relative "errors"
+require_relative "alert"
 
 
 module Pod4
@@ -20,7 +20,6 @@ module Pod4
   class BasicModel
     extend Metaxing
 
-    
     # The value of the ID field on the record
     attr_reader :model_id
 
@@ -29,7 +28,6 @@ module Pod4
 
     # Valid values for @model_status: :error :warning :okay :deleted or :empty
     STATII = %i|error warning okay deleted empty|
-
 
     class << self
 
@@ -44,9 +42,7 @@ module Pod4
         raise NotImplemented, "no call to set_interface in the model"
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
     # Initialize a model by passing it a unique id value.
@@ -58,12 +54,10 @@ module Pod4
       @alerts       = []
     end
 
-
     ##
     # Syntactic sugar; same as self.class.interface, which returns the interface instance.
     #
     def interface; self.class.interface; end
-
 
     ##
     # Return the list of alerts. 
@@ -71,7 +65,6 @@ module Pod4
     # We don't use attr_reader for this because it won't protect an array from external changes.
     #
     def alerts; @alerts.dup; end
-
 
     ##
     # Clear down the alerts.
@@ -84,7 +77,6 @@ module Pod4
       @alerts       = []
       @model_status = :okay
     end
-
 
     ##
     # Raise a Pod4 exception for the model if any alerts are status :error; otherwise do
@@ -100,13 +92,10 @@ module Pod4
       raise ValidationError.from_alert(al) if al && al.type == :error
       self
     end
-
     alias :or_die :raise_exceptions
-
 
     private
 
-    
     ##
     # Add a Pod4::Alert to the model instance @alerts attribute
     #
@@ -123,10 +112,8 @@ module Pod4
       st = @alerts.sort.first.type
       @model_status = st if %i|error warning|.include?(st)
     end
-
     
-  end
-  ##
+  end # of BasicModel
 
 
 end

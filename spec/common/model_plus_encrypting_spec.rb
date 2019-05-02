@@ -33,7 +33,10 @@ describe "(Model with Encryption)" do
       encrypted_columns :name, :ailment, :prescription
       set_key "dflkasdgklajndgn"
       set_iv_column :nonce
-      set_interface NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+
+      ifce = NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+      ifce.id_ai = false
+      set_interface ifce
     end
   end
 
@@ -44,7 +47,10 @@ describe "(Model with Encryption)" do
       encrypted_columns :name, :ailment, :prescription
       set_key "d"
       set_iv_column :nonce
-      set_interface NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+
+      ifce = NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+      ifce.id_ai = false
+      set_interface ifce
     end
   end
 
@@ -55,7 +61,10 @@ describe "(Model with Encryption)" do
       encrypted_columns :name, :ailment, :prescription
       set_key nil
       set_iv_column :nonce
-      set_interface NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+
+      ifce =  NullInterface.new(:id, :nhs_no, :name, :ailment, :prescription, :nonce, [])
+      ifce.id_ai = false
+      set_interface ifce
     end
   end
 
@@ -65,7 +74,10 @@ describe "(Model with Encryption)" do
       attr_columns :id, :date, :heading, :text
       encrypted_columns :heading, :text
       set_key "dflkasdgklajndgn"
-      set_interface NullInterface.new(:id, :date, :heading, :text, [])
+
+      ifce = NullInterface.new(:id, :date, :heading, :text, [])
+      ifce.id_ai = false
+      set_interface ifce
     end
   end
 
