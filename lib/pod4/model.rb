@@ -327,11 +327,10 @@ module Pod4
     end
 
     ##
-    # Call the validate method on the model.  Allow the user to override the method with or without
-    # the vmode paramter, as they choose.
+    # Call the validate method on the model. 
     #
     def run_validation(vmode)
-      method(:validate).arity == 0 ? validate : validate(vmode)
+      validate(vmode)
       self
     end
 

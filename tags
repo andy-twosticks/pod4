@@ -372,7 +372,7 @@ update	spec/common/nebulous_interface_spec.rb	/^  def update(id, name, price)$/;
 use_iv?	lib/pod4/encrypting.rb	/^      def use_iv?$/;"	f	class:Pod4.Encrypting.InstanceMethods
 validate	lib/pod4/model.rb	/^    def validate(vmode=nil)$/;"	f	class:Pod4.Model.test_for_octo
 validate	spec/common/model_new_validate_spec.rb	/^      def validate(vmode)$/;"	f
-validate	spec/common/model_spec.rb	/^      def validate $/;"	f
+validate	spec/common/model_spec.rb	/^      def validate(vmode)$/;"	f
 validate_params	lib/pod4/nebulous_interface.rb	/^      def validate_params$/;"	f	class:Pod4.NebulousInterface
 verb_for	lib/pod4/nebulous_interface.rb	/^    def verb_for(action)$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 verbs	lib/pod4/nebulous_interface.rb	/^      def verbs; {}; end$/;"	f	class:Pod4.NebulousInterface

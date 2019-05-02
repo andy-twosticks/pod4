@@ -4,7 +4,7 @@ require "pod4/model"
 require "pod4/null_interface"
 
 
-describe "CustomerModel" do
+describe "Model" do
 
   ##
   # We define a model class to test, since in normal operation we would never use Model directly,
@@ -37,7 +37,7 @@ describe "CustomerModel" do
         add_alert(*args) #private method
       end
 
-      def validate 
+      def validate(vmode)
         add_alert(:error, "falling over now") if name == "fall over"
       end
 
@@ -453,14 +453,11 @@ describe "CustomerModel" do
       expect( new_model.create ).to eq new_model
     end
 
-    it "calls validate" do
-      # validation tests arity of the validate method; rspec freaks out. So we can't 
-      # `expect( new_model ).to receive(:validate)`
+    it "calls validate and passes the parameter" do
+      expect( new_model ).to receive(:validate).with(:create)
 
-      m = customer_model_class.new
-      m.name = "fall over"
-      m.create
-      expect( m.model_status ).to eq :error
+      new_model.name = "foo"
+      new_model.create
     end
 
     it "calls create on the interface if the record is good" do
@@ -540,7 +537,7 @@ describe "CustomerModel" do
       model.read
     end
 
-    it "calls validate" do
+    it "calls validate and passes the parameter" do
       expect( model ).to receive(:validate).with(:read)
       model.read
     end
@@ -616,10 +613,11 @@ describe "CustomerModel" do
       expect{ model2.update }.to raise_exception Pod4::Pod4Error
     end
 
-    it "calls validate" do
-      model2.name = "fall over"
+    it "calls validate and passes the parameter" do
+      expect( model2 ).to receive(:validate).with(:update)
+
+      model2.name = "foo"
       model2.update
-      expect( model2.model_status ).to eq :error
     end
 
     it "calls update on the interface if the validation passes" do
@@ -686,12 +684,9 @@ describe "CustomerModel" do
       expect{ model2.delete }.to raise_exception Pod4::Pod4Error
     end
 
-    it "calls validate" do
-      model2.name = "fall over"
+    it "calls validate and passes the parameter" do
+      expect( model2 ).to receive(:validate).with(:delete)
       model2.delete
-
-      # one of the elements of the alerts array should include the word "falling"
-      expect( model2.alerts.map(&:message) ).to include(include "falling")
     end
 
     it "calls delete on the interface if the model status is good" do
