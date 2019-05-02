@@ -259,11 +259,12 @@ module Pod4
     end
 
     ##
-    # Return an Octothorpe of all the attr_columns attributes.
+    # Return an Octothorpe of all the attr_columns attributes. This includes the ID field, whether
+    # or not it has been named in attr_columns.
     #
     # Override if you want to return any extra data. (You will need to create a new Octothorpe.) 
     #
-    # See also: `set`, `map_to_model', 'map_to_interface'
+    # See also: `set`
     #
     def to_ot
       Octothorpe.new(to_h)
@@ -272,13 +273,11 @@ module Pod4
     ##
     # Used by the interface to set the column values on the model.
     #
-    # Don't use this to set model attributes from your code; use `set`, instead.
-    #
     # By default this does exactly the same as `set`. Override it if you want the model to
     # represent data differently than the data source does -- but then you will have to override
     # `map_to_interface`, too, to convert the data back.
     #
-    # See also: `to_ot`, `map_to_model'
+    # See also: `map_to_interface'
     #
     def map_to_model(ot)
       merge(ot)
@@ -286,19 +285,18 @@ module Pod4
     end
 
     ##
-    # used by the model to get an OT of column values for the interface. 
+    # Used by the model to get an OT to pass to the interface on #create and #update.
     #
-    # Don't use this to get model values in your code; use `to_ot`, instead.# This is called by
-    # model.create and model.update when it needs to write to the data source.
-    #
-    # By default this behaves exactly the same as to_ot. Override it if you want the model to
-    # represent data differently than the data source -- in which case you also need to override
-    # `map_to_model`.
+    # Override it if you want the model to represent data differently than the data source -- in
+    # which case you also need to override `map_to_model`.
     #
     # Bear in mind that any attribute could be nil, and likely will be when `map_to_interface` is
     # called from the create method.
     #
-    # See also: `to_ot`, `set`.
+    # NB: we always pass the ID field to the Interface, regardless of whether the field
+    # autoincrements or whether it's been named in `attr_columns`.
+    #
+    # See also: `map_to_model'
     #
     def map_to_interface
       Octothorpe.new(to_h)
@@ -307,12 +305,15 @@ module Pod4
     private
 
     ##
-    # Output a hash of the columns
+    # Output a hash of the columns.
+    # _Always_ include the ID field, even if it's not an attribute.
     #
     def to_h
-      columns.each_with_object({}) do |col, hash|
+      h = columns.each_with_object({}) do |col, hash|
         hash[col] = instance_variable_get("@#{col}".to_sym)
       end
+
+      {interface.id_fld => @model_id}.merge h
     end
 
     ##

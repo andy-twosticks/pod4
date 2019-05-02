@@ -114,24 +114,29 @@ module Pod4
     end
 
     ##
-    # Record is a hash of field: value
+    # Record is a hash or octothorpe of field: value
     #
     # By a happy coincidence, insert returns the unique ID for the record, which is just what we
     # want to do, too.
     #
     def create(record)
-      raise(ArgumentError, "Bad type for record parameter") \
-        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
+      raise Octothorpe::BadHash if record.nil?
+      ot = Octothorpe.new(record)
 
-      raise(ArgumentError, "ID field missing from record") \
-        if !id_ai && record[id_fld].nil? && record[id_fld.to_s].nil?
+      if id_ai
+        ot = ot.reject{|k,_| k == id_fld}
+      else
+        raise(ArgumentError, "ID field missing from record") if ot[id_fld].nil?
+      end
 
-      sql, vals = sql_insert(record) 
+      sql, vals = sql_insert(ot) 
       x = selectp(sql, *vals)
       x.first[id_fld]
 
-    rescue => e
-      handle_error(e)
+    rescue Octothorpe::BadHash
+      raise ArgumentError, "Bad type for record parameter"
+    rescue
+      handle_error $!
     end
 
     ##

@@ -31,10 +31,6 @@ describe "Autoincrementing Model with No ID Attribute" do
 
   end
 
-  let(:recordsx) do
-    records.map {|h| h.reject{|k,_| k == :id} }.flatten
-  end
-
   let(:records_as_ot)  { records.map{|r| Octothorpe.new(r) } }
 
   # model is just a plain newly created object that you can call read on.
@@ -68,7 +64,7 @@ describe "Autoincrementing Model with No ID Attribute" do
 
     it "returns the data from the interface" do
       expect( list1.size ).to eq records.size
-      expect( list1.map(&:to_ot).map(&:to_h) ).to match_array(recordsx)
+      expect( list1.map(&:to_ot).map(&:to_h) ).to match_array(records)
     end
 
   end # of Model.list
@@ -113,18 +109,19 @@ describe "Autoincrementing Model with No ID Attribute" do
   describe "#to_ot" do
 
     it "returns an Octothorpe made of the attribute columns, including the missing ID field" do
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
+      m1 = customer_model_class.new
+      expect( m1.to_ot ).to be_a_kind_of Octothorpe
+      expect( m1.to_ot.to_h ).to eq( {id: nil, name: nil, price:nil, groups:nil} )
 
-      expect( model.to_ot.to_h ).
-        to eq( {id: nil, name: nil, price:nil, groups:nil} )
+      m2 = customer_model_class.new(1)
+      m2.read
+      expect( m2.to_ot ).to be_a_kind_of Octothorpe
+      expect( m2.to_ot ).to eq records_as_ot[0]
 
-      model.map_to_model(records[1])
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( model.to_ot ).to eq records_as_ot[1]
-
-      model.map_to_model(records_as_ot[2])
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( model.to_ot ).to eq records_as_ot[2]
+      m2 = customer_model_class.new(2)
+      m2.read
+      expect( m2.to_ot ).to be_a_kind_of Octothorpe
+      expect( m2.to_ot ).to eq records_as_ot[1] 
     end
 
   end # of #to_ot
@@ -152,11 +149,11 @@ describe "Autoincrementing Model with No ID Attribute" do
       expect( cm.map_to_interface.>>.groups ).to eq( "trains,school" )
     end
 
-    it "excludes the ID field" do
+    it "includes the ID field" do
       cm = customer_model_class.new(2).read
 
       expect( cm.map_to_interface ).to be_an Octothorpe
-      expect( cm.map_to_interface.keys ).not_to include(:id)
+      expect( cm.map_to_interface.keys ).to include(:id)
     end
 
   end # of #map_to_interface

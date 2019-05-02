@@ -360,18 +360,19 @@ describe "Model" do
   describe "#to_ot" do
 
     it "returns an Octothorpe made of the attribute columns, including the ID field" do
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
+      m1 = customer_model_class.new
+      expect( m1.to_ot ).to be_a_kind_of Octothorpe
+      expect( m1.to_ot.to_h ).to eq( {id: nil, name: nil, price:nil, groups:nil} )
 
-      expect( model.to_ot.to_h ).
-        to eq( {id: nil, name: nil, price:nil, groups:nil} )
+      m2 = customer_model_class.new(1)
+      m2.read
+      expect( m2.to_ot ).to be_a_kind_of Octothorpe
+      expect( without_groups(m2.to_ot) ).to eq recordsx[0]
 
-      model.map_to_model(records[1])
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( without_groups(model.to_ot) ).to eq recordsx[1]
-
-      model.map_to_model(records_as_ot[2])
-      expect( model.to_ot ).to be_a_kind_of Octothorpe
-      expect( without_groups(model.to_ot) ).to eq recordsx[2]
+      m3 = customer_model_class.new(2)
+      m3.read
+      expect( m3.to_ot ).to be_a_kind_of Octothorpe
+      expect( without_groups(m3.to_ot) ).to eq recordsx[1]
     end
 
   end # of #to_ot
@@ -401,13 +402,6 @@ describe "Model" do
 
       expect( cm.map_to_interface ).to be_an Octothorpe
       expect( cm.map_to_interface.>>.groups ).to eq( "trains,school" )
-    end
-
-    it "excludes the ID field if autoincrement is true, even when named as an attribute" do
-      cm = customer_model_class.new(2).read
-
-      expect( cm.map_to_interface ).to be_an Octothorpe
-      expect( cm.map_to_interface.keys ).not_to include(:id)
     end
 
   end # of #map_to_interface

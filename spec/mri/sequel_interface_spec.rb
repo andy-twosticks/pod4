@@ -284,6 +284,16 @@ describe "SequelInterface" do
       expect( prod_interface.read("foo").to_h ).to include hash
     end
 
+    it "copes with an OT with the ID field in it when the ID field autoincrements" do
+      h = {id: nil, name: "Bam-Bam", price: 4.44}
+      expect{ interface.create(h) }.not_to raise_error
+
+      id = interface.create(h)
+      expect( id ).not_to be_nil
+      expect{ interface.read(id) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include( {name: "Bam-Bam", price: 4.44} )
+    end
+
   end # of #create
 
 

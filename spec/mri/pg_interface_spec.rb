@@ -316,6 +316,16 @@ describe "PgInterface" do
       interface.create(ot)
     end
 
+    it "copes with an OT with an ID field when autoincrement = true" do
+      h = {id: nil, name: "Bam-Bam", qty: 4.44}
+      expect{ interface.create(h) }.not_to raise_error
+
+      id = interface.create(h)
+      expect( id ).not_to be_nil
+      expect{ interface.read(id) }.not_to raise_exception
+      expect( interface.read(id).to_h ).to include( {name: "Bam-Bam", qty: 4.44} )
+    end
+
   end # of #create
 
 

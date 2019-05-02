@@ -136,29 +136,34 @@ module Pod4
     end
 
     ##
-    # Record is a hash of field: value
+    # Record is a Hash or Octothorpe of field: value
     #
     def create(record)
-      raise(ArgumentError, "Bad type for record parameter") \
-        unless record.kind_of?(Hash) || record.kind_of?(Octothorpe)
+      raise Octothorpe::BadHash if record.nil?
+      ot = Octothorpe.new(record)
 
-      raise(ArgumentError, "ID field missing from record") \
-        if !id_ai && record[id_fld].nil? && record[id_fld.to_s].nil?
+      if id_ai
+        ot = ot.reject{|k,_| k == id_fld}
+      else
+        raise(ArgumentError, "ID field missing from record") if ot[id_fld].nil?
+      end
 
-      Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{record.inspect}" }
+      Pod4.logger.debug(__FILE__) { "Creating #{self.class.table}: #{ot.inspect}" }
 
-      id = db_table.insert( sanitise_hash(record.to_h) )
+      id = db_table.insert( sanitise_hash(ot.to_h) )
 
       # Sequel doesn't return the key unless it is an autoincrement; otherwise it turns a row
       # number, which isn't much use to us. We always return the key.
       if id_ai
         id
       else
-        record[id_fld] || record[id_fld.to_s]
+        ot[id_fld]
       end
     
-    rescue => e
-      handle_error(e) 
+    rescue Octothorpe::BadHash
+      raise ArgumentError, "Bad type for record parameter"
+    rescue
+      handle_error $!
     end
 
     ##
