@@ -235,7 +235,7 @@ In addition to the methods above, we have:
 A model also has some built-in attributes of its own:
 
 * `model_id`     -- this is the value of the ID column you set in the interface.
-* `model_status` -- one of :error :warning :okay :deleted :empty 
+* `model_status` -- one of :error :warning :okay :deleted :unknown
 
 We'll deal with all these below.
 
@@ -244,12 +244,13 @@ Adding Validation
 -----------------
 
 Built into the model is an array of alerts (Pod4::Alert) which are messages that have been raised
-against the instance of the model class. Each alert can have a status of :error, :warning, :info or
-:success. If any alert has a status of :error :warning or :success then that is reflected in the
-model's `model_status` attribute. 
+against the instance of the model class. Each alert can have a type of :error, :warning, :info or
+:success. If any alert has a type of :error or :warning, then that is reflected in the model's
+`model_status` attribute. A model that has passed validation with no :error or :warning alerts is
+status :okay.
 
-(There are two other possible statuses -- models are :empty when first created and :deleted after a
-call to delete.)
+(There are two other possible statuses -- models are :unknown when validation has yet to be run, 
+and :deleted after a call to delete.)
 
 You can raise alerts yourself, and you normally do so by overriding `validate`.  This method is
 called after a read as well as when you write to the database; so that a model object should always
@@ -291,7 +292,7 @@ the validation will fail.  (Probably you do not want this on delete; test the pa
 to validate as in the example above).
 
 In passing I should note that validation is _not_ run on list: every record that list returns
-should be complete, but the `model_status` will be :empty because validation has not been run.
+should be complete, but the `model_status` will be :unknown because validation has not been run.
 (This is partly for the sake of speed.)
 
 You should be aware that validation is not called on `set`, either. Because of that, it's entirely
@@ -603,7 +604,7 @@ get the idea:
 
         @userid = @model_id
         set_merge( Octothorpe.new(data) )
-        validate; @model_status = :okay unless @model_status != :empty
+        validate; @model_status = :okay unless @model_status != :unknown
 
         self
       end
@@ -634,6 +635,7 @@ at the comments at the top of the mixin in question if you want details.
 
 * typecasting -- force columns to be a specific ruby type, validation helpers, some encoding stuff
 * encrypting  -- encrypt text columns
+* tweaking    -- adds DSL commands to support custom methods on the interface.
 
 
 Gotchas
@@ -650,3 +652,7 @@ Some hopefully-not-too-unexpected behaviour:
 * As mentioned above, we only run validate on #create, #read, #update and #delete. So you can
   change the attributes of a record to something invalid without it immediately warning you. (You
   can always run #validate yourself, though.)
+
+* Again, as mentioned above, the array of model instances returned by #list will all be status
+  :unknown.  This is because we have run neither #read nor #validate against them.
+

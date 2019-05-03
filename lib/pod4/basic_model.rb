@@ -26,7 +26,7 @@ module Pod4
     # one of Model::STATII
     attr_reader :model_status
 
-    # Valid values for @model_status: :error :warning :okay :deleted or :empty
+    # Valid values for @model_status: :error :warning :okay :deleted or :unknown
     STATII = %i|error warning okay deleted empty|
 
     class << self
@@ -49,7 +49,7 @@ module Pod4
     # Override this to set initial values for your column attributes.
     #
     def initialize(id=nil)
-      @model_status = :empty
+      @model_status = :unknown
       @model_id     = id
       @alerts       = []
     end
@@ -69,7 +69,7 @@ module Pod4
     ##
     # Clear down the alerts.
     #
-    # Note that set model_status to :okay. Theoretically it might need to be :empty or :deleted,
+    # Note that we set model_status to :okay. Theoretically it might need to be :unknown or :deleted,
     # but if you are calling clear_alerts before a call to `read` or after a call to `delete`, then
     # you have more problems than I can solve.
     #

@@ -9,7 +9,7 @@ require "pod4/null_interface"
 # attribute. Pre-1.0 you _had_ to do it this way. No reason why it would not be an option going
 # forward.
 #
-describe "Autoincrementing Model with No ID Attribute" do
+describe "(Autoincrementing Model with No ID Attribute)" do
 
   let(:customer_model_class) do
     Class.new Pod4::Model do
@@ -208,8 +208,8 @@ describe "Autoincrementing Model with No ID Attribute" do
 
   describe "#update" do
 
-    it "raises a Pod4Error if model status is :empty" do
-      expect( model.model_status ).to eq :empty
+    it "raises a Pod4Error if model status is :unknown" do
+      expect( model.model_status ).to eq :unknown
       expect{ model.update }.to raise_exception Pod4::Pod4Error
     end
 
@@ -228,8 +228,8 @@ describe "Autoincrementing Model with No ID Attribute" do
 
   describe "#delete" do
 
-    it "raises a Pod4Error if model status is :empty" do
-      expect( model.model_status ).to eq :empty
+    it "raises a Pod4Error if model status is :unknown" do
+      expect( model.model_status ).to eq :unknown
       expect{ model.delete }.to raise_exception Pod4::Pod4Error
     end
 

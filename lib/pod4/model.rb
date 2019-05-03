@@ -112,7 +112,7 @@ module Pod4
       # :id -- otherwise we raise a Pod4Error.
       #
       # Note also that while list returns an array of model objects, `read` has _not_ been run
-      # against each object. The data is there, but @model_status == :empty, and validation has not
+      # against each object. The data is there, but @model_status == :unknown, and validation has not
       # been run.  This is partly for the sake of efficiency, partly to help avoid recursive loops
       # in validation.
       #
@@ -136,7 +136,7 @@ module Pod4
 
       def test_for_invalid_status(action, status)
         raise( Pod4Error, "Invalid model status for an action of #{action}", caller ) \
-          if [:empty, :deleted].include? status
+          if [:unknown, :deleted].include? status
 
       end
 
@@ -165,7 +165,7 @@ module Pod4
       run_validation(:create)
       @model_id = interface.create(map_to_interface) unless @model_status == :error
 
-      @model_status = :okay if @model_status == :empty
+      @model_status = :okay if @model_status == :unknown
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
@@ -183,7 +183,7 @@ module Pod4
       else
         map_to_model(r)
         run_validation(:read)
-        @model_status = :okay if @model_status == :empty
+        @model_status = :okay if @model_status == :unknown
       end
 
       self

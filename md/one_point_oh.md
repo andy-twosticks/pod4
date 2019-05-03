@@ -68,13 +68,10 @@ all this yourself already if you create your own method in the model. So far I'v
 dozen custom list methods, but maybe one custom action method (for a Nebulous verb)? 
 
 
-Possibly also
--------------
 
-* Remove the facility to call validate without passing a mode.
+Model Status :empty
+-------------------
 
-* Tests for Model say that a comma-seperated list is automatically represented as an array in the
-  model? Do we want that functionality? It breaks POLA.
+This will be renamed to :unknown to reflect that it is also the status of objects created by #list;
+:unknown means that validation has not been run yet.
 
-* NullInterface is incapable of properly supporting autoincrement, defaults to autoincrement false;
-  this breaks POLA. 

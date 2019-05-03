@@ -6,7 +6,7 @@ require "pod4/typecasting"
 require "pod4/null_interface"
 
 
-describe "ProductModel" do
+describe "(Model plus typecasting)" do
 
   let(:product_model_class) do
     Class.new Pod4::Model do

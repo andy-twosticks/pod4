@@ -63,8 +63,8 @@ describe "BasicModel" do
       expect( weird_model_class.new(23).model_id ).to eq 23
     end
 
-    it "sets the status to empty" do
-      expect( weird_model_class.new.model_status ).to eq :empty
+    it "sets the status to unknown" do
+      expect( weird_model_class.new.model_status ).to eq :unknown
     end
 
     it "initializes the alerts attribute" do

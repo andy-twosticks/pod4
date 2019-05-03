@@ -2,11 +2,11 @@
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
 <<	lib/pod4/connection_pool.rb	/^      def <<(cl)$/;"	f	class:Pod4.ConnectionPool.Pool
 <=>	lib/pod4/alert.rb	/^    def <=>(other)$/;"	f	class:Pod4.Alert
-ALERTTYPES	lib/pod4/alert.rb	/^    ALERTTYPES = [:error, :warning, :info, :success]$/;"	C	class:Pod4.Alert
 Alert	lib/pod4/alert.rb	/^  class Alert$/;"	c	class:Pod4
 BasicModel	lib/pod4/basic_model.rb	/^  class BasicModel$/;"	c	class:Pod4
 CantContinue	lib/pod4/errors.rb	/^  class CantContinue < Pod4Error$/;"	c	class:Pod4
 ClassMethods	lib/pod4/encrypting.rb	/^    module ClassMethods$/;"	m	class:Pod4.Encrypting
+ClassMethods	lib/pod4/tweaking.rb	/^    module ClassMethods$/;"	m	class:Pod4.Tweaking
 ClassMethods	lib/pod4/typecasting.rb	/^    module ClassMethods$/;"	m	class:Pod4.TypeCasting
 Connection	lib/pod4/connection.rb	/^  class Connection$/;"	c	class:Pod4
 ConnectionPool	lib/pod4/connection_pool.rb	/^  class ConnectionPool < Connection$/;"	c	class:Pod4
@@ -21,7 +21,7 @@ Encrypting	lib/pod4/encrypting.rb	/^  module Encrypting$/;"	m	class:Pod4
 FakeRequester	spec/common/nebulous_interface_spec.rb	/^class FakeRequester$/;"	c
 Foo	ffile3.rb	/^class Foo$/;"	c
 InstanceMethods	lib/pod4/encrypting.rb	/^    module InstanceMethods$/;"	m	class:Pod4.Encrypting
-InstanceMethods	lib/pod4/typecasting.rb	/^    module InstanceMethods$/;"	m	class:Pod4.TypeCasting
+InstanceMethods	lib/pod4/typecasting.rb	/^    module InstanceMethods$/;"	m	class:Pod4.TypeCasting.ClassMethods
 Interface	ffile.rb	/^  class Interface < Pod4::PgInterface$/;"	c	class:Customer
 Interface	ffile2.rb	/^  class Interface < Pod4::PgInterface$/;"	c	class:Customer
 Interface	lib/pod4/interface.rb	/^  class Interface$/;"	c	class:Pod4
@@ -50,6 +50,7 @@ Pod4	lib/pod4/pg_interface.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/sequel_interface.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/sql_helper.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/tds_interface.rb	/^module Pod4$/;"	m
+Pod4	lib/pod4/tweaking.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/typecasting.rb	/^module Pod4$/;"	m
 Pod4	lib/pod4/version.rb	/^module Pod4 $/;"	m
 Pod4Error	lib/pod4/errors.rb	/^  class Pod4Error < StandardError$/;"	c	class:Pod4
@@ -58,6 +59,7 @@ PoolTimeout	lib/pod4/errors.rb	/^  class PoolTimeout < Pod4Error$/;"	c	class:Pod
 SQLHelper	lib/pod4/sql_helper.rb	/^  module SQLHelper$/;"	m	class:Pod4
 SequelInterface	lib/pod4/sequel_interface.rb	/^  class SequelInterface < Interface$/;"	c	class:Pod4
 TdsInterface	lib/pod4/tds_interface.rb	/^  class TdsInterface < Interface$/;"	c	class:Pod4
+Tweaking	lib/pod4/tweaking.rb	/^  module Tweaking$/;"	m	class:Pod4
 TypeCasting	lib/pod4/typecasting.rb	/^  module TypeCasting$/;"	m	class:Pod4
 ValidationError	lib/pod4/errors.rb	/^  class ValidationError < Pod4Error$/;"	c	class:Pod4
 WeakError	lib/pod4/errors.rb	/^  class WeakError < Pod4Error$/;"	c	class:Pod4
@@ -139,7 +141,6 @@ ensure_connected	lib/pod4/tds_interface.rb	/^    def ensure_connected$/;"	f	clas
 ensure_connection	lib/pod4/pg_interface.rb	/^    def ensure_connection$/;"	f	class:Pod4.list.read.update
 escape	lib/pod4/tds_interface.rb	/^    def escape(thing)$/;"	f	class:Pod4.list.read.update
 example_pending	spec/doc_no_pending.rb	/^  def example_pending(notifications); end$/;"	f	class:DocNoPending
-exception	lib/pod4/alert.rb	/^    attr_reader :exception$/;"	f	class:Pod4.Alert
 execute	lib/pod4/pg_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4.list.read.update
 execute	lib/pod4/sequel_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4
 execute	lib/pod4/tds_interface.rb	/^    def execute(sql)$/;"	f	class:Pod4.list.read.update
@@ -151,8 +152,6 @@ fail_no_id_fld	lib/pod4/model.rb	/^      def fail_no_id_fld$/;"	f	class:Pod4.Mod
 fake_an_alert	spec/common/basic_model_spec.rb	/^      def fake_an_alert(*args)$/;"	f
 fake_an_alert	spec/common/model_new_validate_spec.rb	/^      def fake_an_alert(*args)$/;"	f
 fake_an_alert	spec/common/model_spec.rb	/^      def fake_an_alert(*args)$/;"	f
-field	lib/pod4/alert.rb	/^    attr_accessor :field$/;"	f	class:Pod4.Alert
-field=	lib/pod4/alert.rb	/^    attr_accessor :field$/;"	f	class:Pod4.Alert
 fill_data	spec/common/sequel_interface_pg_spec.rb	/^  def fill_data(ifce, data)$/;"	f
 fill_data	spec/mri/pg_interface_spec.rb	/^  def fill_data(ifce)$/;"	f
 fill_data	spec/mri/sequel_interface_spec.rb	/^  def fill_data(ifce)$/;"	f
@@ -171,6 +170,7 @@ get_all	lib/pod4/param.rb	/^    def get_all; Octothorpe.new(params.dup); end$/;"
 get_cipher	lib/pod4/encrypting.rb	/^      def get_cipher(direction)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 get_current	lib/pod4/connection_pool.rb	/^      def get_current $/;"	f	class:Pod4.ConnectionPool.Pool
 get_free	lib/pod4/connection_pool.rb	/^      def get_free$/;"	f	class:Pod4.ConnectionPool.Pool
+guard	lib/pod4/typecasting.rb	/^      def guard(ot)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
 handle_error	lib/pod4/nebulous_interface.rb	/^    def handle_error(err, kaller=caller[1..-1])$/;"	f	class:Pod4.NebulousInterface.validate_params.create.send_message
 handle_error	lib/pod4/null_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.NullInterface.create
 handle_error	lib/pod4/pg_interface.rb	/^    def handle_error(err, kaller=nil)$/;"	f	class:Pod4.list.read.update
@@ -193,6 +193,7 @@ id_fld	lib/pod4/sequel_interface.rb	/^    def id_fld; self.class.id_fld; end$/;"
 id_fld	lib/pod4/tds_interface.rb	/^      def id_fld$/;"	f	class:Pod4.TdsInterface
 id_fld	lib/pod4/tds_interface.rb	/^    def id_fld; self.class.id_fld; end$/;"	f	class:Pod4
 included	lib/pod4/encrypting.rb	/^    def self.included(base)$/;"	F	class:Pod4.Encrypting
+included	lib/pod4/tweaking.rb	/^    def self.included(base)$/;"	F	class:Pod4.Tweaking
 included	lib/pod4/typecasting.rb	/^    def self.included(base)$/;"	F	class:Pod4.TypeCasting
 init_nebulous	spec/common/nebulous_interface_spec.rb	/^def init_nebulous$/;"	f
 initialize	lib/pod4/alert.rb	/^    def initialize(type, field=nil, message)$/;"	f	class:Pod4.Alert
@@ -244,18 +245,18 @@ make_threads	thread_test.rb	/^def make_threads(count, connection, interface)$/;"
 make_threads	thread_test2.rb	/^def make_threads(count)$/;"	f
 map_to_interface	lib/pod4/encrypting.rb	/^      def map_to_interface$/;"	f	class:Pod4.Encrypting.InstanceMethods
 map_to_interface	lib/pod4/model.rb	/^    def map_to_interface$/;"	f	class:Pod4.Model.test_for_octo
+map_to_interface	lib/pod4/typecasting.rb	/^      def map_to_interface$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
 map_to_interface	spec/common/model_new_validate_spec.rb	/^      def map_to_interface$/;"	f
 map_to_interface	spec/common/model_spec.rb	/^      def map_to_interface$/;"	f
 map_to_model	lib/pod4/encrypting.rb	/^      def map_to_model(ot)$/;"	f	class:Pod4.Encrypting.InstanceMethods
 map_to_model	lib/pod4/model.rb	/^    def map_to_model(ot)$/;"	f	class:Pod4.Model.test_for_octo
-map_to_model	lib/pod4/typecasting.rb	/^      def map_to_model(ot)$/;"	f	class:Pod4.TypeCasting.InstanceMethods
+map_to_model	lib/pod4/typecasting.rb	/^      def map_to_model(ot)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
 map_to_model	spec/common/model_new_validate_spec.rb	/^      def map_to_model(ot)$/;"	f
 map_to_model	spec/common/model_spec.rb	/^      def map_to_model(ot)$/;"	f
 merge	lib/pod4/model.rb	/^    def merge(ot)$/;"	f	class:Pod4.Model.test_for_octo
-message	lib/pod4/alert.rb	/^    attr_accessor :message$/;"	f	class:Pod4.Alert
-message=	lib/pod4/alert.rb	/^    attr_accessor :message$/;"	f	class:Pod4.Alert
 metaclass	lib/pod4/metaxing.rb	/^    def metaclass$/;"	f	class:Pod4.Metaxing
 method	spec/common/nebulous_interface_spec.rb	/^    def method;         @@method;        end$/;"	f	class:FakeRequester
+my_list	spec/common/model_plus_tweaking_spec.rb	/^      def my_list(*args)$/;"	f
 mycast	spec/common/model_plus_typecasting_spec.rb	/^      def mycast(value, opts); "blarg"; end$/;"	f
 new_connection	lib/pod4/interface.rb	/^    def new_connection(args)$/;"	f	class:Pod4.Interface
 new_connection	lib/pod4/pg_interface.rb	/^    def new_connection(params)$/;"	f	class:Pod4.list.read.update
@@ -318,12 +319,15 @@ send_no_cache	spec/common/nebulous_interface_spec.rb	/^      def send_no_cache(*
 sequel_fudges	lib/pod4/sequel_interface.rb	/^    def sequel_fudges(db)$/;"	f	class:Pod4
 set	lib/pod4/model.rb	/^    def set(ot)$/;"	f	class:Pod4.Model.test_for_octo
 set	lib/pod4/param.rb	/^    def set(p,v); params[p.to_s.to_sym] = v; end$/;"	f	class:Pod4.Param
+set	lib/pod4/typecasting.rb	/^      def set(ot)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
 set_conn	spec/common/connection_pool_parallelism_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	spec/common/connection_pool_parallelism_spoc.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	spec/common/connection_pool_spec.rb	/^      def set_conn(c); @conn = c; end$/;"	f
 set_conn	thread_test.rb	/^  def set_conn(c); @conn = c; end$/;"	f	class:MyInterface
+set_custom_list	lib/pod4/tweaking.rb	/^      def set_custom_list(method)$/;"	f	class:Pod4.Tweaking.ClassMethods
 set_db	lib/pod4/tds_interface.rb	/^      def set_db(db)$/;"	f	class:Pod4.TdsInterface
 set_encryption_iv	lib/pod4/encrypting.rb	/^      def set_encryption_iv(iv)$/;"	f	class:Pod4.Encrypting.InstanceMethods
+set_guard	lib/pod4/typecasting.rb	/^      def set_guard(ot, fld, tc)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
 set_id_fld	lib/pod4/nebulous_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.NebulousInterface
 set_id_fld	lib/pod4/pg_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.PgInterface
 set_id_fld	lib/pod4/sequel_interface.rb	/^      def set_id_fld(idFld, opts={})$/;"	f	class:Pod4.SequelInterface
@@ -356,11 +360,24 @@ table	lib/pod4/sequel_interface.rb	/^    def table;  self.class.table;  end$/;"	
 table	lib/pod4/tds_interface.rb	/^      def table$/;"	f	class:Pod4.TdsInterface
 table	lib/pod4/tds_interface.rb	/^    def table;  self.class.table;  end$/;"	f	class:Pod4
 target	lib/pod4/nebulous_interface.rb	/^      def target$/;"	f	class:Pod4.NebulousInterface
+tc_bigdecimal	lib/pod4/typecasting.rb	/^      def tc_bigdecimal(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+tc_boolean	lib/pod4/typecasting.rb	/^      def tc_boolean(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+tc_date	lib/pod4/typecasting.rb	/^      def tc_date(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+tc_float	lib/pod4/typecasting.rb	/^      def tc_float(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+tc_integer	lib/pod4/typecasting.rb	/^      def tc_integer(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+tc_time	lib/pod4/typecasting.rb	/^      def tc_time(thing)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
 test_for_invalid_status	lib/pod4/model.rb	/^      def test_for_invalid_status(action, status)$/;"	f	class:Pod4.Model.test_for_octo
 test_for_octo	lib/pod4/model.rb	/^      def test_for_octo(param)$/;"	f	class:Pod4.Model
 to_h	lib/pod4/model.rb	/^    def to_h$/;"	f	class:Pod4.Model.test_for_octo
 to_ot	lib/pod4/model.rb	/^    def to_ot$/;"	f	class:Pod4.Model.test_for_octo
-type	lib/pod4/alert.rb	/^    attr_reader :type$/;"	f	class:Pod4.Alert
+to_ot	lib/pod4/typecasting.rb	/^      def to_ot$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
+typecast	lib/pod4/typecasting.rb	/^      def typecast(*args)$/;"	f	class:Pod4.TypeCasting.ClassMethods
+typecast	lib/pod4/typecasting.rb	/^      def typecast(type, thing, opt={})$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
+typecast?	lib/pod4/typecasting.rb	/^      def typecast?(attr, val=nil)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods
+typecast_one	lib/pod4/typecasting.rb	/^      def typecast_one(val, tc)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+typecast_ot	lib/pod4/typecasting.rb	/^      def typecast_ot(ot, opts={})$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+typecast_ot_to_ot	lib/pod4/typecasting.rb	/^      def typecast_ot_to_ot(ot)$/;"	f	class:Pod4.TypeCasting.ClassMethods.InstanceMethods.typecast?
+typecasts	lib/pod4/typecasting.rb	/^      def typecasts; {}; end$/;"	f	class:Pod4.TypeCasting.ClassMethods.typecast
 update	lib/pod4/interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.Interface
 update	lib/pod4/model.rb	/^    def update$/;"	f	class:Pod4.Model.test_for_octo
 update	lib/pod4/nebulous_interface.rb	/^    def update(id, record)$/;"	f	class:Pod4.NebulousInterface.validate_params.create

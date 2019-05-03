@@ -208,8 +208,8 @@ describe "Model" do
       expect( customer_model_class.new(23).model_id ).to eq 23
     end
 
-    it "sets the status to empty" do
-      expect( customer_model_class.new.model_status ).to eq :empty
+    it "sets the status to unknown" do
+      expect( customer_model_class.new.model_status ).to eq :unknown
     end
 
     it "initializes the alerts attribute" do
@@ -469,7 +469,7 @@ describe "Model" do
       new_model.create
     end
 
-    it "sets model status to :okay if it was :empty" do
+    it "sets model status to :okay if it was :unknown" do
       new_model.id   = 5
       new_model.name = "Lurch"
       new_model.create
@@ -477,7 +477,7 @@ describe "Model" do
       expect( new_model.model_status ).to eq :okay
     end
 
-    it "leaves the model status alone if it was not :empty" do
+    it "leaves the model status alone if it was not :unknown" do
       new_model.id   = 5
       new_model.name = "Lurch"
       new_model.create
@@ -545,13 +545,13 @@ describe "Model" do
       expect( cm.groups ).to eq( ot.>>.groups.split(",") )
     end
 
-    it "sets model status to :okay if it was :empty" do
+    it "sets model status to :okay if it was :unknown" do
       ot = records_as_ot.last
       model.read
       expect( model.model_status ).to eq :okay
     end
 
-    it "leaves the model status alone if it was not :empty" do
+    it "leaves the model status alone if it was not :unknown" do
       ot = records_as_ot.last
       model.fake_an_alert(:warning, :price, "qar")
       model.read
@@ -597,8 +597,8 @@ describe "Model" do
       expect( model2.update ).to eq model2
     end
 
-    it "raises a Pod4Error if model status is :empty" do
-      expect( model.model_status ).to eq :empty
+    it "raises a Pod4Error if model status is :unknown" do
+      expect( model.model_status ).to eq :unknown
       expect{ model.update }.to raise_exception Pod4::Pod4Error
     end
 
@@ -668,8 +668,8 @@ describe "Model" do
       expect( model2.delete ).to eq model2
     end
 
-    it "raises a Pod4Error if model status is :empty" do
-      expect( model.model_status ).to eq :empty
+    it "raises a Pod4Error if model status is :unknown" do
+      expect( model.model_status ).to eq :unknown
       expect{ model.delete }.to raise_exception Pod4::Pod4Error
     end
 
