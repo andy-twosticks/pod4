@@ -1,8 +1,8 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'basic_model'
-require_relative 'errors'
-require_relative 'alert'
+require_relative "basic_model"
+require_relative "errors"
+require_relative "alert"
 
 
 module Pod4
@@ -112,7 +112,7 @@ module Pod4
       # :id -- otherwise we raise a Pod4Error.
       #
       # Note also that while list returns an array of model objects, `read` has _not_ been run
-      # against each object. The data is there, but @model_status == :empty, and validation has not
+      # against each object. The data is there, but @model_status == :unknown, and validation has not
       # been run.  This is partly for the sake of efficiency, partly to help avoid recursive loops
       # in validation.
       #
@@ -136,7 +136,7 @@ module Pod4
 
       def test_for_invalid_status(action, status)
         raise( Pod4Error, "Invalid model status for an action of #{action}", caller ) \
-          if [:empty, :deleted].include? status
+          if [:unknown, :deleted].include? status
 
       end
 
@@ -159,13 +159,13 @@ module Pod4
     ##
     # Call this to write a new record to the data source.
     #
-    # Note: create needs to set @id. But interface.create should return it, so that's okay.
+    # Note: create needs to set @model_id. But interface.create should return it, so that's okay.
     #
     def create
       run_validation(:create)
       @model_id = interface.create(map_to_interface) unless @model_status == :error
 
-      @model_status = :okay if @model_status == :empty
+      @model_status = :okay if @model_status == :unknown
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)
@@ -183,7 +183,7 @@ module Pod4
       else
         map_to_model(r)
         run_validation(:read)
-        @model_status = :okay if @model_status == :empty
+        @model_status = :okay if @model_status == :unknown
       end
 
       self
@@ -200,6 +200,10 @@ module Pod4
 
       clear_alerts; run_validation(:update)
       interface.update(@model_id, map_to_interface) unless @model_status == :error
+
+      unless interface.id_ai
+        @model_id = instance_variable_get( "@#{interface.id_fld}".to_sym )
+      end
 
       self
     rescue Pod4::WeakError
@@ -259,11 +263,12 @@ module Pod4
     end
 
     ##
-    # Return an Octothorpe of all the attr_columns attributes.
+    # Return an Octothorpe of all the attr_columns attributes. This includes the ID field, whether
+    # or not it has been named in attr_columns.
     #
     # Override if you want to return any extra data. (You will need to create a new Octothorpe.) 
     #
-    # See also: `set`, `map_to_model', 'map_to_interface'
+    # See also: `set`
     #
     def to_ot
       Octothorpe.new(to_h)
@@ -272,13 +277,11 @@ module Pod4
     ##
     # Used by the interface to set the column values on the model.
     #
-    # Don't use this to set model attributes from your code; use `set`, instead.
-    #
     # By default this does exactly the same as `set`. Override it if you want the model to
     # represent data differently than the data source does -- but then you will have to override
     # `map_to_interface`, too, to convert the data back.
     #
-    # See also: `to_ot`, `map_to_model'
+    # See also: `map_to_interface'
     #
     def map_to_model(ot)
       merge(ot)
@@ -286,19 +289,18 @@ module Pod4
     end
 
     ##
-    # used by the model to get an OT of column values for the interface. 
+    # Used by the model to get an OT to pass to the interface on #create and #update.
     #
-    # Don't use this to get model values in your code; use `to_ot`, instead.# This is called by
-    # model.create and model.update when it needs to write to the data source.
-    #
-    # By default this behaves exactly the same as to_ot. Override it if you want the model to
-    # represent data differently than the data source -- in which case you also need to override
-    # `map_to_model`.
+    # Override it if you want the model to represent data differently than the data source -- in
+    # which case you also need to override `map_to_model`.
     #
     # Bear in mind that any attribute could be nil, and likely will be when `map_to_interface` is
     # called from the create method.
     #
-    # See also: `to_ot`, `set`.
+    # NB: we always pass the ID field to the Interface, regardless of whether the field
+    # autoincrements or whether it's been named in `attr_columns`.
+    #
+    # See also: `map_to_model'
     #
     def map_to_interface
       Octothorpe.new(to_h)
@@ -307,12 +309,15 @@ module Pod4
     private
 
     ##
-    # Output a hash of the columns
+    # Output a hash of the columns.
+    # _Always_ include the ID field, even if it's not an attribute.
     #
     def to_h
-      columns.each_with_object({}) do |col, hash|
+      h = columns.each_with_object({}) do |col, hash|
         hash[col] = instance_variable_get("@#{col}".to_sym)
       end
+
+      {interface.id_fld => @model_id}.merge h
     end
 
     ##
@@ -327,11 +332,10 @@ module Pod4
     end
 
     ##
-    # Call the validate method on the model.  Allow the user to override the method with or without
-    # the vmode paramter, as they choose.
+    # Call the validate method on the model. 
     #
     def run_validation(vmode)
-      method(:validate).arity == 0 ? validate : validate(vmode)
+      validate(vmode)
       self
     end
 

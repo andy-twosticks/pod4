@@ -1,8 +1,8 @@
-require 'octothorpe'
+require "octothorpe"
 
-require_relative 'metaxing'
-require_relative 'errors'
-require_relative 'alert'
+require_relative "metaxing"
+require_relative "errors"
+require_relative "alert"
 
 
 module Pod4
@@ -20,16 +20,14 @@ module Pod4
   class BasicModel
     extend Metaxing
 
-    
     # The value of the ID field on the record
     attr_reader :model_id
 
     # one of Model::STATII
     attr_reader :model_status
 
-    # Valid values for @model_status: :error :warning :okay :deleted or :empty
+    # Valid values for @model_status: :error :warning :okay :deleted or :unknown
     STATII = %i|error warning okay deleted empty|
-
 
     class << self
 
@@ -44,26 +42,22 @@ module Pod4
         raise NotImplemented, "no call to set_interface in the model"
       end
 
-    end
-    ##
-
+    end # of class << self
 
     ##
     # Initialize a model by passing it a unique id value.
     # Override this to set initial values for your column attributes.
     #
     def initialize(id=nil)
-      @model_status = :empty
+      @model_status = :unknown
       @model_id     = id
       @alerts       = []
     end
-
 
     ##
     # Syntactic sugar; same as self.class.interface, which returns the interface instance.
     #
     def interface; self.class.interface; end
-
 
     ##
     # Return the list of alerts. 
@@ -72,11 +66,10 @@ module Pod4
     #
     def alerts; @alerts.dup; end
 
-
     ##
     # Clear down the alerts.
     #
-    # Note that set model_status to :okay. Theoretically it might need to be :empty or :deleted,
+    # Note that we set model_status to :okay. Theoretically it might need to be :unknown or :deleted,
     # but if you are calling clear_alerts before a call to `read` or after a call to `delete`, then
     # you have more problems than I can solve.
     #
@@ -84,7 +77,6 @@ module Pod4
       @alerts       = []
       @model_status = :okay
     end
-
 
     ##
     # Raise a Pod4 exception for the model if any alerts are status :error; otherwise do
@@ -100,13 +92,10 @@ module Pod4
       raise ValidationError.from_alert(al) if al && al.type == :error
       self
     end
-
     alias :or_die :raise_exceptions
-
 
     private
 
-    
     ##
     # Add a Pod4::Alert to the model instance @alerts attribute
     #
@@ -123,10 +112,8 @@ module Pod4
       st = @alerts.sort.first.type
       @model_status = st if %i|error warning|.include?(st)
     end
-
     
-  end
-  ##
+  end # of BasicModel
 
 
 end

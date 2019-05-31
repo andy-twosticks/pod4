@@ -19,7 +19,7 @@ describe "SequelInterface (JDBC/MSSQL)" do
   let(:sequel_interface_class) do
     Class.new SequelInterface do
       set_table :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
@@ -27,14 +27,14 @@ describe "SequelInterface (JDBC/MSSQL)" do
     Class.new SequelInterface do
       set_schema :public
       set_table  :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
   let(:prod_interface_class) do
     Class.new SequelInterface do
       set_table  :product
-      set_id_fld :code
+      set_id_fld :code, autoincrement: false
     end
   end
 

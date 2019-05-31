@@ -36,7 +36,7 @@ describe "(writing encrypted data via sequel_interface)" do
   let(:medical_interface_class) do 
     Class.new Pod4::SequelInterface do
       set_table  :medical
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 

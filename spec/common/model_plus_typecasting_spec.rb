@@ -6,14 +6,16 @@ require "pod4/typecasting"
 require "pod4/null_interface"
 
 
-describe "ProductModel" do
+describe "(Model plus typecasting)" do
 
   let(:product_model_class) do
     Class.new Pod4::Model do
       include Pod4::TypeCasting
       force_encoding Encoding::ISO_8859_1   # I assume we are running as UTF8 here
       attr_columns :id, :code, :product, :price
-      set_interface NullInterface.new(:id, :code, :product, :price, [])
+      ifce = NullInterface.new(:id, :code, :product, :price, [])
+      ifce.id_ai = false
+      set_interface ifce
     end
   end
 
@@ -28,8 +30,12 @@ describe "ProductModel" do
       typecast :flag,     as: :boolean
       typecast :foo,     use: :mycast, bar: 42
       typecast :bar,      as: Float 
-      set_interface NullInterface.new( :id, :code, :band, :sales, :created, :yrstart, 
-                                       :flag, :foo, :bar, [] )
+
+      ifce = NullInterface.new( :id, :code, :band, :sales, :created, :yrstart, 
+                                :flag, :foo, :bar, [] )
+
+      ifce.id_ai = false
+      set_interface ifce
 
       def mycast(value, opts); "blarg"; end
     end

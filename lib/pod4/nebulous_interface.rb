@@ -1,5 +1,5 @@
-require_relative 'interface'
-require_relative 'errors'
+require_relative "interface"
+require_relative "errors"
 
 
 module Pod4
@@ -8,7 +8,7 @@ module Pod4
   ##
   # An interface to talk to a Nebulous Target.
   #
-  # Each interface can only speak with one target, designated with #set_target.# The developer must
+  # Each interface can only speak with one target, designated with #set_target. The developer must
   # also set a unique ID key using #set_id_fld.
   #
   # The primary challenge here is to map the CRUDL methods (which interfaces contract to implement)
@@ -42,7 +42,7 @@ module Pod4
   # only keys which are symbols are translated to the corresponding values in the record or
   # selection hash; anything else is passed literally in the Nebulous parameter string.
   #
-  # When you subclass NebulousInterfce, you may want to override some or all of the CRUDL methods
+  # When you subclass NebulousInterface, you may want to override some or all of the CRUDL methods
   # so that your callers can pass specific parameters rather than a hash; the above example
   # demonstrates this.
   #
@@ -72,9 +72,13 @@ module Pod4
   #       self
   #     end
   #
+  # NB: Connections: Nebulous does not use the Connection class. The user must configure
+  # NebulousStomp themselves, once, when their application starts; but they don't need to do this
+  # before requiring the models. And there is no need for a connection pool.
+  #
   class NebulousInterface < Interface
 
-    attr_reader :id_fld
+    attr_reader :id_fld, :id_ai
 
     # The NebulousStomp Message object holding the response from the last message sent, or, nil.
     attr_reader :response 
@@ -90,7 +94,6 @@ module Pod4
     # NB: if we got an exception sending the message, we raised it on the caller, so there is no
     # status for that.
     attr_reader :response_status
-
 
     Verb = Struct.new(:name, :params)
 
@@ -118,7 +121,6 @@ module Pod4
 
       def verbs; {}; end
 
-
       ##
       # Set the name of the Nebulous target in the interface definition
       #
@@ -132,18 +134,22 @@ module Pod4
         raise Pod4Error, "You need to use set_target on your interface"
       end
 
-
       ##
       # Set the name of the ID parameter (needs to be in the CRUD verbs param list)
-      def set_id_fld(idFld)
+      def set_id_fld(idFld, opts={})
+        ai = opts.fetch(:autoincrement) { true }
         define_class_method(:id_fld) {idFld}
+        define_class_method(:id_ai)  {!!ai}
       end
 
       def id_fld
         raise Pod4Error, "You need to use set_id_fld"
       end
 
-      
+      def id_ai
+        raise Pod4Error, "You need to use set_id_fld"
+      end
+
       ##
       # Make sure all of the above is consistent
       #
@@ -164,28 +170,25 @@ module Pod4
 
       end
 
-
-    end
-    ##
-
+    end # of class << self
 
     ##
     # In normal operation, takes no parameters.
     #
     # For testing purposes you may pass something here. Whatever it is you pass, it must respond to
-    # a `send` method, take the same parameters as NebulousStomp::Request.new (that is, a target
-    # and a message) and return something that behaves like a NebulousStomp::Request. This method
-    # will be called instead of creating a NebulousStomp::Request directly.
+    # a `send` method, take the same parameters as NebulousStomp::Request.new (that is, a
+    # target and a message) and return something that behaves like a NebulousStomp::Request.
+    # This method will be called instead of creating a NebulousStomp::Request directly.
     #
     def initialize(requestObj=nil)
       @request_object  = requestObj # might as well be a reference 
       @response        = nil
       @response_status = nil
       @id_fld          = self.class.id_fld
+      @id_ai           = self.class.id_ai
 
       self.class.validate_params
     end
-
 
     ##
     # Pass a parameter string or array (which will be taken as the literal Nebulous parameter) or a
@@ -215,7 +218,6 @@ module Pod4
       handle_error(e)
     end
 
-
     ##
     # Pass a parameter string or an array as the record. returns the ID. We assume that the
     # response to the create message returns the ID as the parameter part of the success verb. If
@@ -224,13 +226,15 @@ module Pod4
     def create(record)
       raise ArgumentError, 'create takes a Hash or an Octothorpe' unless hashy?(record)
 
+      raise ArgumentError, "ID field missing from record" \
+        if !@id_ai && record[@id_fld].nil? && record[@id_fld.to_s].nil?
+
       send_message( verb_for(:create), param_string(:create, record), false )
       @response.params
 
     rescue => e
       handle_error(e)
     end
-
 
     ##
     # Given the id, return an Octothorpe of the record.
@@ -253,7 +257,6 @@ module Pod4
       Octothorpe.new( @response.body.is_a?(Hash) ? @response.body : {} )
     end
 
-
     ##
     # Given an id an a record (Octothorpe or Hash), update the record. Returns self.
     #
@@ -267,7 +270,6 @@ module Pod4
 
       self
     end
-
 
     ##
     # Given an ID, delete the record. Return self.
@@ -283,7 +285,6 @@ module Pod4
 
       self
     end
-
     
     ##
     # Bonus method: chain this method before a CRUDL method to clear the cache for that parameter
@@ -337,9 +338,7 @@ module Pod4
       handle_error(err)
     end
 
-
     private
-
 
     ##
     # Given :create, :read, :update, :delete or :list, return the Nebulous verb
@@ -347,7 +346,6 @@ module Pod4
     def verb_for(action)
       self.class.verbs[action].name
     end
-
 
     ##
     # Work out the parameter string based on the corresponding #set_Verb call. Insert the ID value
@@ -364,7 +362,6 @@ module Pod4
 
       para.join(',')
     end
-
 
     ##
     # Deal with any exceptions that are raised.
@@ -393,7 +390,6 @@ module Pod4
 
     end
 
-
     ##
     # A little helper method to create a response object (unless we were given one for testing
     # purposes), clear the cache if we are supposed to, and then send the message.
@@ -417,12 +413,11 @@ module Pod4
       with_cache ? request.send : request.send_no_cache
     end
 
-
     def hashy?(obj)
       obj.kind_of?(Hash) || obj.kind_of?(Octothorpe)
     end
 
-  end
+  end # of NebulousInterface
 
 
 end

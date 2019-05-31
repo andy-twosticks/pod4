@@ -49,7 +49,8 @@ I don't want the people who maintain my code to have to know the differences bet
 or so methods you need to worry about, and six of those are pretty much self-explanatory. Or, you
 can inherit from Pod4::BasicModel instead, and do without even that.
 
-I honestly don't think of it as an Object Relational Manager.  I think of it as a Way To Have Nice Models.
+I honestly don't think of it as an Object Relational Manager.  I think of it as a Way To Have Nice
+Models.
 
 If you are looking for something with all the features of, say, ActiveRecord, then this isn't for
 you. I provide basic access to and maintenance of records, with validation. For anything more, you
@@ -168,7 +169,7 @@ Here is the model and interface definition that goes with the above example:
 
       class ExampleInterface < Pod4::PgInterface
         set_table :example
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface ExampleInterface.new($pg_conn)
@@ -199,11 +200,12 @@ the data. What they are depends on the interface, but the ones for PgInterface a
 
 Actually, _every_ interface defines `set_id_fld`. Instances of a model _must_ be represented by a
 single ID field that provides a unique identifier. Pod4 does not care what it's called or what data
-type it is -- if you say that's what makes it unique, that's good enough.
+type it is -- if you say that's what makes it unique, that's good enough. Additionally you can
+specify whether your key autoincrements or not. If you don't say, we assume that it does.
 
 Internally, Interfaces talk the same basic language of list / create / read / update / delete that
-models do. But I'm not finding the need to subclass these much. So that's probably going to be it
-for your Interface definition.
+models do. Sometimes you might want to add a special interface method for a specific database
+operation, but otherwise that's probably going to be it for your Interface definition.
 
 ### Model ###
 
@@ -214,14 +216,16 @@ Models have two of their own DSLish methods:
 
 You can see that interfaces are instantiated when the model is required.  Exactly what you need to
 pass to the interface to instantiate it depends on the interface. SequelInterface wants the Sequel
-DB object (which means you have to require sequel, connect, and *then* require your models); the
-other interfaces only want connection hashes.  
+DB object; the other interfaces only want connection hashes. 
+
+(If you are finding it annoying to have to, for example, figure out your database connection hash
+or get a Sequel DB object _before_ requiring your models, then see "Connections", below.)
 
 Any attributes you define using `attr_columns` are treated specially by Pod4::Model. You get all
 the effect of the standard Ruby `attr_accessor` call, but in addition, the attribute will be passed
 to and from the interface, and to and from your external code, by the standard model methods.
 
-In addition to the ones above, we have:
+In addition to the methods above, we have:
 
 * `validate`         -- override this to provide validation
 * `map_to_model`     -- controls how the interface sets attributes on the model
@@ -231,7 +235,7 @@ In addition to the ones above, we have:
 A model also has some built-in attributes of its own:
 
 * `model_id`     -- this is the value of the ID column you set in the interface.
-* `model_status` -- one of :error :warning :okay :deleted :empty 
+* `model_status` -- one of :error :warning :okay :deleted :unknown
 
 We'll deal with all these below.
 
@@ -240,11 +244,12 @@ Adding Validation
 -----------------
 
 Built into the model is an array of alerts (Pod4::Alert) which are messages that have been raised
-against the instance of the model class. Each alert can have a status of :error, :warning, :info or
-:success. If any alert has a status of :error :warning or :success then that is reflected in the
-model's `model_status` attribute. 
+against the instance of the model class. Each alert can have a type of :error, :warning, :info or
+:success. If any alert has a type of :error or :warning, then that is reflected in the model's
+`model_status` attribute. A model that has passed validation with no :error or :warning alerts is
+status :okay.
 
-(In fact, there are two other possible statuses -- models are :empty when first created
+(There are two other possible statuses -- models are :unknown when validation has yet to be run, 
 and :deleted after a call to delete.)
 
 You can raise alerts yourself, and you normally do so by overriding `validate`.  This method is
@@ -259,7 +264,7 @@ Here's a model with some validation:
       class CustomerInterface < Pod4::PgInterface
         set_schema :pod4example
         set_table  :customer
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface CustomerInterface.new($pg_conn)
@@ -287,7 +292,7 @@ the validation will fail.  (Probably you do not want this on delete; test the pa
 to validate as in the example above).
 
 In passing I should note that validation is _not_ run on list: every record that list returns
-should be complete, but the `model_status` will be :empty because validation has not been run.
+should be complete, but the `model_status` will be :unknown because validation has not been run.
 (This is partly for the sake of speed.)
 
 You should be aware that validation is not called on `set`, either. Because of that, it's entirely
@@ -304,16 +309,16 @@ datatimes should all end up as the right type in the model.  (It depends on the 
 going to get tired of me saying that, aren't you?) But maybe you want more than that.
 
 Let's imagine you have a database table in PostreSQL with a column called cost that uses the money
-type. And you want it to be a `BigDecimal` in the model.  Well, Pod4 won't do that for you -- for
-all I know someone might have a problem with my requiring BigDecimal -- but it's not hard to do
-yourself.
+type. (This is a terrible idea, by the way.) And you want it to be a `BigDecimal` in the model.
+Well, Pod4 won't do that for you -- for all I know someone might have a problem with my requiring
+BigDecimal -- but it's not hard to do yourself.
 
     class Product < Pod4::Model
 
       class ProductInterface < Pod4::PgInterface
         set_schema :pod4example
         set_table  :product
-        set_id_fld :product_id
+        set_id_fld :product_id, autoincrement: true
       end
 
       set_interface ProductInterface.new($pg_conn)
@@ -340,7 +345,8 @@ interface from the model. It _returns_ an Octothorpe to the interface. By defaul
 You might also want to ensure that your data types are honoured when your application updates a
 model object; in which case you will need to override `set` as well.
 
-At some point in the future, the Pod4::TypeCasting mixin will do most of this for you.
+If this seems like a lot of work, take a look at the Pod4::TypeCasting mixin. it will handle it for
+you.
 
 
 Relations
@@ -352,7 +358,7 @@ Pod4 does not provide relations. But, I'm not sure that it needs to. Look:
 
       class BlogPostInterface < Pod4::PgInterface
         set_table  :blogpost
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface BlogPostInterface.new($conn)
@@ -396,7 +402,7 @@ If your interface is connected to a SQL database, it should provide two more met
 
       class BlogPostInterface < Pod4::PgInterface
         set_table  :blogpost
-        set_id_fld :id
+        set_id_fld :id, autoincrement: true
       end
 
       set_interface BlogPostInterface.new($conn)
@@ -434,12 +440,110 @@ certainly need revisiting if you change database. But how often does that happen
 it ever does, you are likely to need to revisit the effected models anyway...
 
 
+Connections
+-----------
+
+### A Couple Of Wrinkles ###
+
+There are a couple of weird wrinkles in all this which you may or may not have missed.  Wrinkle
+one:
+
+    class MyModel < Pod4::Model
+
+      class Interface < Pod4::PgInterface
+        set_id_fld :id, autoincrement: true
+        set_table  :my_table
+      end
+
+      set_interface Interface.new($pgconn)  # <- wrinkle
+      attr_columns :one, two, three
+    end
+      
+You _instantiate_ the interface at the point where you _define_ the model.  I admit this is a
+little odd. It wasn't a specific design decision on my part; rather it was the cleanest way to get
+where I was going. 
+
+In practice this means you need to get your DB connection details from somewhere, maybe create your
+Sequel DB object; and only then can you require your models.
+
+Leading on from this, wrinkle two: except when using Sequel (which behaves differently) each
+interface has its own connection to the database. This means that your application has (simplifying
+a bit here) one database connection for each model class.  So if you have a Customer model and a
+Orders model, your application will hold two connections to the database.  All customer enquiries
+share a single connection, and all order enquiries share a single connection.
+
+I'm finding that, generally, this scales about right. But if you have a lot of different models and a
+database that runs out of connections easily, it might be problematic.
+
+### The Connection Object ###
+
+The solution to both of these wrinkles, if you need one, is to use a Pod4::Connection object:
+
+    #
+    # init.rb -- bootup for my project
+    #
+
+    # Require libraries
+    require "sequel"
+    require "pod4"
+    require "pod4/sequel_interface"
+    require "pod4/connection"
+
+    # require models
+    $conn = Pod4::Connection.new(interface: Pod4::SequelInterface)
+    require_relative "models/customer"
+
+    # set up database connection
+    hash = get_sequel_params
+    $conn.data_layer_options = Sequel.connect(hash)
+
+    #############
+
+    #
+    # models/customer.rb ( only a part shown)
+    #
+
+    class Foo < Pod4::Model
+      class Interface < Pod4::SequelInterface
+        set_table    :foo
+        set_id_field :id, autoincrement: true
+      end
+
+      set_interface Interface.new($conn)
+
+TL;DR: the only code that needs to go in the middle of your requires is the line defining a
+Connection object; you pass that to the interface instead.  You can set up the parameters
+the interface needs and pass them to the connection object afterwards.  
+
+With TdsInterface and PgInterface you can pass the same connection to multiple models and they will
+share it.  These interfaces take a Pod4::ConnectionPool instead, but otherwise the code looks
+exactly the same as the above example. 
+
+(Technical note: the ConnectionPool object will actually provide multiple connections, one per
+thread that uses it.  This satisfies the requirement of the underlying libraries that connections
+are not shared between threads, and therefore ensures that Pod4 is more or less thread safe.  You
+get this functionality automatically -- if you don't define a ConnectionPool, then the interface
+will create one internally. Sequel uses its own thread pool, of course, and we only use the one
+Sequel DB object for the whole of Pod4, so it doesn't need any of that. That's why it uses
+Pod4::Connection, instead.)
+
+
 BasicModel
 ----------
 
 Sometimes your model needs to represent data in a way which is so radically different from the data
 source that the whole list, create, read, update, delete thing that Pod4::Model gives you is no
-use. Enter Pod4::BasicModel.
+use. 
+
+Pod4::BasicModel gives you:
+
+* `set_interface`
+* the `model_id`, `model_status` and `alerts` attributes
+* `add_alert`
+
+...and nothing else. But that's enough to make a model, your way, using the methods on the
+interface. These are the same CRUDL methods that Pod4::Model provides -- except that on the
+interface, the CRUD methods take a record id as a key.
 
 A real world example: at James Hall my intranet system has a User model, where each attribute is a
 parameter that controls how the system behaves for that user -- email address, security settings,
@@ -450,16 +554,6 @@ add a user parameter. The logical place to change the parameter is in the User m
 database, and certainly not both. So on the database, I have a settings table where the key runs:
 userid, setting name.
 
-Pod4::BasicModel gives you:
-
-* `set_interface`
-* the `model_id`, `model_status` and `alerts` attributes
-* `add_alert`
-
-...and nothing else. But that's enough to make a model, your way, using the methods on the
-interface. These are the same CRUDL methods that Pod4::Model provides -- except that the CRUD
-methods take a record id as a key.
-
 Here's a simplified version of my User model. This one is read only, but it's hopefully enough to
 get the idea:
 
@@ -467,9 +561,8 @@ get the idea:
 
       class UserInterface < ::Pod4::SequelInterface
         set_table :settings
-        set_id_fld :id
+        set_id_fld :id, autoincrement: false
       end
-
 
       # Here we set what settings always exist for a user
       Setting = Struct.new(:setName, :default)
@@ -485,19 +578,14 @@ get the idea:
       set_interface UserInterface.new($db)
       attr_reader :userid, :depot, :store, :menu, :roles, :name, :nick, :mail
 
-
       class << self
-
         def keys; DefaultSettings.map{|x| x.setName }; end
 
         def list
           array = interface.select(%Q|select distinct userid from settings;|)
           array.map {|r| self.new( r[:userid] ).read }
         end
-
-      end
-      ##
-      
+      end # of class << self
 
       def initialize(userid=nil)
         super(userid)
@@ -506,7 +594,6 @@ get the idea:
           instance_variable_set( "@#{key}".to_sym, nil )
         end
       end
-
 
       def read
         lst = interface.list(userid: @model_id)
@@ -517,11 +604,10 @@ get the idea:
 
         @userid = @model_id
         set_merge( Octothorpe.new(data) )
-        validate; @model_status = :okay unless @model_status != :empty
+        validate; @model_status = :okay unless @model_status != :unknown
 
         self
       end
-
 
       def to_ot
         hash = self.class.keys.each_with_object({}) do |k,m| 
@@ -530,7 +616,6 @@ get the idea:
 
         Octothorpe.new(hash)
       end
-
 
       def set_merge(hash)
         self.class.keys.each do |key|
@@ -541,11 +626,37 @@ get the idea:
 
     end
 
+
 Extensions
 ----------
 
-There are now some mixins that you can use to extend the functionality of Pod4 models.  Have a look
+There are some mixins that you can use to extend the functionality of Pod4 models.  Have a look
 at the comments at the top of the mixin in question if you want details.
 
 * typecasting -- force columns to be a specific ruby type, validation helpers, some encoding stuff
 * encrypting  -- encrypt text columns
+* tweaking    -- adds DSL commands to support custom methods on the interface.
+
+
+Gotchas
+-------
+
+Some hopefully-not-too-unexpected behaviour:
+
+* If you change attributes on a record, then call #delete or #read on it, we don't warn you that
+  your changes are lost.
+
+* If you attempt to update an autoincrement ID field, we don't write that change to the database
+  and we don't warn you about that.
+
+* As mentioned above, we only run validate on #create, #read, #update and #delete. So you can
+  change the attributes of a record to something invalid without it immediately warning you. (You
+  can always run #validate yourself, though.)
+
+* Again, as mentioned above, the array of model instances returned by #list will all be status
+  :unknown.  This is because we have run neither #read nor #validate against them.
+
+* I can't stop you writing to `@model_id` or `@model_status` in your model.  I have no idea what
+  might happen if you do, but I doubt that it would ever be a good idea.  (In a non-autoincrement
+  model, write to your ID field directly instead; `@model_id` will be updated when you call
+  #create, #update or of course #read.)
