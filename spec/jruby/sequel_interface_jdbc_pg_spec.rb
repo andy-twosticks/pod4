@@ -14,32 +14,12 @@ require 'bigdecimal'
 require 'jdbc/postgres'
 
 
-=begin
-class TestSequelInterfacePg < SequelInterface
-  set_table :customer
-  set_id_fld :id
-end
-
-class SchemaSequelInterfacePg < SequelInterface
-  set_schema :public
-  set_table  :customer
-  set_id_fld :id
-end
-
-class ProdSequelInterfacePg < SequelInterface
-  set_table  :product
-  set_id_fld :code
-end
-=end
-
-
-
 describe "SequelInterface (JDBC/Pg)" do
 
   let(:sequel_interface_class) do
     Class.new SequelInterface do
       set_table :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
@@ -47,14 +27,14 @@ describe "SequelInterface (JDBC/Pg)" do
     Class.new SequelInterface do
       set_schema :public
       set_table  :customer
-      set_id_fld :id
+      set_id_fld :id, autoincrement: true
     end
   end
 
   let(:prod_interface_class) do
     Class.new SequelInterface do
       set_table  :product
-      set_id_fld :code
+      set_id_fld :code, autoincrement: false
     end
   end
 

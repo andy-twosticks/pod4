@@ -110,12 +110,14 @@ db	lib/pod4/sequel_interface.rb	/^    def db$/;"	f	class:Pod4
 db	lib/pod4/tds_interface.rb	/^      def db $/;"	f	class:Pod4.TdsInterface
 db	lib/pod4/tds_interface.rb	/^    def db;     self.class.db;     end$/;"	f	class:Pod4
 db_setup	spec/common/sequel_interface_pg_spec.rb	/^  def db_setup(db)$/;"	f
+db_setup	spec/jruby/sequel_encrypting_jdbc_pg_spec.rb	/^  def db_setup(connection)$/;"	f
 db_setup	spec/mri/pg_encrypting_spec.rb	/^  def db_setup(connect)$/;"	f
 db_setup	spec/mri/pg_interface_spec.rb	/^  def db_setup(connect)$/;"	f
 db_setup	spec/mri/sequel_encrypting_spec.rb	/^  def db_setup(connection)$/;"	f
 db_setup	spec/mri/tds_encrypting_spec.rb	/^  def db_setup(connect)$/;"	f
 db_setup	spec/mri/tds_interface_spec.rb	/^  def db_setup(connect)$/;"	f
 db_table	lib/pod4/sequel_interface.rb	/^    def db_table$/;"	f	class:Pod4
+db_truncate	spec/jruby/sequel_encrypting_jdbc_pg_spec.rb	/^  def db_truncate(connection)$/;"	f
 db_truncate	spec/mri/pg_encrypting_spec.rb	/^  def db_truncate(connect)$/;"	f
 db_truncate	spec/mri/sequel_encrypting_spec.rb	/^  def db_truncate(connection)$/;"	f
 db_truncate	spec/mri/tds_encrypting_spec.rb	/^  def db_truncate(connect)$/;"	f	class:db_setup
@@ -154,10 +156,14 @@ fake_an_alert	spec/common/basic_model_spec.rb	/^      def fake_an_alert(*args)$/
 fake_an_alert	spec/common/model_new_validate_spec.rb	/^      def fake_an_alert(*args)$/;"	f
 fake_an_alert	spec/common/model_spec.rb	/^      def fake_an_alert(*args)$/;"	f
 fill_data	spec/common/sequel_interface_pg_spec.rb	/^  def fill_data(ifce, data)$/;"	f
+fill_data	spec/jruby/sequel_interface_jdbc_ms_spec.rb	/^  def fill_data(ifce)$/;"	f
+fill_data	spec/jruby/sequel_interface_jdbc_pg_spec.rb	/^  def fill_data(ifce)$/;"	f
 fill_data	spec/mri/pg_interface_spec.rb	/^  def fill_data(ifce)$/;"	f
 fill_data	spec/mri/sequel_interface_spec.rb	/^  def fill_data(ifce)$/;"	f
 fill_data	spec/mri/tds_interface_spec.rb	/^  def fill_data(ifce)$/;"	f	class:db_setup
 fill_product_data	spec/common/sequel_interface_pg_spec.rb	/^  def fill_product_data(ifce)$/;"	f
+fill_product_data	spec/jruby/sequel_interface_jdbc_ms_spec.rb	/^  def fill_product_data(ifce)$/;"	f
+fill_product_data	spec/jruby/sequel_interface_jdbc_pg_spec.rb	/^  def fill_product_data(ifce)$/;"	f
 fill_product_data	spec/mri/pg_interface_spec.rb	/^  def fill_product_data(ifce)$/;"	f
 fill_product_data	spec/mri/sequel_interface_spec.rb	/^  def fill_product_data(ifce)$/;"	f
 fill_product_data	spec/mri/tds_interface_spec.rb	/^  def fill_product_data(ifce)$/;"	f	class:db_setup
@@ -236,6 +242,8 @@ list	lib/pod4/tds_interface.rb	/^    def list(selection=nil)$/;"	f	class:Pod4
 list_contains	spec/common/nebulous_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/null_interface_spec.rb	/^  def list_contains(id)$/;"	f
 list_contains	spec/common/sequel_interface_pg_spec.rb	/^  def list_contains(ifce, id)$/;"	f
+list_contains	spec/jruby/sequel_interface_jdbc_ms_spec.rb	/^    def list_contains(ifce, id)$/;"	f
+list_contains	spec/jruby/sequel_interface_jdbc_pg_spec.rb	/^    def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/pg_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/sequel_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f
 list_contains	spec/mri/tds_interface_spec.rb	/^  def list_contains(ifce, id)$/;"	f	class:db_setup
