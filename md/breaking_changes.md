@@ -23,8 +23,6 @@ Some minor changes that arise from this:
 * If you change the ID field in a non-autoincrement model, `@model_id` is now updated to reflect
   that when you call #update.  (This was not true before 1.0.)
 
-
-
 Connection Objects
 ------------------
 
@@ -34,8 +32,6 @@ internally, and as such I would be surprised if it didn't effect existing < 1.0 
 
 This counts double if you use PgInterface and TdsInterface, since these are now being served one
 connection per thread and are finally really threadsafe.
-
-
 
 NullInterface
 -------------
@@ -52,14 +48,10 @@ ifce.id_ai = false
 set_interface ifce
 ```
 
-
-
 DSL To Declare a Custom List Method
 -----------------------------------
 
 This is provided by the new Tweaking mixin, so it's not a breaking change.
-
-
 
 Model Status :empty
 -------------------
@@ -67,4 +59,22 @@ Model Status :empty
 This has been renamed to :unknown to reflect that it is also the status of objects created by #list;
 :unknown means that validation has not been run yet. This definitely counts as a breaking change,
 although you would only be effected if you were testing for :empty in a model...
+
+
+0.10.1
+======
+
+Validate Method Takes A Parameter
+---------------------------------
+
+You now need to give your #validate method a parameter, the operation that is being validated --
+one of :create :read :update or :delete.
+
+In fact you could optionally do this since 0.9.  But in 0.10.1 we removed the slightly confusing
+feature where if validation failed on a #delete, we deleted the record anyway.  So 0.10.1 marks the
+point where, for all practical purposes, you have to give your method a parameter and check it at
+least for :delete.
+
+Models that don't do this will not allow deletion of records that fail validation, which presumably
+is an anti-feature for you.
 
