@@ -201,6 +201,10 @@ module Pod4
       clear_alerts; run_validation(:update)
       interface.update(@model_id, map_to_interface) unless @model_status == :error
 
+      unless interface.id_ai
+        @model_id = instance_variable_get( "@#{interface.id_fld}".to_sym )
+      end
+
       self
     rescue Pod4::WeakError
       add_alert(:error, $!)

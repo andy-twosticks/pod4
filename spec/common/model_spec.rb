@@ -512,6 +512,15 @@ describe "Model" do
       expect( new_model.alerts.map(&:message) ).to include( include "foo" )
     end
 
+    it "updates @model_id" do
+      m = customer_model_class.new
+      m.id   = 5
+      m.name = "Lurch"
+      m.create
+
+      expect( m.model_id ).to eq 5
+    end
+
   end # of #create
 
 
@@ -583,6 +592,13 @@ describe "Model" do
       expect( model.alerts.map(&:message) ).to include( include "foo" )
     end
 
+    it "updates @model_id" do
+      foo = product_model_class.new("foo")
+      foo.read
+
+      expect( foo.model_id ).to eq "foo"
+    end
+
   end # of #read
 
 
@@ -652,6 +668,14 @@ describe "Model" do
       expect{ model3.update }.not_to raise_exception
       expect( model3.model_status ).to eq :error
       expect( model3.alerts.map(&:message) ).to include( include "foo" )
+    end
+
+    it "updates @model_id" do
+      foo = product_model_class.new("foo").read
+      foo.code = "bang"
+      foo.update
+      
+      expect( foo.model_id ).to eq "bang"
     end
 
   end # of #update
