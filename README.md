@@ -656,3 +656,7 @@ Some hopefully-not-too-unexpected behaviour:
 * Again, as mentioned above, the array of model instances returned by #list will all be status
   :unknown.  This is because we have run neither #read nor #validate against them.
 
+* I can't stop you writing to `@model_id` or `@model_status` in your model.  I have no idea what
+  might happen if you do, but I doubt that it would ever be a good idea.  (In a non-autoincrement
+  model, write to your ID field directly instead; `@model_id` will be updated when you call
+  #create, #update or of course #read.)

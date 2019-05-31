@@ -20,6 +20,9 @@ Some minor changes that arise from this:
 * If you manually update the ID field even though autoincrement is true, that change will not be
   stored in the database / whatever. We don't pass that on.
 
+* If you change the ID field in a non-autoincrement model, `@model_id` is now updated to reflect
+  that when you call #update.  (This was not true before 1.0.)
+
 
 
 Connection Objects
