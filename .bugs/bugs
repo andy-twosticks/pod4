@@ -1,3 +1,4 @@
 Fixnum is Deprecated                                         | owner:Andy Jones <andy.jones@jameshall.co.uk>, open:True, id:274eb8828bd4e7d879e4f7a99317c75eb2a2e2b0, time:1533817328.12
 BigDecimal.new is deprecated                                 | owner:Andy Jones <andy.jones@jameshall.co.uk>, open:False, id:3979ce1679bc4f8c4aef8436e344e10e3773480d, time:1533817342.0
+Remove id field from record in update if its autoincrement   | owner:Andy Jones <andy.jones@jameshall.co.uk>, open:True, id:a383d9f88db5b73e9391a824310133ed2e348eda, time:1570013165.41
 Connection Pool Parallelism tests crash rspec when run as part of the suite | owner:Andy Jones <andy.jones@jameshall.co.uk>, open:False, id:b5368c7ef19065fc597b5692314da71772660963, time:1554280671.5
