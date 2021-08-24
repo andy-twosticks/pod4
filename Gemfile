@@ -6,14 +6,14 @@ gemspec
 group :development, :test do
 
   # for bundler, management, etc etc
-  gem "bundler", "~> 2"
-  gem "rake",    "~> 12" 
-  gem "rspec",   "~> 3.8"
+  gem "bundler", "~> 2.2"
+  gem "rake",    "~> 13.0" 
+  gem "rspec",   "~> 3.10"
   gem 'pry'
   gem "pry-doc"
 
   # For testing
-  gem "sequel",         "~> 5.20" 
+  gem "sequel",         "~> 5.4" 
   gem "nebulous_stomp", "~> 3"
 
   platforms :ruby do
@@ -26,7 +26,13 @@ group :development, :test do
     gem "jruby-lint"
     gem "jeremyevans-postgres-pr"
     gem 'jdbc-mssqlserver'
-    gem 'jdbc-postgres', '9.4.1200'
+
+    # Note that this gem is part of a larger project, for Activerecord, and their version history
+    # makes no sense at all.  See the RubyGems site to make sense of that.  Note: there are
+    # alternative gems. But this is by the jRuby team; so that's a powerful reason to tolerate BS.
+    # If you want to go back to the previous version we used you'll have to pin it here; Bundler
+    # can't figure out their version history, either.
+    gem 'jdbc-postgres', '42.2.14'
   end
 
 
