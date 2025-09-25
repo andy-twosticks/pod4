@@ -3,13 +3,13 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'pod4/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "pod4"
-  spec.version       = Pod4::VERSION
-  spec.required_ruby_version = "2.7.4"
-  spec.authors       = ["Andy Jones"]
-  spec.email         = ["andy.jones@twosticksconsulting.co.uk"]
-  spec.summary       = %q|Totally not an ORM|
-  spec.description   = <<-DESC.gsub(/^\s+/, "")
+  spec.name                  = "pod4"
+  spec.version               = Pod4::VERSION
+  spec.required_ruby_version = ">= 2.7.4"
+  spec.authors               = ["Andy Jones"]
+  spec.email                 = ["andy.jones@twosticksconsulting.co.uk"]
+  spec.summary               = %q|Totally not an ORM|
+  spec.description           = <<-DESC.gsub(/^\s+/, "")
     Provides a simple, common framework to talk to a bunch of data sources,
     using model classes which consist of a bare minimum of DSL plus vanilla Ruby
     inheritance.
