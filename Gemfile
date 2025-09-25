@@ -11,6 +11,8 @@ group :development, :test do
   gem "rspec",   "~> 3.10"
   gem 'pry'
   gem "pry-doc"
+  gem "base64"
+  gem "logger"
 
   # For testing
   gem "sequel",         "~> 5.4" 

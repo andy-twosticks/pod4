@@ -222,7 +222,7 @@ module Pod4
         return thing if thing.nil?
 
         # For all current cases, attempting to typecast a blank string should return nil
-        return nil if thing =~ /\A\s*\Z/ 
+        return nil if thing.is_a?(String) && thing =~ /\A\s*\Z/ 
 
         # The order we try these in matters
         return tc_bigdecimal(thing) if type == BigDecimal 

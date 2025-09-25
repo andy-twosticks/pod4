@@ -466,18 +466,26 @@ where I was going.
 In practice this means you need to get your DB connection details from somewhere, maybe create your
 Sequel DB object; and only then can you require your models.
 
-Leading on from this, wrinkle two: except when using Sequel (which behaves differently) each
-interface has its own connection to the database. This means that your application has (simplifying
-a bit here) one database connection for each model class.  So if you have a Customer model and a
-Orders model, your application will hold two connections to the database.  All customer enquiries
-share a single connection, and all order enquiries share a single connection.
+As it stood, this meant that, except when using Sequel (which behaves differently) each
+interface had its own connection to the database. This means that your application had (simplifying
+a bit here) one database connection for each model class.
 
-I'm finding that, generally, this scales about right. But if you have a lot of different models and a
-database that runs out of connections easily, it might be problematic.
+This scaled surprisingly well, but (again, excepting Sequel) was not thread safe; multiple threads,
+if you had them, would share the same connection. Note that we are talking in the past tense for
+this second wrinkle, because of:
+
 
 ### The Connection Object ###
 
-The solution to both of these wrinkles, if you need one, is to use a Pod4::Connection object:
+The solution to both of these wrinkles is the Pod4::Connection object. 
+
+By default any interface other than SequelInterface will create a pool of connections and connect
+to the database with one your thread is currently using.  (Sequel uses it's own connection pool, so
+will create one internally. It uses its own thread pool, of course, and we only use the one Sequel
+DB object for the whole of Pod4, so it doesn't need any of that. That's why it uses
+Pod4::Connection, instead.)
+
+You can set this up manually, if you wish:
 
     #
     # init.rb -- bootup for my project
@@ -518,14 +526,6 @@ the interface needs and pass them to the connection object afterwards.
 With TdsInterface and PgInterface you can pass the same connection to multiple models and they will
 share it.  These interfaces take a Pod4::ConnectionPool instead, but otherwise the code looks
 exactly the same as the above example. 
-
-(Technical note: the ConnectionPool object will actually provide multiple connections, one per
-thread that uses it.  This satisfies the requirement of the underlying libraries that connections
-are not shared between threads, and therefore ensures that Pod4 is more or less thread safe.  You
-get this functionality automatically -- if you don't define a ConnectionPool, then the interface
-will create one internally. Sequel uses its own thread pool, of course, and we only use the one
-Sequel DB object for the whole of Pod4, so it doesn't need any of that. That's why it uses
-Pod4::Connection, instead.)
 
 
 BasicModel

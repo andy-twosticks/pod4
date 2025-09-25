@@ -11,7 +11,7 @@ module Pod4
 
   class ConnectionPool < Connection
 
-    PoolItem = Struct.new(:client, :thread_id)
+    PoolItem = Struct.new(:client, :thread_id, :stamp)
 
     class Pool
       def initialize
@@ -21,12 +21,16 @@ module Pod4
 
       def <<(cl)
         @mutex.synchronize do
-          @items << PoolItem.new(cl, Thread.current.object_id)
+          @items << PoolItem.new(cl, Thread.current.object_id, Time.now)
         end
       end
 
+      def get(id)
+        @items.find{|x| x.thread_id == id }
+      end
+
       def get_current 
-        @items.find{|x| x.thread_id == Thread.current.object_id }
+        get(Thread.current.object_id)
       end
 
       def get_free
@@ -37,13 +41,19 @@ module Pod4
         end
       end
 
-      def release
-        pi = get_current
+      def release(id=nil)
+        pi = id.nil? ? get_current : get(id)
         pi.thread_id = nil if pi
       end
 
-      def drop
-        @items.delete_if{|x| x.thread_id == Thread.current.object_id }
+      def release_oldest
+        pi = @items.sort{|a,b| a.stamp <=> b.stamp}.first
+        pi.thread_id = nil if pi
+      end
+
+      def drop(id=nil)
+        id ||= Thread.current.object_id
+        @items.delete_if{|x| x.thread_id == id }
       end
 
       def size 
@@ -84,6 +94,8 @@ module Pod4
     # Return the client we gave this thread before. 
     # Failing that, assign a free one from the pool.
     # Failing that, ask the interface to give us a new client.
+    # Failing that, if we've set a timeout, wait for a client to be freed; if we have not, release
+    #   the oldest client and use that.
     #
     # Note: The interface passes itself in case we want to call it back to get a new client; but
     # clients are assigned to a _thread_. Every interface in a given thread gets the same pool
@@ -106,9 +118,16 @@ module Pod4
         end
 
         if @max_clients && @pool.size >= @max_clients 
-          raise Pod4::PoolTimeout if @max_wait && (Time.now - time > @max_wait)
-          sleep 1
-          next
+          if @max_wait
+            raise Pod4::PoolTimeout if @max_wait && (Time.now - time > @max_wait)
+            Pod4.logger.warn(__FILE__){ "waiting for a free client..." }
+            sleep 1
+            next
+          else
+            Pod4.logger.debug(__FILE__){ "releasing oldest client" }
+            @pool.release_oldest
+            next
+          end
         end
 
         cl = interface.new_connection(@data_layer_options)

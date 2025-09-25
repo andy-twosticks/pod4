@@ -6,13 +6,13 @@ DB[:tds] =
     password:   'pod4test' }
 
 DB[:pg] = 
-  { host:     'centos7andy',
+  { host:     'postgresql01.jhallpr.com',
     dbname:   'pod4_test',
-    user:     'pod4test',
-    password: 'pod4test' }
+    user:     'pod4_test',
+    password: '#why#ring#' }
 
 DB[:sequel] = 
-  { host:     'centos7andy',
-    user:     'pod4test',
-    password: 'pod4test' }
+  { host:     'postgresql01',
+    user:     'pod4_test',
+    password: '#why#ring#' }
 

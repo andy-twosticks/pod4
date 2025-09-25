@@ -92,10 +92,18 @@ describe "SequelInterface (Pg)" do
     d
   end
 
-  let(:db_url) { "postgres://pod4test:pod4test@centos7andy/pod4_test?search_path=public" }
+  #let(:db_url) { "postgres://pod4_test:#why#ring#@postgresql01/pod4_test?search_path=public" }
+
+  let(:db_hash) do
+    { host:     'postgresql01',
+      user:     'pod4_test',
+      password: '#why#ring#',
+      adapter:  :postgres,
+      database: 'pod4_test' }
+  end
 
   let(:db) do
-    db = Sequel.connect(db_url)
+    db = Sequel.connect(db_hash)
     db_setup(db)
     db
   end
@@ -119,7 +127,7 @@ describe "SequelInterface (Pg)" do
   describe "#new" do
      
     context "when passed a Sequel DB object" do
-      let(:ifce) { sequel_interface_class.new(Sequel.connect db_url) }
+      let(:ifce) { sequel_interface_class.new(Sequel.connect db_hash) }
 
       it "uses it to create a connection" do
         expect( ifce._connection ).to be_a Connection
@@ -133,7 +141,7 @@ describe "SequelInterface (Pg)" do
     end
 
     context "when passed a String" do
-      let(:ifce) { sequel_interface_class.new(db_url) }
+      let(:ifce) { sequel_interface_class.new(db_hash) }
 
       it "uses it to create a connection" do
         expect( ifce._connection ).to be_a Connection
@@ -160,7 +168,7 @@ describe "SequelInterface (Pg)" do
       # Normally we'd expect on _every_ use, but Sequel is different
       it "calls Connection#client on first use" do
         # When we pass a connection object we are expected to set the data layer option
-        conn.data_layer_options = Sequel.connect(db_url)
+        conn.data_layer_options = Sequel.connect(db_hash)
 
         expect( ifce._connection ).to receive(:client).with(ifce).and_call_original
 

@@ -127,9 +127,9 @@ describe Pod4::ConnectionPool do
         end
       end
 
-      context "when we reach the maximum" do
+      context "when we reach the maximum and there is a max_wait" do
         before(:each) do
-          @connection = ConnectionPool.new(interface: ifce_class, max_clients: 1)
+          @connection = ConnectionPool.new(interface: ifce_class, max_clients: 1, max_wait: 10)
           @connection.data_layer_options = "meh"
           @interface = ifce_class.new
           @interface.set_conn "boz"
@@ -193,6 +193,42 @@ describe Pod4::ConnectionPool do
           expect{ @connection.client(@interface) }.to raise_error Pod4::PoolTimeout
         end
       end # of when we reach the maximum, max_wait is set and the time is up
+
+      context "when we reach the maximum and no max_wait is set" do
+        before(:each) do
+          @connection = ConnectionPool.new(interface: ifce_class, max_clients: 2)
+          @connection.data_layer_options = "meh"
+          @interface = ifce_class.new
+          @interface.set_conn "foo"
+
+          # assign our 2 clients in the pool to a different thread
+          @threads = []
+          2.times do
+            @threads << Thread.new { @connection.client(@interface); Thread.stop }
+          end
+          sleep 0.1 until @threads.all?{|t| t.stop? }
+
+          expect( @connection._pool.size ).to eq 2
+          @threads.each do |t|
+            expect( t ).not_to be_nil
+            expect( t ).not_to eq Thread.current.object_id
+          end
+        end
+
+        after(:each) { @threads.each{|t| t.kill} }
+
+        it "releases the oldest connection" do
+          oldest = @connection._pool.sort_by{|x| x.stamp}.first
+          expect( oldest.thread_id ).not_to eq Thread.current.object_id
+
+          @connection.client(@interface)
+          expect( @connection._pool.size ).to eq 2
+
+          conn = @connection._pool.find{|x| x.stamp == oldest.stamp }
+          expect( conn.thread_id ).to eq Thread.current.object_id
+        end
+
+      end # of when we reach the maximum and no max_wait is set
 
     end # of when max_clients != nil, there is no client for this thread and none free
     
