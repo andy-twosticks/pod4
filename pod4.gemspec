@@ -5,6 +5,7 @@ require 'pod4/version'
 Gem::Specification.new do |spec|
   spec.name          = "pod4"
   spec.version       = Pod4::VERSION
+  spec.required_ruby_version = "2.7.4"
   spec.authors       = ["Andy Jones"]
   spec.email         = ["andy.jones@twosticksconsulting.co.uk"]
   spec.summary       = %q|Totally not an ORM|
