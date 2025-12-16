@@ -183,6 +183,9 @@ three.  There is no validation or error control.
 Note that we have to require pg_interface and pg seperately. I won't bother to show this in any
 more model examples.
 
+Note also that we are passing the PG connection string to the interface.  This is not best
+practice.  Ideally, you should set up a connection pool, instead.  See below.
+
 ### Interface ###
 
 Let's start with the interface definition.  Remember, the interface class is only there to
@@ -475,35 +478,34 @@ if you had them, would share the same connection. Note that we are talking in th
 this second wrinkle, because of:
 
 
-### The Connection Object ###
+### The Connection Pool Object ###
 
-The solution to both of these wrinkles is the Pod4::Connection object. 
+The solution to both of these wrinkles is the Pod4::ConnectionPool object. 
 
-By default any interface other than SequelInterface will create a pool of connections and connect
-to the database with one your thread is currently using.  (Sequel uses it's own connection pool, so
-will create one internally. It uses its own thread pool, of course, and we only use the one Sequel
-DB object for the whole of Pod4, so it doesn't need any of that. That's why it uses
-Pod4::Connection, instead.)
+You can pass a database connection parameter to an interface, and it will create a Connection
+object for you and use it internally. 
 
-You can set this up manually, if you wish:
+This will, with the exception of SequelInterface, which just lets Sequel do its own thing, give you
+one connection pool per interface.  This will solve all the above problems, but it is rather
+generous; what you probably want is one connection pool per database for your entire application.
+You can pass this to your interface instead of the DB connection parameters.
 
     #
     # init.rb -- bootup for my project
     #
 
     # Require libraries
-    require "sequel"
+    require "PG""
     require "pod4"
-    require "pod4/sequel_interface"
-    require "pod4/connection"
+    require "pod4/pg_interface"
+    require "pod4/connection_pool"
 
     # require models
-    $conn = Pod4::Connection.new(interface: Pod4::SequelInterface)
+    $conn = Pod4::ConnectionPool.new
     require_relative "models/customer"
 
     # set up database connection
-    hash = get_sequel_params
-    $conn.data_layer_options = Sequel.connect(hash)
+    $conn.data_layer_options = get_pg_param_hash
 
     #############
 
@@ -512,20 +514,16 @@ You can set this up manually, if you wish:
     #
 
     class Foo < Pod4::Model
-      class Interface < Pod4::SequelInterface
+      class FooInterface < Pod4::PgInterface
         set_table    :foo
-        set_id_field :id, autoincrement: true
+        set_id_field :id
       end
 
-      set_interface Interface.new($conn)
+      set_interface FooInterface.new($conn)
 
-TL;DR: the only code that needs to go in the middle of your requires is the line defining a
+TL;DR: the only code that needs to go in the middle of your requires are the lines defining a
 Connection object; you pass that to the interface instead.  You can set up the parameters
 the interface needs and pass them to the connection object afterwards.  
-
-With TdsInterface and PgInterface you can pass the same connection to multiple models and they will
-share it.  These interfaces take a Pod4::ConnectionPool instead, but otherwise the code looks
-exactly the same as the above example. 
 
 
 BasicModel

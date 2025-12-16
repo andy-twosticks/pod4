@@ -28,12 +28,13 @@ describe Pod4::Connection do
 
   describe "#new" do
 
-    it "takes a hash" do
-      expect{ Pod4::Connection.new       }.to raise_error ArgumentError
-      expect{ Pod4::Connection.new(:foo) }.to raise_error ArgumentError
+    it "takes an optional hash" do
+      expect{ Pod4::Connection.new         }.not_to raise_error
+      expect{ Pod4::Connection.new(foo: 4) }.not_to raise_error
+      expect{ Pod4::Connection.new(:foo)   }.to raise_error ArgumentError
     end
 
-    it "needs :interface, a Pod4::Interface class" do
+    it "the :interface parameter must be a Pod4::Interface class" do
       expect{ Pod4::Connection.new(interface: "foo") }.to raise_error ArgumentError
       expect{ Pod4::Connection.new(interface: Array) }.to raise_error ArgumentError
       expect{ Pod4::Connection.new(interface: ConnectionTestingI) }.not_to raise_error

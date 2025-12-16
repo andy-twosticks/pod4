@@ -74,6 +74,9 @@ module Pod4
     # * max_wait -- throw a Pod4::PoolTimeout if you wait more than this time in seconds.
     # Pass nil to wait forever. Default is nil, because you would need to handle that timeout.
     #
+    # Note that the :interface parameter is optional here.  You probably want one pool for all your
+    # models and interfaces, so you should leave it out.
+    #
     def initialize(args)
       super(args)
 
@@ -100,16 +103,18 @@ module Pod4
       time = Time.now
       cl   = nil
 
-      Pod4.logger.debug(__FILE__){ "Pool size: #{@pool.size}" }
+      Pod4.logger.debug(__FILE__){ "Pool size: #{@pool.size} Thread: #{Thread.current.object_id}" }
 
       # NB: We are constrained to use loop in order for our test to work
       loop do
         if (pi = @pool.get_current)
+          Pod4.logger.debug(__FILE__){ "get current: #{pi.inspect}" }
           cl = pi.client
           break
         end
 
         if (pi = @pool.get_free)
+          Pod4.logger.debug(__FILE__){ "get free: #{pi.inspect}" }
           cl = pi.client
           break
         end
@@ -129,11 +134,13 @@ module Pod4
           end
         end
 
+        Pod4.logger.debug(__FILE__){ "new connection" }
         cl = interface.new_connection(@data_layer_options)
         @pool << cl
         break
       end # of loop
 
+      Pod4.logger.debug(__FILE__){ "Got client: #{cl.inspect}" }
       cl
     end
 

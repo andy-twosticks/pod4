@@ -15,14 +15,20 @@ module Pod4
     #
     # `conn = Pod4::Connection.new(interface: MyInterface)`
     #
-    def initialize(args)
-      raise ArgumentError, "Connection#new needs a Hash" unless args.is_a? Hash
-      raise ArgumentError, "You must pass a Pod4::Interface" \
-        unless args[:interface] \
-            && args[:interface].is_a?(Class) \
-            && args[:interface].ancestors.include?(Interface)
+    def initialize(args=nil)
+      if args
+        raise ArgumentError, "Connection#new argument needs to be a Hash" unless args.is_a? Hash
 
-      @interface_class    = args[:interface]
+        if args[:interface]
+          raise ArgumentError, "You must pass a Pod4::Interface" \
+            unless args[:interface] \
+                && args[:interface].is_a?(Class) \
+                && args[:interface].ancestors.include?(Interface)
+        end
+
+        @interface_class = args[:interface]
+      end
+
       @data_layer_options = nil
       @client             = nil
       @options            = nil
@@ -55,7 +61,7 @@ module Pod4
 
     def fail_bad_interfaces(f)
       raise ArgumentError, "That's not a #@interface_class", caller \
-        unless f.kind_of?(@interface_class)
+        if @interface_class && !f.kind_of?(@interface_class)
 
     end
 
