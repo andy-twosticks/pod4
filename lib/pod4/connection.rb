@@ -43,7 +43,6 @@ module Pod4
 
     ##
     # Close the connection.  
-    # In the case of a single connection, this is probably not going to get used much. But.
     #
     def close(interface)
       fail_bad_interfaces(interface)

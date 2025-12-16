@@ -1,4 +1,4 @@
-require "octothorpe"
+require "octothorpe" #bamf
 require "date"
 require "time"
 require "bigdecimal"
@@ -319,7 +319,7 @@ module Pod4
     ##
     # Close the connection to the database.
     #
-    # Pod4 itself doesn't use this(?)
+    # This is called from a Connection Object.
     #
     def close_connection(conn)
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }
@@ -360,11 +360,7 @@ module Pod4
     def ensure_connection
       client = @connection.client(self)
 
-      if client.nil?
-        open
-      elsif ! connected?(client)
-        client.reset
-      end
+      client.reset unless connected?(client)
 
       client
     end

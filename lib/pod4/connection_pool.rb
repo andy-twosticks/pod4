@@ -33,6 +33,10 @@ module Pod4
         get(Thread.current.object_id)
       end
 
+      def get_oldest
+        @items.sort{|a,b| a.stamp <=> b.stamp}.first
+      end
+
       def get_free
         @mutex.synchronize do
           pi = @items.find{|x| x.thread_id.nil? }
@@ -44,16 +48,6 @@ module Pod4
       def release(id=nil)
         pi = id.nil? ? get_current : get(id)
         pi.thread_id = nil if pi
-      end
-
-      def release_oldest
-        pi = @items.sort{|a,b| a.stamp <=> b.stamp}.first
-        pi.thread_id = nil if pi
-      end
-
-      def drop(id=nil)
-        id ||= Thread.current.object_id
-        @items.delete_if{|x| x.thread_id == id }
       end
 
       def size 
@@ -97,13 +91,16 @@ module Pod4
     # Failing that, if we've set a timeout, wait for a client to be freed; if we have not, release
     #   the oldest client and use that.
     #
-    # Note: The interface passes itself in case we want to call it back to get a new client; but
-    # clients are assigned to a _thread_. Every interface in a given thread gets the same pool
-    # item, the same client object.
+    # Note: 'interface' is the instance of the interface class. It passes itself in case we want to
+    # call it back to get a new client or to close a client; but clients are assigned to a
+    # _thread_, not an interface. Every interface in a given thread gets the same pool item, the
+    # same client object.
     #
     def client(interface)
       time = Time.now
       cl   = nil
+
+      Pod4.logger.debug(__FILE__){ "Pool size: #{@pool.size}" }
 
       # NB: We are constrained to use loop in order for our test to work
       loop do
@@ -125,7 +122,9 @@ module Pod4
             next
           else
             Pod4.logger.debug(__FILE__){ "releasing oldest client" }
-            @pool.release_oldest
+            oldest = @pool.get_oldest
+            interface.close_connection oldest.client
+            @pool.release(oldest.thread_id)
             next
           end
         end
@@ -141,22 +140,22 @@ module Pod4
     ##
     # De-assign the client for the current thread from that thread.
     #
-    # We never ask the interface to close the connection to the database.  There is no advantage in
-    # doing that for us.
-    #
-    # Note: The interface passes itself in case we want to call it back to actually close the
-    # client; but clients are assigned to a _thread_.
+    # Note: 'interface' is the instance of the interface class.  This is so we can call it
+    # and get it to close the client; we don't know how to do that.
     #
     def close(interface)
-      @pool.release
+      current = @pool.get_current
+      interface.close_connection current.client
+      @pool.release current.thread_id
     end
 
-    ##
-    # Remove the client object entirely -- for example, because the connection to the database has
-    # expired.
+    ## 
+    # Remove the client from the pool but don't try to close it.
+    # we provide this for if the Interface finds that a connection is no longer open; TdsInterface
+    # uses it.
     #
     def drop(interface)
-      @pool.drop
+      @pool.release
     end
 
     ##

@@ -320,8 +320,7 @@ module Pod4
     ##
     # Close the connection to the database.
     #
-    # We don't actually use this.  Theoretically it would be called by ConnectionPool, but we
-    # don't.  I've left it in for completeness.
+    # This is called by ConnectionPool.
     #
     def close_connection(conn)
       Pod4.logger.info(__FILE__){ "Closing connection to DB" }

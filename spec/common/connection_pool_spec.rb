@@ -6,7 +6,7 @@ describe Pod4::ConnectionPool do
   let(:ifce_class) do
     Class.new Pod4::Interface do
       def initialize;                  end
-      def close_connection;            end
+      def close_connection(int);       end
       def new_connection(opts); @conn; end
 
       def set_conn(c); @conn = c; end
@@ -228,6 +228,13 @@ describe Pod4::ConnectionPool do
           expect( conn.thread_id ).to eq Thread.current.object_id
         end
 
+        it "calls close_connection on the interface with the oldest client ID" do
+          oldest = @connection._pool.sort_by{|x| x.stamp}.first
+          expect( @interface ).to receive(:close_connection).with(oldest.client)
+
+          @connection.client(@interface)
+        end
+
       end # of when we reach the maximum and no max_wait is set
 
     end # of when max_clients != nil, there is no client for this thread and none free
@@ -253,6 +260,11 @@ describe Pod4::ConnectionPool do
       expect( @connection._pool.first.thread_id ).to be_nil
     end
 
+    it "calls #close_connection on the interface" do
+      expect( @interface).to receive(:close_connection)
+      @connection.close(@interface)
+    end
+
   end # of #close
 
 
@@ -267,16 +279,19 @@ describe Pod4::ConnectionPool do
       expect( @connection._pool.size ).to eq 1
       expect( @connection._pool.first.thread_id ).to eq Thread.current.object_id
     end
-     
-    it "removes the client object from the pool entirely" do
+
+    it "removes the client object from the pool" do
       @connection.drop(@interface)
-      expect( @connection._pool.size ).to eq 0
+      expect( @connection._pool.size ).to eq 1
+      expect( @connection._pool.first.thread_id ).to be_nil
     end
     
   end # of #drop
   
   
-
+  
+  
+  
 
 end
 

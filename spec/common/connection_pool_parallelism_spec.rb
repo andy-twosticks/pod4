@@ -60,7 +60,7 @@ describe Pod4::ConnectionPool do
   let(:ifce_class) do
     Class.new Pod4::Interface do
       def initialize;                  end
-      def close_connection;            end
+      def close_connection(int);       end
       def new_connection(opts); @conn; end
 
       def set_conn(c); @conn = c; end
